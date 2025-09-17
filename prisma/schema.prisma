@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  pets           Pet[]
+  orders         Order[]
+  walkerProfile  WalkerProfile?
+  walkerBookings WalkerBooking[]
+  chatRooms      ChatRoom[]
+
+  @@map("users")
+}
+
+model Pet {
+  id          String   @id @default(cuid())
+  name        String
+  species     String // 개, 고양이 등
+  breed       String? // 품종
+  age         Int
+  gender      String // 수컷, 암컷
+  personality String? // 성격
+  imageUrl    String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  member User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@map("pets")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  stock       Int      @default(0)
+  categoryId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  userId          String
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  shippingAddress String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  member User        @relation(fields: [userId], references: [id])
+  items  OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model WalkerProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  bio         String?
+  experience  String?
+  rating      Float    @default(0)
+  hourlyRate  Float
+  isAvailable Boolean  @default(true)
+  location    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  member   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings WalkerBooking[]
+  reviews  WalkerReview[]
+
+  @@map("walker_profiles")
+}
+
+model WalkerBooking {
+  id         String        @id @default(cuid())
+  userId     String
+  walkerId   String
+  petId      String
+  date       DateTime
+  duration   Int // 분 단위
+  status     BookingStatus @default(PENDING)
+  totalPrice Float
+  notes      String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  // Relations
+  member   User          @relation(fields: [userId], references: [id])
+  walker   WalkerProfile @relation(fields: [walkerId], references: [id])
+  chatRoom ChatRoom?
+
+  @@map("walker_bookings")
+}
+
+model WalkerReview {
+  id        String   @id @default(cuid())
+  walkerId  String
+  userId    String
+  rating    Int // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  walker WalkerProfile @relation(fields: [walkerId], references: [id], onDelete: Cascade)
+
+  @@map("walker_reviews")
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  booking  WalkerBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  chatRoomId String
+  senderId   String
+  message    String
+  createdAt  DateTime @default(now())
+
+  // Relations
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
