@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,6 +24,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder(toBuilder = true)
 public class Product extends BaseTimeEntity {
     
     @Id
@@ -79,7 +81,42 @@ public class Product extends BaseTimeEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> orderItems = new ArrayList<>();
     
+    // Business methods
+    public void updateProduct(String name, String description, Double price, String imageUrl,
+                             String brand, Double weight, String dimensions, Integer stock,
+                             Long categoryId, Double discountRate, Boolean isActive) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.imageUrl = imageUrl;
+        this.brand = brand;
+        this.weight = weight;
+        this.dimensions = dimensions;
+        this.stock = stock;
+        this.categoryId = categoryId;
+        this.discountRate = discountRate;
+        this.isActive = isActive;
+    }
     
+    public void deactivate() {
+        this.isActive = false;
+    }
+    
+    public void decreaseStock(Integer quantity) {
+        if (this.stock < quantity) {
+            throw new IllegalArgumentException("재고가 부족합니다.");
+        }
+        this.stock -= quantity;
+    }
+    
+    public void increaseStock(Integer quantity) {
+        this.stock += quantity;
+    }
+    
+    public void updateRating(Double ratingAverage, Integer reviewCount) {
+        this.ratingAverage = ratingAverage;
+        this.reviewCount = reviewCount;
+    }
 
 }
 
