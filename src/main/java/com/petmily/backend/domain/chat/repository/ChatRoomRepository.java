@@ -17,7 +17,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 유저의 채팅방 목록 조회 (유저 또는 워커로서 참여한 방)
     @Query("SELECT c FROM ChatRoom c WHERE (c.userId = :userId OR " +
            "(SELECT w.userId FROM WalkerProfile w WHERE w.id = c.walkerId) = :userId) " +
-           "AND c.isActive = true ORDER BY c.modifyTime DESC")
+           "AND c.isActive = true ORDER BY c.updateTime DESC")
     List<ChatRoom> findByUserIdOrWalkerUserId(@Param("userId") Long userId);
     
     // 유저와 워커 간의 기존 채팅방 조회 (예약 전 문의용)
@@ -30,6 +30,6 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     
     // 유저와 워커 간의 모든 채팅방 조회
     @Query("SELECT c FROM ChatRoom c WHERE c.userId = :userId AND c.walkerId = :walkerId " +
-           "AND c.isActive = true ORDER BY c.modifyTime DESC")
+           "AND c.isActive = true ORDER BY c.updateTime DESC")
     List<ChatRoom> findByUserIdAndWalkerId(@Param("userId") Long userId, @Param("walkerId") Long walkerId);
 }

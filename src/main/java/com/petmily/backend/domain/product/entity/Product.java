@@ -42,6 +42,27 @@ public class Product extends BaseTimeEntity {
     @Column(name = "image_url")
     private String imageUrl;
     
+    @Column(name = "brand")
+    private String brand;
+    
+    @Column(name = "weight")
+    private Double weight;
+    
+    @Column(name = "dimensions")
+    private String dimensions;
+    
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+    
+    @Column(name = "discount_rate")
+    private Double discountRate = 0.0;
+    
+    @Column(name = "rating_average")
+    private Double ratingAverage = 0.0;
+    
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
+    
     @NotNull
     @Column(name = "stock")
     private Integer stock = 0;

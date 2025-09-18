@@ -42,6 +42,37 @@ public class Order extends BaseTimeEntity {
     @NotBlank
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
+    
+    @Column(name = "receiver_name")
+    private String receiverName;
+    
+    @Column(name = "receiver_phone")
+    private String receiverPhone;
+    
+    @Column(name = "delivery_memo")
+    private String deliveryMemo;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status")
+    private DeliveryStatus deliveryStatus = DeliveryStatus.PREPARING;
+    
+    @Column(name = "tracking_number")
+    private String trackingNumber;
+    
+    @Column(name = "discount_amount")
+    private Double discountAmount = 0.0;
+    
+    @Column(name = "delivery_fee")
+    private Double deliveryFee = 0.0;
+    
+    @Column(name = "final_amount")
+    private Double finalAmount;
+    
+    @Column(name = "payment_method")
+    private String paymentMethod;
+    
+    @Column(name = "is_subscription")
+    private Boolean isSubscription = false;
 
     
     // Relations
@@ -51,6 +82,9 @@ public class Order extends BaseTimeEntity {
     
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
+    
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private SubscriptionOrder subscriptionOrder;
 
 
 }

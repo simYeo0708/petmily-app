@@ -11,9 +11,19 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
+ext {
+    set('springAiVersion', "1.0.0-M6")
+    set('antlrVersion', "4.13.1")
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
+    }
+    all {
+        resolutionStrategy {
+            force "org.antlr:antlr4-runtime:${antlrVersion}"
+        }
     }
 }
 
@@ -36,6 +46,9 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
     implementation 'com.h2database:h2'
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
+    
+    // ANTLR 버전 명시적 지정
+    implementation "org.antlr:antlr4-runtime:${antlrVersion}"
 
     runtimeOnly 'org.postgresql:postgresql'
 
@@ -54,13 +67,12 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
-ext {
-    set('springAiVersion', "1.0.0-M6")
-}
-
 dependencyManagement {
     imports{
         mavenBom("org.springframework.ai:spring-ai-bom:${springAiVersion}")
+    }
+    dependencies {
+        dependency("org.antlr:antlr4-runtime:${antlrVersion}")
     }
 }
 

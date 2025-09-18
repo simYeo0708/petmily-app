@@ -41,11 +41,27 @@ public class Category extends BaseTimeEntity {
     @Column(name = "is_active")
     private Boolean isActive = true;
     
+    @Column(name = "parent_id")
+    private Long parentId;
+    
+    @Column(name = "sort_order")
+    private Integer sortOrder = 0;
+    
+    @Column(name = "icon_url")
+    private String iconUrl;
+    
     
     
     // Relations
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products = new ArrayList<>();
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", insertable = false, updatable = false)
+    private Category parentCategory;
+    
+    @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Category> subCategories = new ArrayList<>();
     
     
 

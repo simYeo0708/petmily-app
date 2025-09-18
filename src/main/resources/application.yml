@@ -85,6 +85,10 @@ server:
 
 logging:
   level:
-    com.petmily.backend: DEBUG
-    org.springframework: DEBUG
+    root: INFO
+    com.petmily.backend: INFO
+    org.springframework: WARN
+    org.hibernate.SQL: WARN
+    org.springframework.web: WARN
+    org.springframework.security: WARN
 

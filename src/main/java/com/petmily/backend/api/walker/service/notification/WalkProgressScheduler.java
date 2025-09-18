@@ -1,5 +1,7 @@
 package com.petmily.backend.api.walker.service.notification;
 
+import com.petmily.backend.domain.pet.repository.PetRepository;
+import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkingTrack;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
@@ -20,14 +22,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class WalkProgressScheduler {
 
+    private final UserRepository userRepository;
+    private final PetRepository petRepository;
     private final WalkerBookingRepository walkerBookingRepository;
     private final WalkingTrackRepository walkingTrackRepository;
     private final WalkNotificationService notificationService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String STATIONARY_CHECK_KEY = "walk:stationary:";
-    private static final int STATIONARY_THRESHOLD_MINUTES = 15; // 15분 이상 같은 장소
-    private static final double LOCATION_THRESHOLD_METERS = 50; // 50미터 이내를 같은 장소로 간주
+    private static final int STATIONARY_THRESHOLD_MINUTES = 5; // 5분 이상 같은 장소
+    private static final double LOCATION_THRESHOLD_METERS = 20; // 20미터 이내를 같은 장소로 간주
 
     /**
      * 10분마다 진행 중인 산책들의 상태를 체크하고 알림 발송
@@ -142,7 +146,7 @@ public class WalkProgressScheduler {
                     track.getLatitude(), track.getLongitude()
             );
             
-            // 기준점에서 50미터 이상 떨어진 위치가 있으면 정지 상태가 아님
+            // 기준점에서 20미터 이상 떨어진 위치가 있으면 정지 상태가 아님
             if (distance > LOCATION_THRESHOLD_METERS) {
                 return false;
             }
@@ -185,16 +189,16 @@ public class WalkProgressScheduler {
      * 펫 이름 조회 (실제 구현에서는 Pet 엔티티 연동 필요)
      */
     private String getPetName(WalkerBooking booking) {
-        // TODO: 실제 구현에서는 booking.getPet().getName() 등으로 구현
-        return "반려동물"; // 임시 기본값
+        String name = petRepository.findById(booking.getPetId()).get().getName();
+        return name; // 임시 기본값
     }
 
     /**
      * 보호자 연락처 조회 (실제 구현에서는 User 엔티티 연동 필요)
      */
     private String getOwnerContact(WalkerBooking booking) {
-        // TODO: 실제 구현에서는 booking.getOwner().getPhoneNumber() 등으로 구현
-        return "owner@example.com"; // 임시 기본값
+        String phone = userRepository.findById(booking.getUserId()).get().getPhone();
+        return phone; // 임시 기본값
     }
 
     /**
