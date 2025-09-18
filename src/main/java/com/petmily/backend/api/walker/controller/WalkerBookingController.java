@@ -1,5 +1,6 @@
 package com.petmily.backend.api.walker.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.walker.dto.walkerBooking.*;
 import com.petmily.backend.api.walker.service.WalkerBookingService;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
@@ -24,8 +25,8 @@ public class WalkerBookingController {
     public ResponseEntity<WalkerBookingResponse> createBooking(
             @RequestBody WalkerBookingRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerBookingResponse response = walkerBookingService.createBooking(username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse response = walkerBookingService.createBooking(userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -34,8 +35,8 @@ public class WalkerBookingController {
      */
     @GetMapping("/user")
     public ResponseEntity<List<WalkerBookingResponse>> getUserBookings(Authentication authentication) {
-        String username = authentication.getName();
-        List<WalkerBookingResponse> bookings = walkerBookingService.getUserBookings(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerBookingResponse> bookings = walkerBookingService.getUserBookings(userId);
         return ResponseEntity.ok(bookings);
     }
 
@@ -44,8 +45,8 @@ public class WalkerBookingController {
      */
     @GetMapping("/walker")
     public ResponseEntity<List<WalkerBookingResponse>> getWalkerBookings(Authentication authentication) {
-        String username = authentication.getName();
-        List<WalkerBookingResponse> bookings = walkerBookingService.getWalkerBookings(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerBookingResponse> bookings = walkerBookingService.getWalkerBookings(userId);
         return ResponseEntity.ok(bookings);
     }
 
@@ -56,8 +57,8 @@ public class WalkerBookingController {
     public ResponseEntity<WalkerBookingResponse> getBooking(
             @PathVariable Long bookingId,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerBookingResponse booking = walkerBookingService.getBooking(bookingId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse booking = walkerBookingService.getBooking(bookingId, userId);
         return ResponseEntity.ok(booking);
     }
 
@@ -69,8 +70,8 @@ public class WalkerBookingController {
             @PathVariable Long bookingId,
             @RequestParam WalkerBooking.BookingStatus status,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerBookingResponse response = walkerBookingService.updateBookingStatus(bookingId, status, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse response = walkerBookingService.updateBookingStatus(bookingId, status, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -81,8 +82,8 @@ public class WalkerBookingController {
     public ResponseEntity<Void> cancelBooking(
             @PathVariable Long bookingId,
             Authentication authentication) {
-        String username = authentication.getName();
-        walkerBookingService.cancelBooking(bookingId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        walkerBookingService.cancelBooking(bookingId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -93,9 +94,9 @@ public class WalkerBookingController {
     public ResponseEntity<WalkerBookingResponse> confirmBooking(
             @PathVariable Long bookingId,
             Authentication authentication) {
-        String username = authentication.getName();
+        Long userId = SecurityUtils.getUserId(authentication);
         WalkerBookingResponse response = walkerBookingService.updateBookingStatus(
-            bookingId, WalkerBooking.BookingStatus.CONFIRMED, username);
+            bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -116,8 +117,8 @@ public class WalkerBookingController {
             @PathVariable Long openRequestId,
             @RequestBody WalkerApplicationRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerBookingResponse response = walkerBookingService.applyToOpenRequest(openRequestId, request, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse response = walkerBookingService.applyToOpenRequest(openRequestId, request, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -128,8 +129,8 @@ public class WalkerBookingController {
     public ResponseEntity<List<WalkerApplicationResponse>> getWalkerApplications(
             @PathVariable Long openRequestId,
             Authentication authentication) {
-        String username = authentication.getName();
-        List<WalkerApplicationResponse> applications = walkerBookingService.getWalkerApplications(openRequestId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerApplicationResponse> applications = walkerBookingService.getWalkerApplications(openRequestId, userId);
         return ResponseEntity.ok(applications);
     }
 
@@ -141,8 +142,8 @@ public class WalkerBookingController {
             @PathVariable Long applicationId,
             @RequestParam boolean accept,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerBookingResponse response = walkerBookingService.respondToWalkerApplication(applicationId, accept, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse response = walkerBookingService.respondToWalkerApplication(applicationId, accept, userId);
         return ResponseEntity.ok(response);
     }
 }

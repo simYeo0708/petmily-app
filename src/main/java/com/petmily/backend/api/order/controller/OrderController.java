@@ -1,5 +1,6 @@
 package com.petmily.backend.api.order.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.order.dto.OrderCreateRequest;
 import com.petmily.backend.api.order.dto.OrderDetailResponse;
 import com.petmily.backend.api.order.dto.OrderListResponse;
@@ -23,31 +24,35 @@ public class OrderController {
     public ResponseEntity<OrderListResponse> getOrders(
             @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        // TODO: 주문 목록 조회 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        OrderListResponse orders = orderService.getOrders(userId, pageable);
+        return ResponseEntity.ok(orders);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderDetailResponse> getOrder(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 주문 상세 조회 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        OrderDetailResponse order = orderService.getOrder(id, userId);
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping
     public ResponseEntity<OrderDetailResponse> createOrder(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OrderCreateRequest request) {
-        // TODO: 주문 생성 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        OrderDetailResponse order = orderService.createOrder(userId, request);
+        return ResponseEntity.ok(order);
     }
 
     @PutMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelOrder(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 주문 취소 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        orderService.cancelOrder(id, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -55,7 +60,9 @@ public class OrderController {
     public ResponseEntity<TrackingResponse> getOrderTracking(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 배송 추적 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        Object tracking = orderService.getOrderTracking(id, userId);
+        // TODO: TrackingResponse로 변환 로직 추가
         return ResponseEntity.ok().build();
     }
 
@@ -63,7 +70,8 @@ public class OrderController {
     public ResponseEntity<Void> confirmOrder(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 주문 확정 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        orderService.confirmOrder(id, userId);
         return ResponseEntity.ok().build();
     }
 

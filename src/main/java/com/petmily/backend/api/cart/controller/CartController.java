@@ -4,6 +4,7 @@ import com.petmily.backend.api.cart.dto.CartAddRequest;
 import com.petmily.backend.api.cart.dto.CartResponse;
 import com.petmily.backend.api.cart.dto.CartUpdateRequest;
 import com.petmily.backend.api.cart.service.CartService;
+import com.petmily.backend.api.common.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +23,17 @@ public class CartController {
 
     @GetMapping
     public ResponseEntity<CartResponse> getCart(@AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 장바구니 조회 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        CartResponse cart = cartService.getCart(userId);
+        return ResponseEntity.ok(cart);
     }
 
     @PostMapping("/items")
     public ResponseEntity<Void> addToCart(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CartAddRequest request) {
-        // TODO: 장바구니 아이템 추가 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.addToCart(userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -39,7 +42,8 @@ public class CartController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody CartUpdateRequest request) {
-        // TODO: 장바구니 아이템 수량 변경 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.updateCartItem(id, userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -47,7 +51,8 @@ public class CartController {
     public ResponseEntity<Void> removeCartItem(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 장바구니 아이템 삭제 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.removeCartItem(id, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -55,13 +60,15 @@ public class CartController {
     public ResponseEntity<Void> toggleCartItemSelection(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 장바구니 아이템 선택/해제 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.toggleCartItemSelection(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> clearCart(@AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 장바구니 비우기 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.clearCart(userId);
         return ResponseEntity.ok().build();
     }
 
@@ -69,7 +76,8 @@ public class CartController {
     public ResponseEntity<Void> removeSelectedItems(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam List<Long> itemIds) {
-        // TODO: 선택된 장바구니 아이템들 삭제 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        cartService.removeSelectedItems(userId, itemIds);
         return ResponseEntity.ok().build();
     }
 }

@@ -1,5 +1,6 @@
 package com.petmily.backend.api.subscription.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.subscription.dto.SubscriptionCreateRequest;
 import com.petmily.backend.api.subscription.dto.SubscriptionDetailResponse;
 import com.petmily.backend.api.subscription.dto.SubscriptionListResponse;
@@ -26,24 +27,27 @@ public class SubscriptionController {
     public ResponseEntity<SubscriptionListResponse> getSubscriptions(
             @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        // TODO: 정기배송 목록 조회 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        SubscriptionListResponse subscriptions = subscriptionService.getSubscriptions(userId, pageable);
+        return ResponseEntity.ok(subscriptions);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SubscriptionDetailResponse> getSubscription(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 정기배송 상세 조회 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        SubscriptionDetailResponse subscription = subscriptionService.getSubscription(id, userId);
+        return ResponseEntity.ok(subscription);
     }
 
     @PostMapping
     public ResponseEntity<SubscriptionDetailResponse> createSubscription(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody SubscriptionCreateRequest request) {
-        // TODO: 정기배송 신청 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        SubscriptionDetailResponse subscription = subscriptionService.createSubscription(userId, request);
+        return ResponseEntity.ok(subscription);
     }
 
     @PutMapping("/{id}")
@@ -51,8 +55,9 @@ public class SubscriptionController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody SubscriptionUpdateRequest request) {
-        // TODO: 정기배송 설정 변경 구현
-        return ResponseEntity.ok().build();
+        Long userId = SecurityUtils.getUserId(userDetails);
+        SubscriptionDetailResponse subscription = subscriptionService.updateSubscription(id, userId, request);
+        return ResponseEntity.ok(subscription);
     }
 
     @PutMapping("/{id}/pause")
@@ -60,7 +65,8 @@ public class SubscriptionController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) LocalDate pauseUntil) {
-        // TODO: 정기배송 일시정지 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        subscriptionService.pauseSubscription(id, userId, pauseUntil);
         return ResponseEntity.ok().build();
     }
 
@@ -68,7 +74,8 @@ public class SubscriptionController {
     public ResponseEntity<Void> resumeSubscription(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 정기배송 재개 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        subscriptionService.resumeSubscription(id, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -76,7 +83,8 @@ public class SubscriptionController {
     public ResponseEntity<Void> cancelSubscription(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
-        // TODO: 정기배송 해지 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        subscriptionService.cancelSubscription(id, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -85,7 +93,9 @@ public class SubscriptionController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
-        // TODO: 정기배송 주문 이력 조회 구현
+        Long userId = SecurityUtils.getUserId(userDetails);
+        Object history = subscriptionService.getSubscriptionHistory(id, userId, pageable);
+        // TODO: SubscriptionHistoryResponse로 변환 로직 추가
         return ResponseEntity.ok().build();
     }
 
