@@ -20,28 +20,28 @@ public class CategoryController {
 
     @GetMapping
     public ResponseEntity<CategoryListResponse> getCategories() {
-        // TODO: 카테고리 목록 조회 구현 (계층구조)
-        return ResponseEntity.ok().build();
+        CategoryListResponse categories = categoryService.getCategories();
+        return ResponseEntity.ok(categories);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CategoryDetailResponse> getCategory(@PathVariable Long id) {
-        // TODO: 카테고리 상세 조회 구현
-        return ResponseEntity.ok().build();
+        CategoryDetailResponse category = categoryService.getCategory(id);
+        return ResponseEntity.ok(category);
     }
 
     @GetMapping("/{id}/children")
     public ResponseEntity<CategoryListResponse> getCategoryChildren(@PathVariable Long id) {
-        // TODO: 하위 카테고리 조회 구현
-        return ResponseEntity.ok().build();
+        CategoryListResponse children = categoryService.getCategoryChildren(id);
+        return ResponseEntity.ok(children);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CategoryDetailResponse> createCategory(
             @Valid @RequestBody CategoryCreateRequest request) {
-        // TODO: 카테고리 생성 구현
-        return ResponseEntity.ok().build();
+        CategoryDetailResponse category = categoryService.createCategory(request);
+        return ResponseEntity.ok(category);
     }
 
     @PutMapping("/{id}")
@@ -49,14 +49,14 @@ public class CategoryController {
     public ResponseEntity<CategoryDetailResponse> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryUpdateRequest request) {
-        // TODO: 카테고리 수정 구현
-        return ResponseEntity.ok().build();
+        CategoryDetailResponse category = categoryService.updateCategory(id, request);
+        return ResponseEntity.ok(category);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
-        // TODO: 카테고리 삭제 구현
+        categoryService.deleteCategory(id);
         return ResponseEntity.ok().build();
     }
 }

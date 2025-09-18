@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,6 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder(toBuilder = true)
 public class Category extends BaseTimeEntity {
     
     @Id
@@ -63,6 +65,28 @@ public class Category extends BaseTimeEntity {
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Category> subCategories = new ArrayList<>();
     
+    // Business methods
+    public void updateCategory(String name, String description, String imageUrl, 
+                              String iconUrl, Long parentId, Integer sortOrder, Boolean isActive) {
+        this.name = name;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.iconUrl = iconUrl;
+        this.parentId = parentId;
+        this.sortOrder = sortOrder;
+        this.isActive = isActive;
+    }
     
+    public void deactivate() {
+        this.isActive = false;
+    }
+    
+    public boolean hasProducts() {
+        return !products.isEmpty();
+    }
+    
+    public boolean hasChildren() {
+        return !subCategories.isEmpty();
+    }
 
 }
