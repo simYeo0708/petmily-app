@@ -6,20 +6,19 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "orders")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
-@Setter
+@Builder
 public class Order extends BaseTimeEntity {
     
     @Id
@@ -33,7 +32,7 @@ public class Order extends BaseTimeEntity {
     @NotNull
     @Positive
     @Column(name = "total_amount")
-    private Double totalAmount;
+    private BigDecimal totalAmount;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -60,18 +59,21 @@ public class Order extends BaseTimeEntity {
     private String trackingNumber;
     
     @Column(name = "discount_amount")
-    private Double discountAmount = 0.0;
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
     
     @Column(name = "delivery_fee")
-    private Double deliveryFee = 0.0;
+    @Builder.Default
+    private BigDecimal deliveryFee = BigDecimal.ZERO;
     
     @Column(name = "final_amount")
-    private Double finalAmount;
+    private BigDecimal finalAmount;
     
     @Column(name = "payment_method")
     private String paymentMethod;
     
     @Column(name = "is_subscription")
+    @Builder.Default
     private Boolean isSubscription = false;
 
     
@@ -81,11 +83,64 @@ public class Order extends BaseTimeEntity {
     private User user;
     
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
     
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private SubscriptionOrder subscriptionOrder;
 
-
+    public void calculateFinalAmount() {
+        this.finalAmount = this.totalAmount.subtract(this.discountAmount).add(this.deliveryFee);
+    }
+    
+    public void confirm() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 주문만 확정할 수 있습니다.");
+        }
+        this.status = OrderStatus.CONFIRMED;
+    }
+    
+    public void ship(String trackingNumber) {
+        if (this.status != OrderStatus.CONFIRMED) {
+            throw new IllegalStateException("확정된 주문만 배송할 수 있습니다.");
+        }
+        this.status = OrderStatus.SHIPPED;
+        this.deliveryStatus = DeliveryStatus.SHIPPED;
+        this.trackingNumber = trackingNumber;
+    }
+    
+    public void deliver() {
+        if (this.status != OrderStatus.SHIPPED) {
+            throw new IllegalStateException("배송 중인 주문만 배송완료 처리할 수 있습니다.");
+        }
+        this.status = OrderStatus.DELIVERED;
+        this.deliveryStatus = DeliveryStatus.DELIVERED;
+    }
+    
+    public void cancel() {
+        if (this.status == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("배송완료된 주문은 취소할 수 없습니다.");
+        }
+        this.status = OrderStatus.CANCELLED;
+        this.deliveryStatus = DeliveryStatus.CANCELLED;
+    }
+    
+    public boolean canCancel() {
+        return this.status != OrderStatus.DELIVERED;
+    }
+    
+    public boolean isDelivered() {
+        return this.status == OrderStatus.DELIVERED;
+    }
+    
+    public void addItem(OrderItem item) {
+        this.items.add(item);
+    }
+    
+    public BigDecimal getTotalItemsPrice() {
+        return this.items.stream()
+            .map(OrderItem::getTotalPrice)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }
 

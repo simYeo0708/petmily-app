@@ -1,10 +1,10 @@
 package com.petmily.backend.api.order.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import com.petmily.backend.domain.order.entity.OrderStatus;
+import com.petmily.backend.domain.order.entity.DeliveryStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,19 +12,22 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class OrderDetailResponse {
     private Long id;
+    private Long userId;
     private String orderNumber;
-    private LocalDateTime orderDate;
-    private String status;
-    private String deliveryStatus;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
+    private OrderStatus status;
+    private DeliveryStatus deliveryStatus;
     private String trackingNumber;
     
     // 주문 금액 정보
-    private Double totalAmount;
-    private Double discountAmount;
-    private Double deliveryFee;
-    private Double finalAmount;
+    private BigDecimal totalAmount;
+    private BigDecimal discountAmount;
+    private BigDecimal deliveryFee;
+    private BigDecimal finalAmount;
     
     // 배송 정보
     private String receiverName;
@@ -49,21 +52,23 @@ public class OrderDetailResponse {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class OrderItemInfo {
         private Long id;
         private Long productId;
         private String productName;
         private String productImage;
         private String brand;
-        private Double price;
+        private BigDecimal price;
         private Integer quantity;
-        private Double totalPrice;
+        private BigDecimal totalPrice;
     }
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class SubscriptionInfo {
         private String subscriptionType;
         private Integer deliveryIntervalDays;

@@ -5,17 +5,16 @@ import com.petmily.backend.domain.product.entity.Product;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_items")
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
-@Setter
+@Builder
 public class OrderItem extends BaseTimeEntity {
     
     @Id
@@ -36,7 +35,7 @@ public class OrderItem extends BaseTimeEntity {
     
     @NotNull
     @Positive
-    private Double price;
+    private BigDecimal price;
     
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
@@ -47,7 +46,23 @@ public class OrderItem extends BaseTimeEntity {
     @JoinColumn(name = "product_id", insertable = false, updatable = false)
     private Product product;
     
+    public BigDecimal getTotalPrice() {
+        return this.price.multiply(BigDecimal.valueOf(this.quantity));
+    }
     
-
+    public static OrderItem createFromProduct(Product product, Integer quantity) {
+        return OrderItem.builder()
+            .productId(product.getId())
+            .quantity(quantity)
+            .price(product.getPrice())
+            .build();
+    }
+    
+    public void updateQuantity(Integer newQuantity) {
+        if (newQuantity <= 0) {
+            throw new IllegalArgumentException("수량은 0보다 커야 합니다.");
+        }
+        this.quantity = newQuantity;
+    }
 }
 
