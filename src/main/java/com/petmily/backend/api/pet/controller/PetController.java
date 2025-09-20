@@ -81,9 +81,9 @@ public class PetController {
     /**
      * 반려동물 검색 (필터링)
      */
-    @PostMapping("/search")
+    @GetMapping("/search")
     public ResponseEntity<List<PetResponse>> searchPets(
-            @RequestBody PetSearchRequest searchRequest,
+            @ModelAttribute PetSearchRequest searchRequest,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         List<PetResponse> pets = petService.searchPets(searchRequest, page, size);

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping("/api/carts")
 @RequiredArgsConstructor
 public class CartController {
 
@@ -56,7 +56,7 @@ public class CartController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/items/{id}/select")
+    @PatchMapping("/items/{id}/select")
     public ResponseEntity<Void> toggleCartItemSelection(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

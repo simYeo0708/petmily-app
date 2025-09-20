@@ -17,7 +17,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("api/walker")
+@RequestMapping("/api/walkers")
 public class WalkerController {
 
     private final WalkerService walkerService;
@@ -55,11 +55,4 @@ public class WalkerController {
         return ResponseEntity.ok(response);
     }
 
-    // Admin endpoint
-    @PutMapping("/admin/{id}/status")
-    public ResponseEntity<WalkerProfileResponse> updateWalkerStatus(@PathVariable long id, @RequestParam WalkerStatus status) {
-        // Security for admin access should be handled by Spring Security configuration
-        WalkerProfileResponse response = walkerService.updateWalkerStatus(id, status);
-        return ResponseEntity.ok(response);
-    }
 }

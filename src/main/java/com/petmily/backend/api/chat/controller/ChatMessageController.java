@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping("/api/chat-rooms")
 public class ChatMessageController {
 
     private final ChatMessageService chatMessageService;
@@ -22,7 +22,7 @@ public class ChatMessageController {
     /**
      * 채팅방의 메시지 목록 조회 (페이징)
      */
-    @GetMapping("/room/{roomId}/messages")
+    @GetMapping("/{roomId}/messages")
     public ResponseEntity<Page<ChatMessageResponse>> getChatMessages(
             @PathVariable String roomId,
             @PageableDefault(size = 50, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable,
@@ -35,7 +35,7 @@ public class ChatMessageController {
     /**
      * 메시지 전송 (REST API)
      */
-    @PostMapping("/room/{roomId}/messages")
+    @PostMapping("/{roomId}/messages")
     public ResponseEntity<ChatMessageResponse> sendMessage(
             @PathVariable String roomId,
             @RequestBody ChatMessageRequest request,
@@ -49,7 +49,7 @@ public class ChatMessageController {
     /**
      * 메시지 읽음 처리
      */
-    @PutMapping("/room/{roomId}/messages/read")
+    @PutMapping("/{roomId}/messages/read")
     public ResponseEntity<Void> markMessagesAsRead(
             @PathVariable String roomId,
             Authentication authentication) {
