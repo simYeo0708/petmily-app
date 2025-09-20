@@ -18,6 +18,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Getter
+@Setter
 @Builder
 public class Order extends BaseTimeEntity {
     
@@ -36,6 +37,7 @@ public class Order extends BaseTimeEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
     
     @NotBlank
@@ -53,6 +55,7 @@ public class Order extends BaseTimeEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "delivery_status")
+    @Builder.Default
     private DeliveryStatus deliveryStatus = DeliveryStatus.PREPARING;
     
     @Column(name = "tracking_number")

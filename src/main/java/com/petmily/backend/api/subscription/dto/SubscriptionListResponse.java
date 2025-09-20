@@ -1,9 +1,6 @@
 package com.petmily.backend.api.subscription.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,6 +10,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SubscriptionListResponse {
     private List<SubscriptionSummary> subscriptions;
     private int currentPage;
@@ -25,6 +23,7 @@ public class SubscriptionListResponse {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class SubscriptionSummary {
         private Long id;
         private String subscriptionType;

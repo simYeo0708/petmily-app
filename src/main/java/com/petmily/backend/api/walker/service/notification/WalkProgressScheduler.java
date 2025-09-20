@@ -82,7 +82,6 @@ public class WalkProgressScheduler {
      */
     private void processWalkingBooking(WalkerBooking booking) {
         try {
-            // TODO: 실제 구현에서는 Pet 엔티티에서 이름을 가져와야 함
             String petName = getPetName(booking);
             String ownerContact = getOwnerContact(booking);
 

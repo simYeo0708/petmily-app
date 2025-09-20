@@ -115,7 +115,7 @@ public class WalkNotificationService {
             return true;
         }
 
-        // TODO: 실제 운영 환경에서는 사용자의 카카오톡 액세스 토큰을 가져와서 사용
+        // 실제 운영 환경에서는 사용자의 카카오톡 액세스 토큰을 가져와서 사용
         // 현재는 개발용으로 로그 출력
         messageSender.logMessageForDevelopment(ownerContact, message);
         

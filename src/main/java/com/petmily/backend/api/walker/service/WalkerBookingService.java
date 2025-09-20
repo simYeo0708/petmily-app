@@ -36,8 +36,8 @@ public class WalkerBookingService {
     private final ChatMessageService chatMessageService;
 
     @Transactional
-    public WalkerBookingResponse createBooking(String username, WalkerBookingRequest request) {
-        User user = userRepository.findByUsername(username)
+    public WalkerBookingResponse createBooking(Long userId, WalkerBookingRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         if (request.getBookingMethod() == WalkerBooking.BookingMethod.WALKER_SELECTION) {
@@ -115,8 +115,8 @@ public class WalkerBookingService {
         return WalkerBookingResponse.from(savedBooking);
     }
 
-    public List<WalkerBookingResponse> getUserBookings(String username) {
-        User user = userRepository.findByUsername(username)
+    public List<WalkerBookingResponse> getUserBookings(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         List<WalkerBooking> bookings = walkerBookingRepository.findByUserIdOrderByDateDesc(user.getId());
@@ -125,8 +125,8 @@ public class WalkerBookingService {
                 .collect(Collectors.toList());
     }
 
-    public List<WalkerBookingResponse> getWalkerBookings(String username) {
-        User user = userRepository.findByUsername(username)
+    public List<WalkerBookingResponse> getWalkerBookings(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId())
@@ -138,8 +138,8 @@ public class WalkerBookingService {
                 .collect(Collectors.toList());
     }
 
-    public WalkerBookingResponse getBooking(Long bookingId, String username) {
-        User user = userRepository.findByUsername(username)
+    public WalkerBookingResponse getBooking(Long bookingId, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerBooking booking = walkerBookingRepository.findById(bookingId)
@@ -158,8 +158,8 @@ public class WalkerBookingService {
     }
 
     @Transactional
-    public WalkerBookingResponse updateBookingStatus(Long bookingId, WalkerBooking.BookingStatus status, String username) {
-        User user = userRepository.findByUsername(username)
+    public WalkerBookingResponse updateBookingStatus(Long bookingId, WalkerBooking.BookingStatus status, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerBooking booking = walkerBookingRepository.findById(bookingId)
@@ -197,13 +197,13 @@ public class WalkerBookingService {
 
 
     @Transactional
-    public WalkerBookingResponse cancelBooking(Long bookingId, String username) {
-        return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CANCELLED, username);
+    public WalkerBookingResponse cancelBooking(Long bookingId, Long userId) {
+        return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CANCELLED, userId);
     }
 
     @Transactional
-    public WalkerBookingResponse confirmBooking(Long bookingId, String username) {
-        return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CONFIRMED, username);
+    public WalkerBookingResponse confirmBooking(Long bookingId, Long userId) {
+        return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
     }
 
     // 오픈 요청 목록 조회 (워커들이 볼 수 있는)
@@ -219,8 +219,8 @@ public class WalkerBookingService {
 
     // 워커가 오픈 요청에 지원
     @Transactional
-    public WalkerBookingResponse applyToOpenRequest(Long openRequestId, WalkerApplicationRequest request, String username) {
-        User user = userRepository.findByUsername(username)
+    public WalkerBookingResponse applyToOpenRequest(Long openRequestId, WalkerApplicationRequest request, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId())
@@ -274,8 +274,8 @@ public class WalkerBookingService {
     }
 
     // 사용자가 오픈 요청에 대한 워커 지원자 목록 조회
-    public List<WalkerApplicationResponse> getWalkerApplications(Long openRequestId, String username) {
-        User user = userRepository.findByUsername(username)
+    public List<WalkerApplicationResponse> getWalkerApplications(Long openRequestId, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerBooking openRequest = walkerBookingRepository.findById(openRequestId)
@@ -305,8 +305,8 @@ public class WalkerBookingService {
 
     // 사용자가 워커 지원을 수락/거절
     @Transactional
-    public WalkerBookingResponse respondToWalkerApplication(Long applicationId, boolean accept, String username) {
-        User user = userRepository.findByUsername(username)
+    public WalkerBookingResponse respondToWalkerApplication(Long applicationId, boolean accept, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         WalkerBooking application = walkerBookingRepository.findById(applicationId)

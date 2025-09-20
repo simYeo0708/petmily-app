@@ -54,19 +54,24 @@ public class Product extends BaseTimeEntity {
     private String dimensions;
     
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
     
     @Column(name = "discount_rate")
+    @Builder.Default
     private Double discountRate = 0.0;
     
     @Column(name = "rating_average")
+    @Builder.Default
     private Double ratingAverage = 0.0;
     
     @Column(name = "review_count")
+    @Builder.Default
     private Integer reviewCount = 0;
     
     @NotNull
     @Column(name = "stock")
+    @Builder.Default
     private Integer stock = 0;
     
     @NotNull
@@ -79,6 +84,7 @@ public class Product extends BaseTimeEntity {
     private Category category;
     
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
     
     // Business methods
@@ -116,6 +122,10 @@ public class Product extends BaseTimeEntity {
     public void updateRating(Double ratingAverage, Integer reviewCount) {
         this.ratingAverage = ratingAverage;
         this.reviewCount = reviewCount;
+    }
+    
+    public boolean isActive() {
+        return this.isActive != null && this.isActive;
     }
 
 }

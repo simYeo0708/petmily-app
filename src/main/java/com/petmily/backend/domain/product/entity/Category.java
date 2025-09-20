@@ -41,12 +41,14 @@ public class Category extends BaseTimeEntity {
     private String imageUrl;
     
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
     
     @Column(name = "parent_id")
     private Long parentId;
     
     @Column(name = "sort_order")
+    @Builder.Default
     private Integer sortOrder = 0;
     
     @Column(name = "icon_url")
@@ -56,6 +58,7 @@ public class Category extends BaseTimeEntity {
     
     // Relations
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Product> products = new ArrayList<>();
     
     @ManyToOne(fetch = FetchType.LAZY)
@@ -63,6 +66,7 @@ public class Category extends BaseTimeEntity {
     private Category parentCategory;
     
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
     
     // Business methods

@@ -110,7 +110,7 @@ public class OrderService {
                 .orderId(savedOrder.getId())
                 .productId(cartItem.getProductId())
                 .quantity(cartItem.getQuantity())
-                .price(cartItem.getProduct().getPrice())
+                .price(BigDecimal.valueOf(cartItem.getProduct().getPrice()))
                 .build())
             .collect(Collectors.toList());
         
@@ -172,12 +172,40 @@ public class OrderService {
 
     @Transactional
     public void updateOrderStatus(Long orderId, String status) {
-        // TODO: 주문 상태 업데이트 로직 구현 (관리자용)
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        
+        try {
+            OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            order.setStatus(orderStatus);
+            orderRepository.save(order);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
     }
 
     @Transactional
     public void updateDeliveryStatus(Long orderId, String deliveryStatus, String trackingNumber) {
-        // TODO: 배송 상태 업데이트 로직 구현 (관리자용)
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new CustomException(ErrorCode.ORDER_NOT_FOUND));
+        
+        try {
+            DeliveryStatus status = DeliveryStatus.valueOf(deliveryStatus.toUpperCase());
+            order.setDeliveryStatus(status);
+            
+            if (trackingNumber != null && !trackingNumber.trim().isEmpty()) {
+                order.setTrackingNumber(trackingNumber);
+            }
+            
+            // 배송 완료 시 주문 상태도 업데이트
+            if (status == DeliveryStatus.DELIVERED) {
+                order.setStatus(OrderStatus.DELIVERED);
+            }
+            
+            orderRepository.save(order);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
     }
 
     private BigDecimal calculateTotalAmount(List<CartItem> cartItems) {

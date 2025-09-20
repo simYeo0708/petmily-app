@@ -66,8 +66,15 @@ public enum ErrorCode {
     SUBSCRIPTION_NOT_FOUND(NOT_FOUND, "정기배송을 찾을 수 없습니다."),
     SUBSCRIPTION_ALREADY_PAUSED(BAD_REQUEST, "이미 일시정지된 정기배송입니다."),
     SUBSCRIPTION_ALREADY_CANCELLED(BAD_REQUEST, "이미 해지된 정기배송입니다."),
+    SUBSCRIPTION_ALREADY_ACTIVE(BAD_REQUEST, "이미 활성화된 정기배송입니다."),
     INVALID_SUBSCRIPTION_TYPE(BAD_REQUEST, "올바르지 않은 정기배송 유형입니다."),
+    INVALID_DELIVERY_INTERVAL(BAD_REQUEST, "올바르지 않은 배송 주기입니다."),
     SUBSCRIPTION_MODIFICATION_NOT_ALLOWED(BAD_REQUEST, "정기배송 변경이 불가능합니다."),
+    SUBSCRIPTION_CANNOT_PAUSE(BAD_REQUEST, "일시정지할 수 없는 정기배송입니다."),
+    SUBSCRIPTION_CANNOT_RESUME(BAD_REQUEST, "재개할 수 없는 정기배송입니다."),
+    SUBSCRIPTION_ITEMS_REQUIRED(BAD_REQUEST, "정기배송할 상품을 선택해주세요."),
+    INVALID_FIRST_DELIVERY_DATE(BAD_REQUEST, "첫 배송일이 올바르지 않습니다."),
+    SUBSCRIPTION_COMPLETED(BAD_REQUEST, "완료된 정기배송입니다."),
 
     // return
     RETURN_NOT_FOUND(NOT_FOUND, "반품 요청을 찾을 수 없습니다."),

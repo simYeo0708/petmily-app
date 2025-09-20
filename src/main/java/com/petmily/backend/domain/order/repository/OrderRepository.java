@@ -42,6 +42,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.userId = :userId AND o.isSubscription = true ORDER BY o.createTime DESC")
     Page<Order> findSubscriptionOrdersByUserId(@Param("userId") Long userId, Pageable pageable);
     
+    // 특정 정기배송의 주문 이력 조회 (아이템 포함)
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items oi LEFT JOIN FETCH oi.product " +
+           "WHERE o.id IN (SELECT so.orderId FROM SubscriptionOrder so WHERE so.id = :subscriptionId) " +
+           "ORDER BY o.createTime DESC")
+    Page<Order> findBySubscriptionIdWithItems(@Param("subscriptionId") Long subscriptionId, Pageable pageable);
+    
     // 관리자용: 전체 주문 조회
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.status = :status ORDER BY o.createTime DESC")
     Page<Order> findByStatusWithItems(@Param("status") OrderStatus status, Pageable pageable);

@@ -1,10 +1,7 @@
 package com.petmily.backend.api.subscription.controller;
 
 import com.petmily.backend.api.common.util.SecurityUtils;
-import com.petmily.backend.api.subscription.dto.SubscriptionCreateRequest;
-import com.petmily.backend.api.subscription.dto.SubscriptionDetailResponse;
-import com.petmily.backend.api.subscription.dto.SubscriptionListResponse;
-import com.petmily.backend.api.subscription.dto.SubscriptionUpdateRequest;
+import com.petmily.backend.api.subscription.dto.*;
 import com.petmily.backend.api.subscription.service.SubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -94,13 +91,7 @@ public class SubscriptionController {
             @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {
         Long userId = SecurityUtils.getUserId(userDetails);
-        Object history = subscriptionService.getSubscriptionHistory(id, userId, pageable);
-        // TODO: SubscriptionHistoryResponse로 변환 로직 추가
-        return ResponseEntity.ok().build();
-    }
-
-    // DTO for subscription history response
-    public static class SubscriptionHistoryResponse {
-        // TODO: 정기배송 이력 응답 DTO 정의
+        SubscriptionHistoryResponse history = subscriptionService.getSubscriptionHistory(id, userId, pageable);
+        return ResponseEntity.ok(history);
     }
 }

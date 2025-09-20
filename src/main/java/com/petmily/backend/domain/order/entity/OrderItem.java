@@ -54,7 +54,7 @@ public class OrderItem extends BaseTimeEntity {
         return OrderItem.builder()
             .productId(product.getId())
             .quantity(quantity)
-            .price(product.getPrice())
+            .price(BigDecimal.valueOf(product.getPrice()))
             .build();
     }
     

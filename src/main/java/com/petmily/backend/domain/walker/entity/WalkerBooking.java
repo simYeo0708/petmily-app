@@ -2,6 +2,7 @@ package com.petmily.backend.domain.walker.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.user.entity.User;
+import com.petmily.backend.domain.pet.entity.Pet;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -125,6 +126,10 @@ public class WalkerBooking extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walker_id", insertable = false, updatable = false)
     private WalkerProfile walker;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pet_id", insertable = false, updatable = false)
+    private Pet pet;
     
     // Chat room integration will be added later when ChatRoom entity is implemented
     // @OneToOne(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -287,18 +287,20 @@ public class WalkingService {
      * 펫 이름 조회 (실제 구현에서는 Pet 엔티티 연동 필요)
      */
     private String getPetName(WalkerBooking booking) {
-        // TODO: 실제 구현에서는 booking과 연결된 Pet 엔티티에서 이름을 가져와야 함
-        // return booking.getPet().getName();
-        return "귀여운 강아지"; // 임시 기본값
+        if (booking.getPet() != null) {
+            return booking.getPet().getName();
+        }
+        return "귀여운 강아지"; // 기본값
     }
 
     /**
      * 보호자 연락처 조회 (실제 구현에서는 User 엔티티 연동 필요)
      */
     private String getOwnerContact(WalkerBooking booking) {
-        // TODO: 실제 구현에서는 booking과 연결된 Owner 엔티티에서 연락처를 가져와야 함
-        // return booking.getOwner().getPhoneNumber();
-        return "owner@petmily.com"; // 임시 기본값
+        if (booking.getUser() != null) {
+            return booking.getUser().getPhone() != null ? booking.getUser().getPhone() : booking.getUser().getEmail();
+        }
+        return "owner@petmily.com"; // 기본값
     }
 
 }

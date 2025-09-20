@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "cart_items")
 @NoArgsConstructor
@@ -38,6 +40,7 @@ public class CartItem extends BaseTimeEntity {
     private Integer quantity;
     
     @Column(name = "is_selected")
+    @Builder.Default
     private Boolean isSelected = true;
     
     // Relations
@@ -69,21 +72,22 @@ public class CartItem extends BaseTimeEntity {
         this.isSelected = false;
     }
     
-    public Double getTotalPrice() {
+    public BigDecimal getTotalPrice() {
         if (this.product == null) {
-            return 0.0;
+            return BigDecimal.ZERO;
         }
-        return this.quantity * this.product.getPrice();
+        return BigDecimal.valueOf(this.product.getPrice()).multiply(BigDecimal.valueOf(this.quantity));
     }
     
-    public Double getDiscountedTotalPrice() {
+    public BigDecimal getDiscountedTotalPrice() {
         if (this.product == null) {
-            return 0.0;
+            return BigDecimal.ZERO;
         }
-        Double discountedPrice = this.product.getPrice();
+        BigDecimal price = BigDecimal.valueOf(this.product.getPrice());
         if (this.product.getDiscountRate() > 0) {
-            discountedPrice = this.product.getPrice() * (1 - this.product.getDiscountRate() / 100.0);
+            BigDecimal discountRate = BigDecimal.valueOf(this.product.getDiscountRate() / 100.0);
+            price = price.multiply(BigDecimal.ONE.subtract(discountRate));
         }
-        return this.quantity * discountedPrice;
+        return price.multiply(BigDecimal.valueOf(this.quantity));
     }
 }
