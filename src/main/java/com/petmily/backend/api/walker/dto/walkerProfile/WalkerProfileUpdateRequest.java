@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class WalkerProfileUpdateRequest {
+    private boolean isAvailable;
     private String bio;
     private String experience;
     private String availableTime;

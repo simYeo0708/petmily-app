@@ -4,7 +4,6 @@ import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileCreateReque
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileUpdateRequest;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
 import com.petmily.backend.api.walker.service.WalkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

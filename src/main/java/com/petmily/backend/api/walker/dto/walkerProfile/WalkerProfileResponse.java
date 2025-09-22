@@ -19,6 +19,7 @@ public class WalkerProfileResponse {
     private Double rating;
     private Double hourlyRate;
     private WalkerStatus status;
+    private boolean isAvailable;
     private String location;
 
     public static WalkerProfileResponse from(WalkerProfile walkerProfile) {
@@ -34,6 +35,7 @@ public class WalkerProfileResponse {
                 .rating(walkerProfile.getRating())
                 .hourlyRate(walkerProfile.getHourlyRate())
                 .status(walkerProfile.getStatus())
+                .isAvailable(walkerProfile.getIsAvailable())
                 .location(walkerProfile.getLocation())
                 .build();
     }

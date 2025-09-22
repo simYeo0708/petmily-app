@@ -111,6 +111,7 @@ public class WalkerService {
         WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found for this user."));
 
+        walkerProfile.setIsAvailable(request.isAvailable());
         walkerProfile.setBio(request.getBio());
         walkerProfile.setExperience(request.getExperience());
         walkerProfile.setLocation(request.getServiceArea());

@@ -102,12 +102,12 @@ class WalkerBookingServiceTest {
     @Test
     void createBooking_Success() {
         // Given
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         when(walkerProfileRepository.findById(1L)).thenReturn(Optional.of(mockWalkerProfile));
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
         // When
-        WalkerBookingResponse result = walkerBookingService.createBooking("testuser", mockBookingRequest);
+        WalkerBookingResponse result = walkerBookingService.createBooking(1L, mockBookingRequest);
 
         // Then
         assertThat(result).isNotNull();
@@ -119,21 +119,21 @@ class WalkerBookingServiceTest {
     @Test
     void createBooking_UserNotFound() {
         // Given
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.createBooking("testuser", mockBookingRequest))
+        assertThatThrownBy(() -> walkerBookingService.createBooking(1L, mockBookingRequest))
                 .isInstanceOf(CustomException.class);
     }
 
     @Test
     void createBooking_WalkerNotFound() {
         // Given
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
         when(walkerProfileRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.createBooking("testuser", mockBookingRequest))
+        assertThatThrownBy(() -> walkerBookingService.createBooking(1L, mockBookingRequest))
                 .isInstanceOf(CustomException.class);
     }
 
@@ -152,19 +152,18 @@ class WalkerBookingServiceTest {
         when(walkerProfileRepository.findById(1L)).thenReturn(Optional.of(unavailableWalker));
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.createBooking("testuser", mockBookingRequest))
+        assertThatThrownBy(() -> walkerBookingService.createBooking(1L, mockBookingRequest))
                 .isInstanceOf(CustomException.class);
     }
 
     @Test
     void getUserBookings_Success() {
         // Given
-        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(mockUser));
         when(walkerBookingRepository.findByUserIdOrderByDateDesc(1L))
                 .thenReturn(Arrays.asList(mockBooking));
 
         // When
-        List<WalkerBookingResponse> result = walkerBookingService.getUserBookings("testuser");
+        List<WalkerBookingResponse> result = walkerBookingService.getUserBookings(1L);
 
         // Then
         assertThat(result).hasSize(1);
@@ -174,13 +173,12 @@ class WalkerBookingServiceTest {
     @Test
     void getWalkerBookings_Success() {
         // Given
-        when(userRepository.findByUsername("walker1")).thenReturn(Optional.of(mockWalkerUser));
-        when(walkerProfileRepository.findByUserId(2L)).thenReturn(Optional.of(mockWalkerProfile));
+        when(walkerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(mockWalkerProfile));
         when(walkerBookingRepository.findByWalkerIdOrderByDateDesc(1L))
                 .thenReturn(Arrays.asList(mockBooking));
 
         // When
-        List<WalkerBookingResponse> result = walkerBookingService.getWalkerBookings("walker1");
+        List<WalkerBookingResponse> result = walkerBookingService.getWalkerBookings(1L);
 
         // Then
         assertThat(result).hasSize(1);
@@ -196,7 +194,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
         // When
-        WalkerBookingResponse result = walkerBookingService.confirmBooking(1L, "walker1");
+        WalkerBookingResponse result = walkerBookingService.confirmBooking(1L, 1L);
 
         // Then
         assertThat(result).isNotNull();
@@ -212,7 +210,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.findById(1L)).thenReturn(Optional.of(mockBooking));
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.confirmBooking(1L, "otherwalker"))
+        assertThatThrownBy(() -> walkerBookingService.confirmBooking(1L, 2L))
                 .isInstanceOf(CustomException.class);
     }
 
@@ -225,7 +223,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
         // When
-        WalkerBookingResponse result = walkerBookingService.cancelBooking(1L, "testuser");
+        WalkerBookingResponse result = walkerBookingService.cancelBooking(1L, 1L);
 
         // Then
         assertThat(result).isNotNull();
@@ -244,7 +242,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.findById(1L)).thenReturn(Optional.of(otherUserBooking));
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.cancelBooking(1L, "testuser"))
+        assertThatThrownBy(() -> walkerBookingService.cancelBooking(1L, 1L))
                 .isInstanceOf(CustomException.class);
     }
 

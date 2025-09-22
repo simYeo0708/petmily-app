@@ -21,7 +21,7 @@ public class WalkerAdminController {
      */
     @PutMapping("/{id}/status")
     public ResponseEntity<WalkerProfileResponse> updateWalkerStatus(
-            @PathVariable long id, 
+            @PathVariable long id,
             @RequestParam WalkerStatus status) {
         WalkerProfileResponse response = walkerService.updateWalkerStatus(id, status);
         return ResponseEntity.ok(response);
