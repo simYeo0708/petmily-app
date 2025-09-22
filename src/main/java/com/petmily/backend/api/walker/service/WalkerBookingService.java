@@ -6,7 +6,7 @@ import com.petmily.backend.api.walker.dto.walkerBooking.WalkerApplicationRequest
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerApplicationResponse;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingRequest;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -186,7 +185,6 @@ public class WalkerBookingService {
 
         WalkerBooking updatedBooking = walkerBookingRepository.save(booking);
         
-        // 예약이 확정되면 자동으로 채팅방 생성 및 시스템 메시지 발송
         if (status == WalkerBooking.BookingStatus.CONFIRMED) {
             createBookingChatRoomAndSendSystemMessage(updatedBooking);
         }
@@ -206,7 +204,6 @@ public class WalkerBookingService {
         return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
     }
 
-    // 오픈 요청 목록 조회 (워커들이 볼 수 있는)
     public List<WalkerBookingResponse> getOpenRequests() {
         List<WalkerBooking> openRequests = walkerBookingRepository.findByBookingMethodAndStatusOrderByCreateTimeDesc(
                 WalkerBooking.BookingMethod.OPEN_REQUEST, 
@@ -217,7 +214,6 @@ public class WalkerBookingService {
                 .collect(Collectors.toList());
     }
 
-    // 워커가 오픈 요청에 지원
     @Transactional
     public WalkerBookingResponse applyToOpenRequest(Long openRequestId, WalkerApplicationRequest request, Long userId) {
         User user = userRepository.findById(userId)
@@ -241,7 +237,6 @@ public class WalkerBookingService {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "This open request is no longer available");
         }
 
-        // 이미 지원했는지 확인
         boolean alreadyApplied = walkerBookingRepository.existsByUserIdAndWalkerIdAndStatus(
                 openRequest.getUserId(), walker.getId(), WalkerBooking.BookingStatus.WALKER_APPLIED);
         
@@ -249,7 +244,6 @@ public class WalkerBookingService {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Already applied to this request");
         }
 
-        // 새로운 지원 레코드 생성
         WalkerBooking application = new WalkerBooking();
         application.setUserId(openRequest.getUserId());
         application.setWalkerId(walker.getId());
@@ -273,7 +267,6 @@ public class WalkerBookingService {
         return WalkerBookingResponse.from(savedApplication);
     }
 
-    // 사용자가 오픈 요청에 대한 워커 지원자 목록 조회
     public List<WalkerApplicationResponse> getWalkerApplications(Long openRequestId, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
@@ -303,7 +296,6 @@ public class WalkerBookingService {
                 .collect(Collectors.toList());
     }
 
-    // 사용자가 워커 지원을 수락/거절
     @Transactional
     public WalkerBookingResponse respondToWalkerApplication(Long applicationId, boolean accept, Long userId) {
         User user = userRepository.findById(userId)
@@ -323,7 +315,6 @@ public class WalkerBookingService {
         if (accept) {
             application.setStatus(WalkerBooking.BookingStatus.CONFIRMED);
             
-            // 같은 오픈 요청에 대한 다른 지원들을 거절 처리
             List<WalkerBooking> otherApplications = walkerBookingRepository.findByUserIdAndBookingMethodAndStatus(
                     user.getId(), WalkerBooking.BookingMethod.OPEN_REQUEST, WalkerBooking.BookingStatus.WALKER_APPLIED);
             
@@ -339,7 +330,6 @@ public class WalkerBookingService {
 
         WalkerBooking updatedApplication = walkerBookingRepository.save(application);
         
-        // 오픈 요청 지원이 수락되면 자동으로 채팅방 생성 및 시스템 메시지 발송
         if (accept) {
             createBookingChatRoomAndSendSystemMessage(updatedApplication);
         }
@@ -352,14 +342,12 @@ public class WalkerBookingService {
      */
     private void createBookingChatRoomAndSendSystemMessage(WalkerBooking booking) {
         try {
-            // 채팅방 생성
             var chatRoomResponse = chatRoomService.createPostBookingChatRoom(
                     booking.getUserId(), 
                     booking.getWalkerId(), 
                     booking.getId()
             );
             
-            // 예약 상세 정보가 포함된 시스템 메시지 발송
             chatMessageService.createBookingSystemMessage(chatRoomResponse.getId(), booking);
             
             log.info("예약 확정으로 인한 채팅방 생성 완료 - Booking ID: {}, Chat Room ID: {}", 
@@ -367,7 +355,6 @@ public class WalkerBookingService {
             
         } catch (Exception e) {
             log.error("예약 확정 시 채팅방 생성 중 오류 발생 - Booking ID: {}", booking.getId(), e);
-            // 채팅방 생성 실패해도 예약은 유지되도록 예외를 던지지 않음
         }
     }
 }

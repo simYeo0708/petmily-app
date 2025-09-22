@@ -1,6 +1,6 @@
 package com.petmily.backend.api.walker.dto.walkerProfile;
 
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import lombok.Builder;

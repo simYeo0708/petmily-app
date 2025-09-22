@@ -78,7 +78,6 @@ public class Product extends BaseTimeEntity {
     @Column(name = "category_id")
     private Long categoryId;
     
-    // Relations
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", insertable = false, updatable = false)
     private Category category;
@@ -87,7 +86,6 @@ public class Product extends BaseTimeEntity {
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
     
-    // Business methods
     public void updateProduct(String name, String description, Double price, String imageUrl,
                              String brand, Double weight, String dimensions, Integer stock,
                              Long categoryId, Double discountRate, Boolean isActive) {

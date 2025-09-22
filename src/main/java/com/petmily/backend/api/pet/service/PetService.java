@@ -32,11 +32,9 @@ public class PetService {
 
     @Transactional
     public PetResponse createPet(String username, PetCreateRequest request) {
-        // Get user
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        // Create pet
         Pet pet = new Pet();
         pet.setName(request.getName());
         pet.setSpecies(request.getSpecies());
@@ -78,7 +76,6 @@ public class PetService {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
 
-        // Check if user owns this pet
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물만 조회 가능합니다.");
         }
@@ -94,12 +91,10 @@ public class PetService {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
 
-        // Check if user owns this pet
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물의 정보만 수정 가능합니다.");
         }
 
-        // Update pet information
         if (request.getName() != null) pet.setName(request.getName());
         if (request.getSpecies() != null) pet.setSpecies(request.getSpecies());
         if (request.getBreed() != null) pet.setBreed(request.getBreed());
@@ -130,7 +125,6 @@ public class PetService {
         Pet pet = petRepository.findById(petId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
 
-        // Check if user owns this pet
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "당신의 애완동물만 지울 수 있습니다.");
         }
@@ -141,8 +135,6 @@ public class PetService {
     public List<PetResponse> searchPets(PetSearchRequest searchRequest, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createTime"));
         
-        // For now, implement basic filtering. In real application, you might want to use 
-        // Specification or custom queries for complex filtering
         Page<Pet> pets;
         
         if (searchRequest.getSpecies() != null) {
@@ -199,7 +191,6 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
-    // Method for onboarding - create pet during user registration process
     @Transactional
     public PetResponse createOnboardingPet(Long userId, PetCreateRequest request) {
         User user = userRepository.findById(userId)

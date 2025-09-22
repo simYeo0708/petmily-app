@@ -8,7 +8,7 @@ import com.petmily.backend.api.dashboard.service.DashboardService;
 import com.petmily.backend.api.pet.dto.PetSummaryResponse;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
 import org.junit.jupiter.api.BeforeEach;

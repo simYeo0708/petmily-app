@@ -2,6 +2,7 @@ package com.petmily.backend.api.walker.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

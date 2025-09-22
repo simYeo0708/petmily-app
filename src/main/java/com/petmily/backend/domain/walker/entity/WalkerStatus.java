@@ -1,4 +1,4 @@
-package com.petmily.backend.api.walker.dto;
+package com.petmily.backend.domain.walker.entity;
 
 public enum WalkerStatus {
     PENDING,

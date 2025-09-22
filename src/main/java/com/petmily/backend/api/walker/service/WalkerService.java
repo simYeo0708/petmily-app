@@ -8,7 +8,7 @@ import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileCreateReque
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileUpdateRequest;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;

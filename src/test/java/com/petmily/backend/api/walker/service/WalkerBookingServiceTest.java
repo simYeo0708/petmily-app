@@ -1,11 +1,9 @@
 package com.petmily.backend.api.walker.service;
 
 import com.petmily.backend.api.exception.CustomException;
-import com.petmily.backend.api.walker.dto.walkerBooking.LocationUpdateRequest;
-import com.petmily.backend.api.walker.dto.walkerBooking.PhotoUploadRequest;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingRequest;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;

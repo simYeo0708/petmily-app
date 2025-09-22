@@ -1,7 +1,7 @@
 package com.petmily.backend.api.admin.controller;
 
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.api.walker.service.WalkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

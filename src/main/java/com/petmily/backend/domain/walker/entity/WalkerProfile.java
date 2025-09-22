@@ -2,7 +2,6 @@ package com.petmily.backend.domain.walker.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.user.entity.User;
-import com.petmily.backend.api.walker.dto.WalkerStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

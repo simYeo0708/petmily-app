@@ -3,6 +3,7 @@ package com.petmily.backend.api.walker.service;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.walker.dto.walkerBooking.*;
+import com.petmily.backend.api.walker.dto.walking.*;
 import com.petmily.backend.api.walker.service.notification.WalkNotificationService;
 import com.petmily.backend.domain.walker.entity.WalkingTrack;
 import com.petmily.backend.domain.walker.repository.WalkingTrackRepository;
@@ -41,7 +42,6 @@ public class WalkingService {
 
         WalkerBooking updatedBooking = walkerBookingRepository.save(validation.booking);
         
-        // 산책 시작 알림 발송 (비동기)
         try {
             String petName = getPetName(updatedBooking);
             String ownerContact = getOwnerContact(updatedBooking);
@@ -69,7 +69,6 @@ public class WalkingService {
 
         WalkerBooking updatedBooking = walkerBookingRepository.save(validation.booking);
         
-        // 산책 완료 알림 발송 (비동기)
         try {
             String petName = getPetName(updatedBooking);
             String ownerContact = getOwnerContact(updatedBooking);
@@ -89,11 +88,9 @@ public class WalkingService {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Can only track location during active walk");
         }
 
-        // 위치 데이터 검증
         locationValidationService.requireLocation(request.getLatitude(), request.getLongitude(), "위치 추적");
         locationValidationService.validateLocationChange(bookingId, request.getLatitude(), request.getLongitude());
         
-        // 의심스러운 위치 패턴 체크 (로그만, 차단하지 않음)
         if (locationValidationService.isProbablyFakeLocation(bookingId, request.getLatitude(), request.getLongitude())) {
             log.warn("의심스러운 위치 패턴 감지 - Booking ID: {}, 좌표: {}, {}", 
                      bookingId, request.getLatitude(), request.getLongitude());
@@ -144,7 +141,6 @@ public class WalkingService {
     public WalkerBookingResponse updateLocation(Long bookingId, LocationUpdateRequest request, String username) {
         WalkingValidationService.WalkerBookingValidation validation = validationService.validateWalkerBooking(bookingId, username);
 
-        // 위치 데이터 검증
         locationValidationService.requireLocation(request.getLatitude(), request.getLongitude(), "위치 업데이트");
         locationValidationService.validateLocationChange(bookingId, request.getLatitude(), request.getLongitude());
 
@@ -283,24 +279,22 @@ public class WalkingService {
         }
     }
 
-    /**
-     * 펫 이름 조회 (실제 구현에서는 Pet 엔티티 연동 필요)
-     */
     private String getPetName(WalkerBooking booking) {
-        if (booking.getPet() != null) {
+        if (booking.getPet() != null && booking.getPet().getName() != null) {
             return booking.getPet().getName();
         }
-        return "귀여운 강아지"; // 기본값
+        return "반려동물";
     }
 
-    /**
-     * 보호자 연락처 조회 (실제 구현에서는 User 엔티티 연동 필요)
-     */
     private String getOwnerContact(WalkerBooking booking) {
         if (booking.getUser() != null) {
-            return booking.getUser().getPhone() != null ? booking.getUser().getPhone() : booking.getUser().getEmail();
+            if (booking.getUser().getPhone() != null && !booking.getUser().getPhone().trim().isEmpty()) {
+                return booking.getUser().getPhone();
+            } else if (booking.getUser().getEmail() != null && !booking.getUser().getEmail().trim().isEmpty()) {
+                return booking.getUser().getEmail();
+            }
         }
-        return "owner@petmily.com"; // 기본값
+        return "연락처 없음";
     }
 
 }

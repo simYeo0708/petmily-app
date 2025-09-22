@@ -37,7 +37,6 @@ public class CartService {
 
     @Transactional
     public void addToCart(Long userId, CartAddRequest request) {
-        // 상품 존재 및 활성 상태 확인
         Product product = productRepository.findById(request.getProductId())
             .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         
@@ -45,16 +44,13 @@ public class CartService {
             throw new CustomException(ErrorCode.PRODUCT_INACTIVE);
         }
         
-        // 재고 확인
         if (product.getStock() < request.getQuantity()) {
             throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
         }
         
-        // 기존 장바구니 아이템 확인
         Optional<CartItem> existingItem = cartItemRepository.findByUserIdAndProductId(userId, request.getProductId());
         
         if (existingItem.isPresent()) {
-            // 기존 아이템 수량 업데이트
             CartItem cartItem = existingItem.get();
             int newQuantity = cartItem.getQuantity() + request.getQuantity();
             
@@ -64,7 +60,6 @@ public class CartService {
             
             cartItem.updateQuantity(newQuantity);
         } else {
-            // 새 아이템 추가
             CartItem cartItem = CartItem.builder()
                 .userId(userId)
                 .productId(request.getProductId())
@@ -81,12 +76,10 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(itemId)
             .orElseThrow(() -> new CustomException(ErrorCode.CART_ITEM_NOT_FOUND));
         
-        // 사용자 권한 확인
         if (!cartItem.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.NO_ACCESS);
         }
         
-        // 상품 재고 확인
         Product product = cartItem.getProduct();
         if (product.getStock() < request.getQuantity()) {
             throw new CustomException(ErrorCode.INSUFFICIENT_STOCK);
@@ -100,7 +93,6 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(itemId)
             .orElseThrow(() -> new CustomException(ErrorCode.CART_ITEM_NOT_FOUND));
         
-        // 사용자 권한 확인
         if (!cartItem.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.NO_ACCESS);
         }
@@ -113,7 +105,6 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(itemId)
             .orElseThrow(() -> new CustomException(ErrorCode.CART_ITEM_NOT_FOUND));
         
-        // 사용자 권한 확인
         if (!cartItem.getUserId().equals(userId)) {
             throw new CustomException(ErrorCode.NO_ACCESS);
         }
@@ -128,7 +119,6 @@ public class CartService {
 
     @Transactional
     public void removeSelectedItems(Long userId, List<Long> itemIds) {
-        // 사용자의 아이템들인지 확인
         List<CartItem> cartItems = cartItemRepository.findByIdInAndUserId(itemIds, userId);
         
         if (cartItems.size() != itemIds.size()) {
@@ -142,7 +132,6 @@ public class CartService {
         return cartItemRepository.countByUserId(userId);
     }
     
-    // Helper methods
     private CartResponse.CartItemInfo convertToCartItemInfo(CartItem cartItem) {
         Product product = cartItem.getProduct();
         
@@ -190,7 +179,6 @@ public class CartService {
             .mapToDouble(item -> item.getQuantity() * (item.getPrice() - item.getDiscountedPrice()))
             .sum();
         
-        // 배송비 계산 (예: 50000원 이상 무료배송)
         Double deliveryFee = selectedPrice >= 50000 ? 0.0 : 3000.0;
         Double finalPrice = selectedPrice + deliveryFee;
         

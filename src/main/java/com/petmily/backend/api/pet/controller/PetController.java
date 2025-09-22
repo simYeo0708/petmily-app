@@ -19,9 +19,6 @@ public class PetController {
 
     private final PetService petService;
 
-    /**
-     * 반려동물 등록 (온보딩 과정에서 사용)
-     */
     @PostMapping
     public ResponseEntity<PetResponse> createPet(
             @RequestBody PetCreateRequest request,
@@ -31,9 +28,6 @@ public class PetController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 사용자의 반려동물 목록 조회 (마이펫 탭에서 사용)
-     */
     @GetMapping("/my")
     public ResponseEntity<List<PetResponse>> getMyPets(Authentication authentication) {
         String username = authentication.getName();
@@ -41,9 +35,6 @@ public class PetController {
         return ResponseEntity.ok(pets);
     }
 
-    /**
-     * 특정 반려동물 상세 조회
-     */
     @GetMapping("/{petId}")
     public ResponseEntity<PetResponse> getPet(
             @PathVariable Long petId,
@@ -53,9 +44,6 @@ public class PetController {
         return ResponseEntity.ok(pet);
     }
 
-    /**
-     * 반려동물 정보 수정
-     */
     @PutMapping("/{petId}")
     public ResponseEntity<PetResponse> updatePet(
             @PathVariable Long petId,
@@ -66,9 +54,6 @@ public class PetController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 반려동물 삭제
-     */
     @DeleteMapping("/{petId}")
     public ResponseEntity<Void> deletePet(
             @PathVariable Long petId,
@@ -78,9 +63,6 @@ public class PetController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 반려동물 검색 (필터링)
-     */
     @GetMapping("/search")
     public ResponseEntity<List<PetResponse>> searchPets(
             @ModelAttribute PetSearchRequest searchRequest,
@@ -90,9 +72,6 @@ public class PetController {
         return ResponseEntity.ok(pets);
     }
 
-    /**
-     * 모든 반려동물 조회 (페이징)
-     */
     @GetMapping("/all")
     public ResponseEntity<List<PetResponse>> getAllPets(
             @RequestParam(defaultValue = "0") int page,
@@ -101,9 +80,6 @@ public class PetController {
         return ResponseEntity.ok(pets);
     }
 
-    /**
-     * 반려동물 프로필 사진 업로드
-     */
     @PutMapping("/{petId}/photo")
     public ResponseEntity<PetResponse> updatePetPhoto(
             @PathVariable Long petId,
@@ -118,9 +94,6 @@ public class PetController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 온보딩용 반려동물 등록 (사용자 ID로)
-     */
     @PostMapping("/onboarding/{userId}")
     public ResponseEntity<PetResponse> createOnboardingPet(
             @PathVariable Long userId,
@@ -139,7 +112,6 @@ public class PetController {
         String username = authentication.getName();
         PetResponse pet = petService.getPet(petId, username);
         
-        // AI 가상 착용을 위해 필요한 정보들 (크기, 품종, 사진 등)이 모두 포함된 응답 반환
         return ResponseEntity.ok(pet);
     }
 
@@ -153,7 +125,6 @@ public class PetController {
         String username = authentication.getName();
         PetResponse pet = petService.getPet(petId, username);
         
-        // 산책 매칭에 필요한 정보들 (성격, 활동량, 다른 반려동물과의 사교성 등) 포함
         return ResponseEntity.ok(pet);
     }
 }

@@ -1,4 +1,4 @@
-package com.petmily.backend.api.walker.dto.walkerBooking;
+package com.petmily.backend.api.walker.dto.walking;
 
 import lombok.Data;
 

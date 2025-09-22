@@ -74,11 +74,6 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
-    // ==================== 리뷰 조회 관련 API ====================
-
-    /**
-     * 상품별 리뷰 목록 조회 (기본 - 최신순)
-     */
     @GetMapping("/{productId}/reviews")
     public ResponseEntity<ReviewListResponse> getProductReviews(
             @PathVariable Long productId,
@@ -89,18 +84,12 @@ public class ProductController {
         return ResponseEntity.ok(reviews);
     }
 
-    /**
-     * 상품별 리뷰 통계 조회
-     */
     @GetMapping("/{productId}/reviews/stats")
     public ResponseEntity<ProductReviewStatsResponse> getProductReviewStats(@PathVariable Long productId) {
         ProductReviewStatsResponse stats = productService.getProductReviewStats(productId);
         return ResponseEntity.ok(stats);
     }
 
-    /**
-     * 평점별 리뷰 조회
-     */
     @GetMapping("/{productId}/reviews/rating/{rating}")
     public ResponseEntity<ReviewListResponse> getProductReviewsByRating(
             @PathVariable Long productId,
@@ -112,9 +101,6 @@ public class ProductController {
         return ResponseEntity.ok(reviews);
     }
 
-    /**
-     * 이미지가 있는 리뷰만 조회
-     */
     @GetMapping("/{productId}/reviews/with-images")
     public ResponseEntity<ReviewListResponse> getProductReviewsWithImages(
             @PathVariable Long productId,
@@ -125,9 +111,6 @@ public class ProductController {
         return ResponseEntity.ok(reviews);
     }
 
-    /**
-     * 도움이 많이 된 리뷰 순으로 조회
-     */
     @GetMapping("/{productId}/reviews/helpful")
     public ResponseEntity<ReviewListResponse> getProductReviewsByHelpful(
             @PathVariable Long productId,

@@ -1,6 +1,7 @@
 package com.petmily.backend.api.walker.controller;
 
 import com.petmily.backend.api.walker.dto.walkerBooking.*;
+import com.petmily.backend.api.walker.dto.walking.*;
 import com.petmily.backend.api.walker.service.WalkingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,6 @@ public class WalkingController {
 
     private final WalkingService walkingService;
 
-    /**
-     * 산책 시작 (워커만 가능)
-     */
     @PostMapping("/{bookingId}/start")
     public ResponseEntity<WalkerBookingResponse> startWalk(
             @PathVariable Long bookingId,
@@ -29,9 +27,6 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 산책 완료 (워커만 가능)
-     */
     @PostMapping("/{bookingId}/complete")
     public ResponseEntity<WalkerBookingResponse> completeWalk(
             @PathVariable Long bookingId,
@@ -41,9 +36,6 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 위치 추적 데이터 저장 (워커만 가능)
-     */
     @PostMapping("/{bookingId}/track")
     public ResponseEntity<WalkingTrackResponse> saveWalkingTrack(
             @PathVariable Long bookingId,
@@ -54,9 +46,6 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 산책 경로 조회 (사용자 및 워커 모두 가능)
-     */
     @GetMapping("/{bookingId}/path")
     public ResponseEntity<WalkingPathResponse> getWalkingPath(
             @PathVariable Long bookingId,
@@ -66,9 +55,6 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 실시간 위치 조회 (사용자 및 워커 모두 가능)
-     */
     @GetMapping("/{bookingId}/realtime")
     public ResponseEntity<List<WalkingTrackResponse>> getRealtimeLocation(
             @PathVariable Long bookingId,
@@ -80,9 +66,6 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 실시간 위치 업데이트 (워커만 가능)
-     */
     @PutMapping("/{bookingId}/location")
     public ResponseEntity<WalkerBookingResponse> updateLocation(
             @PathVariable Long bookingId,
@@ -93,10 +76,7 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 산책 인증 사진 업로드 (워커만 가능)
-     * photoType: START, MIDDLE, END
-     */
+    // photoType: START, MIDDLE, END
     @PutMapping("/{bookingId}/photos")
     public ResponseEntity<WalkerBookingResponse> uploadPhoto(
             @PathVariable Long bookingId,
