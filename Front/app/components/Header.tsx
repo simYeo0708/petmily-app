@@ -20,7 +20,7 @@ interface HeaderProps {
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const Header: React.FC<HeaderProps> = ({
-  title = "🐾 PetMily",
+  title = "🐾 Petmily",
   showSearch = false,
   searchPlaceholder = "검색",
   searchQuery = "",

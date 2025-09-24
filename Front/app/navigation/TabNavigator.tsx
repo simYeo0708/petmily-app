@@ -4,13 +4,11 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import ExploreScreen from "../screen/ExploreScreen";
 import HomeScreen from "../screen/HomeScreen";
 import MyScreen from "../screen/MyScreen";
-import ShopMainScreen from "../screen/ShopMainScreen";
 import { navigationStyles } from "../styles/HomeScreenStyles";
 
 export type TabParamList = {
   HomeTab: undefined;
   ExploreTab: undefined;
-  ShopTab: { initialCategory?: string } | undefined;
   MyTab: undefined;
 };
 
@@ -18,12 +16,10 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 interface TabNavigatorProps {
   initialTab?: keyof TabParamList;
-  shopTabParams?: { initialCategory: string };
 }
 
 const TabNavigator = ({
   initialTab = "HomeTab",
-  shopTabParams,
 }: TabNavigatorProps) => {
   return (
     <Tab.Navigator
@@ -57,11 +53,6 @@ const TabNavigator = ({
                   return {
                     name: "Home",
                     icon: require("../../assets/images/home.png"),
-                  };
-                case "ShopTab":
-                  return {
-                    name: "Shop",
-                    icon: require("../../assets/images/shopping.png"),
                   };
                 case "ExploreTab":
                   return {
@@ -115,20 +106,6 @@ const TabNavigator = ({
           tabBarIcon: ({ focused }) => (
             <Image
               source={require("../../assets/images/home.png")}
-              style={[navigationStyles.navIcon]}
-              resizeMode="contain"
-            />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="ShopTab"
-        component={ShopMainScreen}
-        initialParams={shopTabParams}
-        options={{
-          tabBarIcon: ({ focused }) => (
-            <Image
-              source={require("../../assets/images/shopping.png")}
               style={[navigationStyles.navIcon]}
               resizeMode="contain"
             />

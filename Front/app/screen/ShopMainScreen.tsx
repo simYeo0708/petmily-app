@@ -20,12 +20,11 @@ import MenuButton from "../components/MenuButton";
 import SideMenuDrawer from "../components/SideMenuDrawer";
 import { getProductsByCategory, Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
-import { TabParamList } from "../navigation/TabNavigator";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 
 type ShopMainScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
-type ShopMainScreenRouteProp = RouteProp<TabParamList, "ShopTab">;
+type ShopMainScreenRouteProp = RouteProp<RootStackParamList, "Shop">;
 
 interface CartItem extends Product {
   quantity: number;
@@ -37,7 +36,7 @@ const ShopMainScreen = () => {
   const route = useRoute<ShopMainScreenRouteProp>();
 
   const [selectedCategory, setSelectedCategory] = useState(
-    route.params?.initialCategory || "전체"
+    route.params?.category || "전체"
   );
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,11 +48,11 @@ const ShopMainScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      if (route.params?.initialCategory) {
-        setSelectedCategory(route.params.initialCategory);
-        navigation.setParams({ initialCategory: undefined });
+      if (route.params?.category) {
+        setSelectedCategory(route.params.category);
+        navigation.setParams({ category: undefined });
       }
-    }, [route.params?.initialCategory, navigation])
+    }, [route.params?.category, navigation])
   );
 
   useEffect(() => {
@@ -306,6 +305,15 @@ const ShopMainScreen = () => {
         ]}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <MenuButton onPress={openMenu} style={{ marginRight: 12 }} />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 6,
+              marginRight: 8,
+            }}>
+            <Text style={{ fontSize: 20, color: "#C59172", fontWeight: "600" }}>←</Text>
+          </TouchableOpacity>
           <Text style={headerStyles.logo}>🛍️ Shop</Text>
         </View>
         <TouchableOpacity

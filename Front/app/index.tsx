@@ -16,7 +16,7 @@ import SplashScreen from "./screen/SplashScreen";
 export type RootStackParamList = {
   Login: undefined;
   Main:
-    | { initialTab?: keyof TabParamList; ShopTab?: { initialCategory: string } }
+    | { initialTab?: keyof TabParamList }
     | undefined;
   Home: undefined;
   MyPet: undefined;
@@ -55,7 +55,6 @@ export default function App() {
         {({ route }) => (
           <TabNavigator
             initialTab={route.params?.initialTab as keyof TabParamList}
-            shopTabParams={route.params?.ShopTab}
           />
         )}
       </Stack.Screen>

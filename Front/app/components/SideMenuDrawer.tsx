@@ -1,4 +1,3 @@
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useEffect, useRef } from 'react';
@@ -12,7 +11,6 @@ import {
     View
 } from 'react-native';
 import type { RootStackParamList } from '../index';
-import type { TabParamList } from '../navigation/TabNavigator';
 
 interface SideMenuDrawerProps {
   isVisible: boolean;
@@ -20,11 +18,9 @@ interface SideMenuDrawerProps {
 }
 
 type StackNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type TabNavigationProp = BottomTabNavigationProp<TabParamList>;
 
 const SideMenuDrawer: React.FC<SideMenuDrawerProps> = ({ isVisible, onClose }) => {
   const stackNavigation = useNavigation<StackNavigationProp>();
-  const tabNavigation = useNavigation<TabNavigationProp>();
   const slideAnim = useRef(new Animated.Value(-280)).current; // 사이드바 너비만큼 왼쪽으로 시작
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const [shouldRender, setShouldRender] = React.useState(false);
@@ -35,7 +31,7 @@ const SideMenuDrawer: React.FC<SideMenuDrawerProps> = ({ isVisible, onClose }) =
       title: '홈',
       icon: '🏠',
       onPress: () => {
-        tabNavigation.navigate('HomeTab');
+        stackNavigation.navigate('Main', { initialTab: 'HomeTab' });
         onClose();
       },
     },
@@ -44,7 +40,7 @@ const SideMenuDrawer: React.FC<SideMenuDrawerProps> = ({ isVisible, onClose }) =
       title: '펫몰',
       icon: '🛒',
       onPress: () => {
-        tabNavigation.navigate('ShopTab');
+        stackNavigation.navigate('Shop', { category: '전체' });
         onClose();
       },
     },
@@ -53,7 +49,7 @@ const SideMenuDrawer: React.FC<SideMenuDrawerProps> = ({ isVisible, onClose }) =
       title: '탐색',
       icon: '🔍',
       onPress: () => {
-        tabNavigation.navigate('ExploreTab');
+        stackNavigation.navigate('Main', { initialTab: 'ExploreTab' });
         onClose();
       },
     },
@@ -62,7 +58,7 @@ const SideMenuDrawer: React.FC<SideMenuDrawerProps> = ({ isVisible, onClose }) =
       title: 'My',
       icon: '👤',
       onPress: () => {
-        tabNavigation.navigate('MyTab');
+        stackNavigation.navigate('Main', { initialTab: 'MyTab' });
         onClose();
       },
     },
