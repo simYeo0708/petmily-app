@@ -29,6 +29,21 @@ interface PetInfo {
   temperament: string;
 }
 
+interface MenuItem {
+  title: string;
+  icon: string;
+  subtitle?: string;
+  action?: () => void;
+  hasSwitch?: boolean;
+  value?: boolean;
+  onToggle?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+interface MenuSection {
+  title: string;
+  items: MenuItem[];
+}
+
 const MyScreen = () => {
   const navigation = useNavigation<MyScreenNavigationProp>();
   const [petInfo, setPetInfo] = useState<PetInfo | null>(null);
@@ -120,7 +135,7 @@ const MyScreen = () => {
     navigation.navigate("MyPet");
   };
 
-  const myMenuSections = [
+  const myMenuSections: MenuSection[] = [
     {
       title: "반려동물",
       items: [

@@ -23,7 +23,7 @@ import {
 
 type MatchingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "MatchingScreen"
+  "Matching"
 >;
 
 interface WalkRequest {

@@ -1,141 +1,138 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Alert,
   Pressable,
   SafeAreaView,
-  ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import Step1BasicInfo from "../components/booking/Step1BasicInfo";
+import Step2WalkerSelection from "../components/booking/Step2WalkerSelection";
+import Step3WalkSettings from "../components/booking/Step3WalkSettings";
+import Step4Payment from "../components/booking/Step4Payment";
+import Step5Confirmation from "../components/booking/Step5Confirmation";
 import MenuButton from "../components/MenuButton";
 import SideMenuDrawer from "../components/SideMenuDrawer";
 import { RootStackParamList } from "../index";
-import {
-  headerStyles,
-  homeScreenStyles,
-  modeStyles,
-} from "../styles/HomeScreenStyles";
+import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import { BookingData } from "../types/BookingTypes";
 
 type BookingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Booking"
 >;
 
-interface PetInfo {
-  name: string;
-  species: string;
-  breed: string;
-  age: string;
-  weight: string;
-  gender: "male" | "female" | "";
-  isNeutered: boolean;
-  medicalInfo: string;
-  temperament: string;
-}
-
-interface BookingData {
-  duration: number;
-  date: string;
-  time: string;
-  address: string;
-  petInfo: PetInfo;
-  requests: string;
-}
-
 const BookingScreen = () => {
   const navigation = useNavigation<BookingScreenNavigationProp>();
-  const [bookingData, setBookingData] = useState<BookingData>({
-    duration: 60,
-    date: "",
-    time: "",
-    address: "",
-    petInfo: {
-      name: "",
-      species: "dog",
-      breed: "",
-      age: "",
-      weight: "",
-      gender: "",
-      isNeutered: false,
-      medicalInfo: "",
-      temperament: "",
-    },
-    requests: "",
-  });
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [bookingData, setBookingData] = useState<BookingData>({});
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
-  const [isEditingPet, setIsEditingPet] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const durationOptions = [
-    { value: 30, label: "30분" },
-    { value: 60, label: "45분" },
-    { value: 90, label: "60분" },
-    { value: 120, label: "90분" },
+  const steps = [
+    { id: 1, title: "기본 정보", description: "날짜, 시간, 유형 선택" },
+    { id: 2, title: "워커 선택", description: "펫 워커 선택" },
+    { id: 3, title: "산책 설정", description: "주의사항 및 알림 설정" },
+    { id: 4, title: "결제", description: "보험 및 결제 방법" },
+    { id: 5, title: "완료", description: "예약 확정" },
   ];
 
-  useEffect(() => {
-    loadPetInfo();
-  }, []);
-
-  const loadPetInfo = async () => {
-    try {
-      const savedPetInfo = await AsyncStorage.getItem("petInfo");
-      if (savedPetInfo) {
-        const petInfo = JSON.parse(savedPetInfo);
-        setBookingData((prev) => ({ ...prev, petInfo }));
-      } else {
-        setIsEditingPet(true); // 정보가 없으면 편집 모드로 시작
-      }
-    } catch (error) {
-      console.error("Failed to load pet info:", error);
-      setIsEditingPet(true);
-    }
-  };
-
   const handleBackPress = () => {
-    navigation.goBack();
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    } else {
+      navigation.goBack();
+    }
   };
 
-  const handleBooking = () => {
-    if (!bookingData.date || !bookingData.time || !bookingData.address) {
-      Alert.alert("알림", "필수 정보를 모두 입력해주세요.");
-      return;
+  const handleNext = () => {
+    // 각 단계별 유효성 검사
+    if (currentStep === 1) {
+      if (!bookingData.date || !bookingData.time) {
+        Alert.alert("알림", "날짜와 시간을 선택해주세요.");
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!bookingData.selectedWalker) {
+        Alert.alert("알림", "워커를 선택해주세요.");
+        return;
+      }
+    } else if (currentStep === 3) {
+      if (!bookingData.petInfo?.name || !bookingData.petInfo?.breed) {
+        Alert.alert("알림", "반려동물 정보를 입력해주세요.");
+        return;
+      }
+    } else if (currentStep === 4) {
+      if (!bookingData.insuranceAgreed) {
+        Alert.alert("알림", "보험 약관에 동의해주세요.");
+        return;
+      }
     }
 
-    if (!bookingData.petInfo.name || !bookingData.petInfo.breed) {
-      Alert.alert("알림", "반려동물 정보를 입력해주세요.");
-      return;
+    if (currentStep < 5) {
+      setCurrentStep(currentStep + 1);
     }
+  };
 
+  const handlePayment = () => {
+    // 결제 처리 로직 (모의)
     Alert.alert(
-      "예약 완료!",
-      `산책 예약이 완료되었습니다.\n\n날짜: ${bookingData.date}\n시간: ${bookingData.time}\n산책 시간: ${bookingData.duration}분\n장소: ${bookingData.address}`,
+      "결제 진행",
+      "결제를 진행하시겠습니까?",
       [
+        { text: "취소", style: "cancel" },
         {
-          text: "확인",
-          onPress: () => navigation.goBack(),
+          text: "결제",
+          onPress: () => {
+            // 결제 성공 후 다음 단계로
+            setCurrentStep(5);
+          },
         },
       ]
     );
   };
 
-  const updatePetInfo = (field: keyof PetInfo, value: any) => {
-    setBookingData((prev) => ({
-      ...prev,
-      petInfo: { ...prev.petInfo, [field]: value },
-    }));
+  const handleComplete = () => {
+    Alert.alert(
+      "예약 완료",
+      "산책 예약이 성공적으로 완료되었습니다!",
+      [
+        {
+          text: "확인",
+          onPress: () => navigation.navigate("Main", { initialTab: "HomeTab" }),
+        },
+      ]
+    );
+  };
+
+  const updateBookingData = (newData: BookingData) => {
+    setBookingData(newData);
   };
 
   const openMenu = () => setIsMenuOpen(true);
   const closeMenu = () => setIsMenuOpen(false);
 
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return <Step1BasicInfo bookingData={bookingData} onUpdate={updateBookingData} />;
+      case 2:
+        return <Step2WalkerSelection bookingData={bookingData} onUpdate={updateBookingData} />;
+      case 3:
+        return <Step3WalkSettings bookingData={bookingData} onUpdate={updateBookingData} />;
+      case 4:
+        return <Step4Payment bookingData={bookingData} onUpdate={updateBookingData} />;
+      case 5:
+        return <Step5Confirmation bookingData={bookingData} onComplete={handleComplete} />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <SafeAreaView style={homeScreenStyles.root}>
+    <SafeAreaView style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
       {/* Header */}
       <View
         style={[
@@ -152,9 +149,9 @@ const BookingScreen = () => {
               justifyContent: "center",
               alignItems: "center",
               borderRadius: 20,
-              backgroundColor: "rgba(0,0,0,0.1)",
+              backgroundColor: "rgba(197, 145, 114, 0.1)",
             }}>
-            <Text style={{ fontSize: 18, color: "#333" }}>←</Text>
+            <Text style={{ fontSize: 18, color: "#C59172", fontWeight: "600" }}>←</Text>
           </Pressable>
           <Text style={[headerStyles.logo, { marginLeft: 10 }]}>
             🐕 산책 예약하기
@@ -162,354 +159,112 @@ const BookingScreen = () => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={homeScreenStyles.scrollContent}>
-        {/* 산책 시간 선택 */}
-        <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>산책 시간</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            {durationOptions.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  modeStyles.modeChip,
-                  {
-                    flex: 0,
-                    width: "48%",
-                    backgroundColor:
-                      bookingData.duration === option.value
-                        ? "#C59172"
-                        : "rgba(255, 255, 255, 0.95)",
-                    borderWidth: 2,
-                    borderColor:
-                      bookingData.duration === option.value
-                        ? "#C59172"
-                        : "#E0E0E0",
-                  },
-                ]}
-                onPress={() =>
-                  setBookingData((prev) => ({
-                    ...prev,
-                    duration: option.value,
-                  }))
-                }>
+      {/* Step Progress Indicator */}
+      <View
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          paddingHorizontal: 20,
+          paddingVertical: 16,
+          borderBottomWidth: 1,
+          borderBottomColor: "rgba(197, 145, 114, 0.2)",
+        }}>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          {steps.map((step, index) => (
+            <React.Fragment key={step.id}>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: currentStep >= step.id ? "#C59172" : "#E0E0E0",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}>
                 <Text
-                  style={[
-                    modeStyles.modeChipTitle,
-                    {
-                      color:
-                        bookingData.duration === option.value
-                          ? "white"
-                          : "#333",
-                    },
-                  ]}>
-                  {option.label}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "600",
+                    color: currentStep >= step.id ? "white" : "#999",
+                  }}>
+                  {step.id}
+                </Text>
+              </View>
+              {index < steps.length - 1 && (
+                <View
+                  style={{
+                    flex: 1,
+                    height: 2,
+                    backgroundColor: currentStep > step.id ? "#C59172" : "#E0E0E0",
+                    marginHorizontal: 8,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+        <Text style={{ fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 4 }}>
+          {steps[currentStep - 1]?.title}
+        </Text>
+        <Text style={{ fontSize: 12, color: "#666" }}>
+          {steps[currentStep - 1]?.description}
+        </Text>
+      </View>
+
+      {/* Step Content */}
+      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 16 }}>
+        {renderStepContent()}
+      </View>
+
+      {/* Navigation Buttons */}
+      {currentStep < 5 && (
+        <View
+          style={{
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            paddingHorizontal: 20,
+            paddingVertical: 16,
+            borderTopWidth: 1,
+            borderTopColor: "rgba(197, 145, 114, 0.2)",
+          }}>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {currentStep > 1 && (
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: "rgba(197, 145, 114, 0.1)",
+                  borderRadius: 15,
+                  padding: 16,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "rgba(197, 145, 114, 0.3)",
+                }}
+                onPress={() => setCurrentStep(currentStep - 1)}>
+                <Text style={{ color: "#C59172", fontSize: 16, fontWeight: "600" }}>
+                  이전
                 </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* 날짜 및 시간 */}
-        <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>예약 날짜 및 시간</Text>
-
-          <View style={{ marginBottom: 15 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "500",
-                marginBottom: 8,
-                color: "#333",
-              }}>
-              날짜 *
-            </Text>
-            <TextInput
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                borderRadius: 15,
-                padding: 18,
-                fontSize: 16,
-                borderWidth: 0,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-              placeholder="2025-09-19"
-              value={bookingData.date}
-              onChangeText={(text) =>
-                setBookingData((prev) => ({ ...prev, date: text }))
-              }
-            />
-          </View>
-
-          <View style={{ marginBottom: 15 }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "500",
-                marginBottom: 8,
-                color: "#333",
-              }}>
-              시간 *
-            </Text>
-            <TextInput
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                borderRadius: 15,
-                padding: 18,
-                fontSize: 16,
-                borderWidth: 0,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-              placeholder="14:00"
-              value={bookingData.time}
-              onChangeText={(text) =>
-                setBookingData((prev) => ({ ...prev, time: text }))
-              }
-            />
-          </View>
-        </View>
-
-        {/* 방문 주소 */}
-        <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>방문 주소</Text>
-          <TextInput
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              borderRadius: 15,
-              padding: 18,
-              fontSize: 16,
-              borderWidth: 0,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-            }}
-            placeholder="산책할 장소의 주소를 입력해주세요"
-            value={bookingData.address}
-            onChangeText={(text) =>
-              setBookingData((prev) => ({ ...prev, address: text }))
-            }
-            multiline
-          />
-        </View>
-
-        {/* 반려동물 정보 */}
-        <View style={homeScreenStyles.section}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 15,
-            }}>
-            <Text style={homeScreenStyles.sectionTitle}>반려동물 정보</Text>
+            )}
+            
             <TouchableOpacity
-              onPress={() => setIsEditingPet(!isEditingPet)}
               style={{
+                flex: currentStep === 1 ? 1 : 2,
                 backgroundColor: "#C59172",
-                paddingHorizontal: 15,
-                paddingVertical: 8,
                 borderRadius: 15,
-              }}>
-              <Text style={{ color: "white", fontWeight: "500" }}>
-                {isEditingPet ? "완료" : "수정"}
+                padding: 16,
+                alignItems: "center",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 5,
+              }}
+              onPress={currentStep === 4 ? handlePayment : handleNext}>
+              <Text style={{ color: "white", fontSize: 16, fontWeight: "600" }}>
+                {currentStep === 4 ? "결제하기" : "다음"}
               </Text>
             </TouchableOpacity>
           </View>
-
-          {!isEditingPet && bookingData.petInfo.name ? (
-            <View
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                borderRadius: 15,
-                padding: 18,
-                borderWidth: 0,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}>
-              <Text
-                style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
-                {bookingData.petInfo.name}
-              </Text>
-              <Text style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
-                {bookingData.petInfo.breed} • {bookingData.petInfo.age}세
-              </Text>
-              {bookingData.petInfo.weight && (
-                <Text style={{ fontSize: 14, color: "#666", marginBottom: 4 }}>
-                  체중: {bookingData.petInfo.weight}kg
-                </Text>
-              )}
-              {bookingData.petInfo.temperament && (
-                <Text style={{ fontSize: 14, color: "#666" }}>
-                  성격: {bookingData.petInfo.temperament}
-                </Text>
-              )}
-            </View>
-          ) : (
-            <View style={{ gap: 15 }}>
-              <TextInput
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  borderRadius: 15,
-                  padding: 18,
-                  fontSize: 16,
-                  borderWidth: 0,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-                placeholder="반려동물 이름 *"
-                value={bookingData.petInfo.name}
-                onChangeText={(text) => updatePetInfo("name", text)}
-              />
-              <TextInput
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  borderRadius: 15,
-                  padding: 18,
-                  fontSize: 16,
-                  borderWidth: 0,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-                placeholder="품종 *"
-                value={bookingData.petInfo.breed}
-                onChangeText={(text) => updatePetInfo("breed", text)}
-              />
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <TextInput
-                  style={{
-                    flex: 1,
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: 15,
-                    padding: 18,
-                    fontSize: 16,
-                    borderWidth: 0,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
-                  }}
-                  placeholder="나이"
-                  value={bookingData.petInfo.age}
-                  onChangeText={(text) => updatePetInfo("age", text)}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={{
-                    flex: 1,
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    borderRadius: 15,
-                    padding: 18,
-                    fontSize: 16,
-                    borderWidth: 0,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 3,
-                  }}
-                  placeholder="체중(kg)"
-                  value={bookingData.petInfo.weight}
-                  onChangeText={(text) => updatePetInfo("weight", text)}
-                  keyboardType="numeric"
-                />
-              </View>
-              <TextInput
-                style={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  borderRadius: 15,
-                  padding: 18,
-                  fontSize: 16,
-                  borderWidth: 0,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                  height: 80,
-                  textAlignVertical: "top",
-                }}
-                placeholder="성격/특징"
-                value={bookingData.petInfo.temperament}
-                onChangeText={(text) => updatePetInfo("temperament", text)}
-                multiline
-              />
-            </View>
-          )}
         </View>
-
-        {/* 요청사항 */}
-        <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>요청사항</Text>
-          <TextInput
-            style={{
-              backgroundColor: "rgba(255, 255, 255, 0.95)",
-              borderRadius: 15,
-              padding: 18,
-              fontSize: 16,
-              borderWidth: 0,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 3,
-              height: 100,
-              textAlignVertical: "top",
-            }}
-            placeholder="워커에게 전달하고 싶은 특별한 요청사항이 있다면 입력해주세요"
-            value={bookingData.requests}
-            onChangeText={(text) =>
-              setBookingData((prev) => ({ ...prev, requests: text }))
-            }
-            multiline
-          />
-        </View>
-
-        {/* 예약하기 버튼 */}
-        <View style={{ marginBottom: 30 }}>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "#C59172",
-              borderRadius: 20,
-              padding: 20,
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.15,
-              shadowRadius: 8,
-              elevation: 5,
-              marginHorizontal: 20,
-            }}
-            onPress={handleBooking}>
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-                fontWeight: "600",
-              }}>
-              예약하기
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      )}
       
       <SideMenuDrawer isVisible={isMenuOpen} onClose={closeMenu} />
     </SafeAreaView>
