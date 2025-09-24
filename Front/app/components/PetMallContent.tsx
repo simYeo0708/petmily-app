@@ -1,6 +1,9 @@
+import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { ModeConfig } from "../constants/ServiceModes";
+import { TabParamList } from "../navigation/TabNavigator";
 import { homeScreenStyles } from "../styles/HomeScreenStyles";
 import { CardBox } from "./CardBox";
 import { CategoryList } from "./CategoryList";
@@ -10,10 +13,18 @@ interface PetMallContentProps {
   onCategoryPress?: (category: string) => void;
 }
 
+type PetMallNavigationProp = BottomTabNavigationProp<TabParamList>;
+
 export const PetMallContent: React.FC<PetMallContentProps> = ({
   currentMode,
   onCategoryPress,
 }) => {
+  const navigation = useNavigation<PetMallNavigationProp>();
+
+  const handleShopNavigation = (category?: string) => {
+    navigation.navigate("ShopTab", { initialCategory: category || "전체" });
+  };
+
   return (
     <>
       <View style={homeScreenStyles.section}>
@@ -34,7 +45,7 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
               borderWidth: 1,
               borderColor: "rgba(197, 145, 114, 0.3)",
             }}
-            onPress={() => onCategoryPress?.("전체")}
+            onPress={() => handleShopNavigation("전체")}
             activeOpacity={0.7}>
             <Text
               style={{
@@ -46,18 +57,24 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
             </Text>
           </TouchableOpacity>
         </View>
-        <CategoryList onCategoryPress={onCategoryPress} />
+        <CategoryList
+          onCategoryPress={(category) => handleShopNavigation(category)}
+        />
       </View>
 
       <View style={homeScreenStyles.section}>
         <Text style={homeScreenStyles.sectionTitle}>🔥 인기 상품 TOP 10</Text>
-        <CardBox
-          icon="🏆"
-          description="지금 가장 인기 있는 반려용품을 확인하세요"
-          actionText="상품 보기"
-          borderColor={currentMode.color}
-          backgroundColor={currentMode.color}
-        />
+        <TouchableOpacity
+          onPress={() => handleShopNavigation("전체")}
+          activeOpacity={0.7}>
+          <CardBox
+            icon="🏆"
+            description="지금 가장 인기 있는 반려용품을 확인하세요"
+            actionText="상품 보기"
+            borderColor={currentMode.color}
+            backgroundColor={currentMode.color}
+          />
+        </TouchableOpacity>
       </View>
 
       <View style={homeScreenStyles.section}>
