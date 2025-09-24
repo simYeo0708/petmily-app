@@ -1,24 +1,30 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
+import ExploreScreen from "../screen/ExploreScreen";
 import HomeScreen from "../screen/HomeScreen";
-import MyPetScreen from "../screen/MyPetScreen";
-import SettingsScreen from "../screen/SettingsScreen";
+import MyScreen from "../screen/MyScreen";
+import ShopMainScreen from "../screen/ShopMainScreen";
 import { navigationStyles } from "../styles/HomeScreenStyles";
 
 export type TabParamList = {
   HomeTab: undefined;
-  MyPetTab: undefined;
-  SettingsTab: undefined;
+  ExploreTab: undefined;
+  ShopTab: { initialCategory?: string } | undefined;
+  MyTab: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 interface TabNavigatorProps {
   initialTab?: keyof TabParamList;
+  shopTabParams?: { initialCategory: string };
 }
 
-const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
+const TabNavigator = ({
+  initialTab = "HomeTab",
+  shopTabParams,
+}: TabNavigatorProps) => {
   return (
     <Tab.Navigator
       initialRouteName={initialTab}
@@ -52,14 +58,19 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
                     name: "Home",
                     icon: require("../../assets/images/home.png"),
                   };
-                case "MyPetTab":
+                case "ShopTab":
                   return {
-                    name: "My Pet",
-                    icon: require("../../assets/images/paw.png"),
+                    name: "Shop",
+                    icon: require("../../assets/images/shopping.png"),
                   };
-                case "SettingsTab":
+                case "ExploreTab":
                   return {
-                    name: "Settings",
+                    name: "Explore",
+                    icon: require("../../assets/images/explore.png"),
+                  };
+                case "MyTab":
+                  return {
+                    name: "My",
                     icon: require("../../assets/images/setting.png"),
                   };
                 default:
@@ -111,12 +122,13 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
         }}
       />
       <Tab.Screen
-        name="MyPetTab"
-        component={MyPetScreen}
+        name="ShopTab"
+        component={ShopMainScreen}
+        initialParams={shopTabParams}
         options={{
           tabBarIcon: ({ focused }) => (
             <Image
-              source={require("../../assets/images/paw.png")}
+              source={require("../../assets/images/shopping.png")}
               style={[navigationStyles.navIcon]}
               resizeMode="contain"
             />
@@ -124,8 +136,21 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
         }}
       />
       <Tab.Screen
-        name="SettingsTab"
-        component={SettingsScreen}
+        name="ExploreTab"
+        component={ExploreScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require("../../assets/images/explore.png")}
+              style={[navigationStyles.navIcon]}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="MyTab"
+        component={MyScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <Image

@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React from "react";
+import React, { useState } from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import MenuButton from "../components/MenuButton";
+import SideMenuDrawer from "../components/SideMenuDrawer";
 import { useHelperStatus } from "../hooks/useHelperStatus";
 import { RootStackParamList } from "../index";
 import {
@@ -25,6 +27,7 @@ type HelperDashboardScreenNavigationProp = NativeStackNavigationProp<
 const HelperDashboardScreen = () => {
   const navigation = useNavigation<HelperDashboardScreenNavigationProp>();
   const { helperStatus } = useHelperStatus();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const mockAdditionalData = {
     name: "홍길동",
@@ -32,12 +35,15 @@ const HelperDashboardScreen = () => {
   };
 
   const handleMatchingPress = () => {
-    navigation.navigate("MatchingScreen");
+    navigation.navigate("Matching");
   };
 
   const handleBackPress = () => {
     navigation.goBack();
   };
+
+  const openMenu = () => setIsMenuOpen(true);
+  const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <SafeAreaView style={homeScreenStyles.root}>
@@ -48,6 +54,7 @@ const HelperDashboardScreen = () => {
           { backgroundColor: "rgba(255, 255, 255, 0.95)" },
         ]}>
         <View style={headerStyles.headerLeft}>
+          <MenuButton onPress={openMenu} style={{ marginRight: 12 }} />
           <Pressable
             onPress={handleBackPress}
             style={helperDashboardStyles.backButton}>
@@ -148,6 +155,8 @@ const HelperDashboardScreen = () => {
           </View>
         </View>
       </ScrollView>
+      
+      <SideMenuDrawer isVisible={isMenuOpen} onClose={closeMenu} />
     </SafeAreaView>
   );
 };

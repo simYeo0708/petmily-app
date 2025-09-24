@@ -1,17 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import Header from "../components/Header";
+import { RootStackParamList } from "../index";
+import { homeScreenStyles } from "../styles/HomeScreenStyles";
+
+type MyPetScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface PetInfo {
   name: string;
@@ -26,6 +32,7 @@ interface PetInfo {
 }
 
 const MyPetScreen = () => {
+  const navigation = useNavigation<MyPetScreenNavigationProp>();
   const [petInfo, setPetInfo] = useState<PetInfo>({
     name: "",
     species: "dog",
@@ -68,6 +75,8 @@ const MyPetScreen = () => {
           text: "확인",
           onPress: () => {
             console.log("Pet Info Saved:", petInfo);
+            // 정보 저장 후 이전 화면으로 돌아가기
+            navigation.goBack();
           },
         },
       ]);
@@ -89,13 +98,7 @@ const MyPetScreen = () => {
   return (
     <SafeAreaView
       style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
-      <View
-        style={[
-          headerStyles.header,
-          { backgroundColor: "rgba(255, 255, 255, 0.95)" },
-        ]}>
-        <Text style={headerStyles.logo}>🐾 My Pet</Text>
-      </View>
+      <Header title="🐾 My Pet" showBackButton={true} />
 
       <ScrollView contentContainerStyle={homeScreenStyles.scrollContent}>
         {/* 프로필 사진 섹션 */}

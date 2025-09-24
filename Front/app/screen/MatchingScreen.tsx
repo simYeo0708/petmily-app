@@ -2,21 +2,23 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
-  Alert,
-  Modal,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Modal,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import MenuButton from "../components/MenuButton";
+import SideMenuDrawer from "../components/SideMenuDrawer";
 import { RootStackParamList } from "../index";
 import {
-  headerStyles,
-  homeScreenStyles,
-  matchingScreenStyles,
-  modalStyles,
+    headerStyles,
+    homeScreenStyles,
+    matchingScreenStyles,
+    modalStyles,
 } from "../styles/HomeScreenStyles";
 
 type MatchingScreenNavigationProp = NativeStackNavigationProp<
@@ -44,6 +46,7 @@ const MatchingScreen = () => {
     null
   );
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const mockRequests: WalkRequest[] = [
     {
@@ -119,6 +122,9 @@ const MatchingScreen = () => {
     setSelectedRequest(null);
   };
 
+  const openMenu = () => setIsMenuOpen(true);
+  const closeMenu = () => setIsMenuOpen(false);
+
   return (
     <SafeAreaView style={homeScreenStyles.root}>
       {/* Header */}
@@ -128,6 +134,7 @@ const MatchingScreen = () => {
           { backgroundColor: "rgba(255, 255, 255, 0.95)" },
         ]}>
         <View style={headerStyles.headerLeft}>
+          <MenuButton onPress={openMenu} style={{ marginRight: 12 }} />
           <Pressable
             onPress={handleBackPress}
             style={matchingScreenStyles.backButton}>
@@ -309,6 +316,8 @@ const MatchingScreen = () => {
           </View>
         </View>
       </Modal>
+      
+      <SideMenuDrawer isVisible={isMenuOpen} onClose={closeMenu} />
     </SafeAreaView>
   );
 };

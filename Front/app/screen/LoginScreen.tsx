@@ -2,16 +2,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  Alert,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { RootStackParamList } from "../index";
 
@@ -70,7 +70,7 @@ const LoginScreen = ({ navigation }: Props) => {
             {
               text: "등록하기",
               onPress: () => {
-                navigation.navigate("Main", { initialTab: "MyPetTab" });
+                navigation.navigate("Main", { initialTab: "MyTab" });
               },
             },
           ],
