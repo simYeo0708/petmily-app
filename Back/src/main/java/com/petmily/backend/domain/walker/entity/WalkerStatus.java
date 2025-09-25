@@ -5,5 +5,6 @@ public enum WalkerStatus {
     APPROVED,
     REJECTED,
     ACTIVE,
-    INACTIVE
+    INACTIVE,
+    SUSPENDED
 }

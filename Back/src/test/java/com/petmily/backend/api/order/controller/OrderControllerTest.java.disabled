@@ -1,0 +1,522 @@
+package com.petmily.backend.api.order.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.auth.dto.model.PrincipalDetails;
+import com.petmily.backend.api.common.util.SecurityUtils;
+import com.petmily.backend.api.order.dto.*;
+import com.petmily.backend.api.order.service.OrderService;
+import com.petmily.backend.domain.order.entity.DeliveryStatus;
+import com.petmily.backend.domain.order.entity.OrderStatus;
+import com.petmily.backend.domain.order.entity.ReturnReason;
+import com.petmily.backend.domain.order.entity.ReturnStatus;
+import com.petmily.backend.domain.user.entity.Role;
+import com.petmily.backend.domain.user.entity.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private OrderService orderService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private User mockUser;
+    private PrincipalDetails principalDetails;
+    private OrderDetailResponse orderDetailResponse;
+    private OrderListResponse orderListResponse;
+    private OrderCreateRequest orderCreateRequest;
+    private ReturnDetailResponse returnDetailResponse;
+    private ReturnCreateRequest returnCreateRequest;
+    private ReturnProcessRequest returnProcessRequest;
+    private ReviewDetailResponse reviewDetailResponse;
+    private ReviewCreateRequest reviewCreateRequest;
+    private TrackingResponse trackingResponse;
+
+    @BeforeEach
+    void setUp() {
+        mockUser = User.builder()
+                .id(1L)
+                .username("testuser")
+                .name("테스트유저")
+                .email("test@example.com")
+                .role(Role.USER)
+                .build();
+
+        principalDetails = new PrincipalDetails(mockUser, Map.of(), "username");
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Order Item Info
+        OrderDetailResponse.OrderItemInfo orderItemInfo = OrderDetailResponse.OrderItemInfo.builder()
+                .id(1L)
+                .productId(1L)
+                .productName("강아지 사료")
+                .productImage("food.jpg")
+                .brand("펫밀리")
+                .price(new BigDecimal("30000"))
+                .quantity(2)
+                .totalPrice(new BigDecimal("60000"))
+                .build();
+
+        // Order Detail Response
+        orderDetailResponse = OrderDetailResponse.builder()
+                .id(1L)
+                .userId(1L)
+                .orderNumber("ORD-20231201-001")
+                .createTime(now)
+                .updateTime(now)
+                .status(OrderStatus.CONFIRMED)
+                .deliveryStatus(DeliveryStatus.PREPARING)
+                .trackingNumber("TRACK123456")
+                .totalAmount(new BigDecimal("60000"))
+                .discountAmount(new BigDecimal("5000"))
+                .deliveryFee(new BigDecimal("3000"))
+                .finalAmount(new BigDecimal("58000"))
+                .receiverName("홍길동")
+                .receiverPhone("01012345678")
+                .shippingAddress("서울시 강남구 테헤란로 123")
+                .deliveryMemo("문 앞에 놔주세요")
+                .expectedDeliveryDate(now.plusDays(2))
+                .paymentMethod("CARD")
+                .paymentDate(now.minusMinutes(30))
+                .items(Arrays.asList(orderItemInfo))
+                .isSubscription(false)
+                .build();
+
+        // Order List Response
+        orderListResponse = OrderListResponse.builder()
+                .orders(Arrays.asList(orderDetailResponse))
+                .totalElements(1L)
+                .totalPages(1)
+                .currentPage(0)
+                .build();
+
+        // Order Create Request
+        orderCreateRequest = new OrderCreateRequest();
+        orderCreateRequest.setCartItemIds(Arrays.asList(1L, 2L));
+        orderCreateRequest.setReceiverName("홍길동");
+        orderCreateRequest.setReceiverPhone("01012345678");
+        orderCreateRequest.setShippingAddress("서울시 강남구 테헤란로 123");
+        orderCreateRequest.setDeliveryMemo("문 앞에 놔주세요");
+        orderCreateRequest.setPaymentMethod("CARD");
+        orderCreateRequest.setDiscountAmount(5000.0);
+        orderCreateRequest.setIsSubscription(false);
+
+        // Return Detail Response
+        returnDetailResponse = ReturnDetailResponse.builder()
+                .id(1L)
+                .orderId(1L)
+                .reason(ReturnReason.DEFECTIVE)
+                .detailedReason("상품에 흠집이 있습니다.")
+                .status(ReturnStatus.REQUESTED)
+                .createTime(now)
+                .build();
+
+        // Return Create Request
+        returnCreateRequest = new ReturnCreateRequest();
+        returnCreateRequest.setReturnItems(Arrays.asList(new ReturnCreateRequest.ReturnItemRequest()));
+        returnCreateRequest.setReason(ReturnReason.DEFECTIVE);
+        returnCreateRequest.setDetailedReason("상품에 흠집이 있습니다.");
+
+        // Return Process Request
+        returnProcessRequest = new ReturnProcessRequest();
+        returnProcessRequest.setMemo("반품 승인합니다.");
+
+        // Review Detail Response
+        reviewDetailResponse = ReviewDetailResponse.builder()
+                .id(1L)
+                .userId(1L)
+                .productId(1L)
+                .orderId(1L)
+                .rating(5)
+                .content("정말 좋은 상품입니다!")
+                .createTime(now)
+                .helpfulCount(10)
+                .isHelpful(false)
+                .build();
+
+        // Review Create Request
+        reviewCreateRequest = new ReviewCreateRequest();
+        reviewCreateRequest.setRating(5);
+        reviewCreateRequest.setContent("정말 좋은 상품입니다!");
+
+        // Tracking Response
+        trackingResponse = TrackingResponse.builder()
+                .orderId(1L)
+                .trackingNumber("TRACK123456")
+                .currentStatus(DeliveryStatus.IN_TRANSIT)
+                .estimatedDeliveryDate(now.plusDays(1))
+                .build();
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrders_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrders(eq(1L), any(Pageable.class))).thenReturn(orderListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/orders")
+                            .param("page", "0")
+                            .param("size", "10"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.orders").isArray())
+                    .andExpect(jsonPath("$.orders[0].id").value(1L))
+                    .andExpect(jsonPath("$.orders[0].orderNumber").value("ORD-20231201-001"))
+                    .andExpect(jsonPath("$.orders[0].status").value("CONFIRMED"))
+                    .andExpect(jsonPath("$.totalElements").value(1));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrder_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrder(1L, 1L)).thenReturn(orderDetailResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/orders/1"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.orderNumber").value("ORD-20231201-001"))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"))
+                    .andExpect(jsonPath("$.receiverName").value("홍길동"))
+                    .andExpect(jsonPath("$.items[0].productName").value("강아지 사료"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createOrder_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.createOrder(eq(1L), any(OrderCreateRequest.class))).thenReturn(orderDetailResponse);
+
+            // When & Then
+            mockMvc.perform(post("/api/orders")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(orderCreateRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.orderNumber").value("ORD-20231201-001"))
+                    .andExpect(jsonPath("$.receiverName").value("홍길동"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createOrder_WithValidationError_ShouldReturnBadRequest() throws Exception {
+        // Given - invalid request (missing required fields)
+        OrderCreateRequest invalidRequest = new OrderCreateRequest();
+        invalidRequest.setCartItemIds(Arrays.asList()); // empty list
+
+        // When & Then
+        mockMvc.perform(post("/api/orders")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void cancelOrder_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+
+            // When & Then
+            mockMvc.perform(put("/api/orders/1/cancel")
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+
+            verify(orderService).cancelOrder(1L, 1L);
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrderTracking_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrderTracking(1L, 1L)).thenReturn(trackingResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/orders/1/tracking"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.orderId").value(1L))
+                    .andExpect(jsonPath("$.trackingNumber").value("TRACK123456"))
+                    .andExpect(jsonPath("$.currentStatus").value("배송 중"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void confirmOrder_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+
+            // When & Then
+            mockMvc.perform(put("/api/orders/1/confirm")
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+
+            verify(orderService).confirmOrder(1L, 1L);
+        }
+    }
+
+    // ==================== Return Tests ====================
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrderReturns_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            ReturnListResponse returnListResponse = ReturnListResponse.builder()
+                    .returns(Arrays.asList(returnDetailResponse))
+                    .totalElements(1L)
+                    .build();
+
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrderReturns(eq(1L), eq(1L), any(Pageable.class))).thenReturn(returnListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/orders/1/returns"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.returns").isArray())
+                    .andExpect(jsonPath("$.returns[0].id").value(1L))
+                    .andExpect(jsonPath("$.totalElements").value(1));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createReturn_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.createReturn(eq(1L), eq(1L), any(ReturnCreateRequest.class)))
+                    .thenReturn(returnDetailResponse);
+
+            // When & Then
+            mockMvc.perform(post("/api/orders/1/returns")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(returnCreateRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.reason").value("상품 불량"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void cancelReturn_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+
+            // When & Then
+            mockMvc.perform(delete("/api/orders/1/returns/1")
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+
+            verify(orderService).cancelReturn(1L, 1L, 1L);
+        }
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void approveReturn_Success() throws Exception {
+        // Given
+        when(orderService.approveReturn(eq(1L), eq(1L), any(ReturnProcessRequest.class)))
+                .thenReturn(returnDetailResponse);
+
+        // When & Then
+        mockMvc.perform(put("/api/orders/1/returns/1/approve")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(returnProcessRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_USER")
+    void approveReturn_WithoutAdminRole_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/orders/1/returns/1/approve")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(returnProcessRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    // ==================== Review Tests ====================
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrderReview_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrderReview(1L, 1L)).thenReturn(reviewDetailResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/orders/1/review"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.rating").value(5))
+                    .andExpect(jsonPath("$.content").value("정말 좋은 상품입니다!"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createReview_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.createReview(eq(1L), eq(1L), any(ReviewCreateRequest.class)))
+                    .thenReturn(reviewDetailResponse);
+
+            // When & Then
+            mockMvc.perform(post("/api/orders/1/review")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(reviewCreateRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L))
+                    .andExpect(jsonPath("$.rating").value(5));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateReview_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            ReviewUpdateRequest updateRequest = new ReviewUpdateRequest();
+            updateRequest.setRating(4);
+            updateRequest.setContent("수정된 리뷰입니다.");
+
+            ReviewDetailResponse updatedReview = ReviewDetailResponse.builder()
+                    .id(1L)
+                    .userId(1L)
+                    .rating(4)
+                    .content("수정된 리뷰입니다.")
+                    .build();
+
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.updateOrderReview(eq(1L), eq(1L), any(ReviewUpdateRequest.class)))
+                    .thenReturn(updatedReview);
+
+            // When & Then
+            mockMvc.perform(put("/api/orders/1/review")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(updateRequest)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.rating").value(4))
+                    .andExpect(jsonPath("$.content").value("수정된 리뷰입니다."));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void deleteReview_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+
+            // When & Then
+            mockMvc.perform(delete("/api/orders/1/review")
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+
+            verify(orderService).deleteOrderReview(1L, 1L);
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void addHelpfulToReview_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.addHelpfulToOrderReview(1L, 1L)).thenReturn(reviewDetailResponse);
+
+            // When & Then
+            mockMvc.perform(post("/api/orders/1/review/helpful")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(1L));
+        }
+    }
+
+    @Test
+    void getOrders_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/orders"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createOrder_WithoutCsrf_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(orderCreateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getOrder_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(orderService.getOrder(1L, 1L)).thenThrow(new RuntimeException("Order not found"));
+
+            // When & Then
+            mockMvc.perform(get("/api/orders/1"))
+                    .andExpect(status().is5xxServerError());
+        }
+    }
+}

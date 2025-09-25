@@ -1,6 +1,7 @@
 package com.petmily.backend.api.cart.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CartResponse {
     private List<CartItemInfo> items;
     private int totalItemCount;
@@ -25,6 +27,7 @@ public class CartResponse {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     public static class CartItemInfo {
         private Long id;
         private Long productId;

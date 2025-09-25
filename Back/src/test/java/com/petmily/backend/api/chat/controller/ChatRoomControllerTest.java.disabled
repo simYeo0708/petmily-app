@@ -1,0 +1,345 @@
+package com.petmily.backend.api.chat.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.chat.dto.ChatRoomResponse;
+import com.petmily.backend.api.chat.dto.CreateChatRoomRequest;
+import com.petmily.backend.api.chat.service.ChatRoomService;
+import com.petmily.backend.domain.chat.entity.ChatRoom;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ChatRoomController.class)
+class ChatRoomControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ChatRoomService chatRoomService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private ChatRoomResponse chatRoomResponse1;
+    private ChatRoomResponse chatRoomResponse2;
+    private CreateChatRoomRequest createChatRoomRequest;
+    private List<ChatRoomResponse> chatRooms;
+
+    @BeforeEach
+    void setUp() {
+        LocalDateTime now = LocalDateTime.now();
+
+        chatRoomResponse1 = ChatRoomResponse.builder()
+                .id(1L)
+                .roomId("room-1")
+                .userId(1L)
+                .walkerId(2L)
+                .bookingId(null)
+                .chatType(ChatRoom.ChatType.PRE_BOOKING)
+                .roomName("워커1과의 상담")
+                .isActive(true)
+                .createTime(now.minusHours(2))
+                .modifyTime(now.minusMinutes(30))
+                .userName("사용자1")
+                .walkerName("워커1")
+                .walkerProfileImageUrl("walker1.jpg")
+                .lastMessage("안녕하세요! 산책 문의드립니다.")
+                .lastMessageTime(now.minusMinutes(30))
+                .unreadCount(0L)
+                .build();
+
+        chatRoomResponse2 = ChatRoomResponse.builder()
+                .id(2L)
+                .roomId("room-2")
+                .userId(1L)
+                .walkerId(3L)
+                .bookingId(1L)
+                .chatType(ChatRoom.ChatType.POST_BOOKING)
+                .roomName("워커2와의 예약 채팅")
+                .isActive(true)
+                .createTime(now.minusHours(1))
+                .modifyTime(now.minusMinutes(10))
+                .userName("사용자1")
+                .walkerName("워커2")
+                .walkerProfileImageUrl("walker2.jpg")
+                .lastMessage("내일 오후 3시에 만나요!")
+                .lastMessageTime(now.minusMinutes(10))
+                .unreadCount(2L)
+                .build();
+
+        chatRooms = Arrays.asList(chatRoomResponse1, chatRoomResponse2);
+
+        createChatRoomRequest = CreateChatRoomRequest.builder()
+                .walkerId(2L)
+                .initialMessage("안녕하세요! 산책 서비스 문의드립니다.")
+                .build();
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getUserChatRooms_Success() throws Exception {
+        // Given
+        when(chatRoomService.getUserChatRooms("testuser")).thenReturn(chatRooms);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/rooms"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].roomId").value("room-1"))
+                .andExpect(jsonPath("$[0].roomName").value("워커1과의 상담"))
+                .andExpect(jsonPath("$[0].chatType").value("PRE_BOOKING"))
+                .andExpect(jsonPath("$[0].isActive").value(true))
+                .andExpect(jsonPath("$[0].userName").value("사용자1"))
+                .andExpect(jsonPath("$[0].walkerName").value("워커1"))
+                .andExpect(jsonPath("$[0].lastMessage").value("안녕하세요! 산책 문의드립니다."))
+                .andExpect(jsonPath("$[0].unreadCount").value(0))
+                .andExpect(jsonPath("$[1].id").value(2L))
+                .andExpect(jsonPath("$[1].roomId").value("room-2"))
+                .andExpect(jsonPath("$[1].roomName").value("워커2와의 예약 채팅"))
+                .andExpect(jsonPath("$[1].chatType").value("POST_BOOKING"))
+                .andExpect(jsonPath("$[1].unreadCount").value(2));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getUserChatRooms_EmptyResult() throws Exception {
+        // Given
+        when(chatRoomService.getUserChatRooms("testuser")).thenReturn(Arrays.asList());
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/rooms"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void getUserChatRooms_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/rooms"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatRoom_Success() throws Exception {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatRoomService.findRoomById("room-1")).thenReturn(chatRoomResponse1);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room/room-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.roomId").value("room-1"))
+                .andExpect(jsonPath("$.roomName").value("워커1과의 상담"))
+                .andExpect(jsonPath("$.chatType").value("PRE_BOOKING"))
+                .andExpect(jsonPath("$.isActive").value(true))
+                .andExpect(jsonPath("$.userName").value("사용자1"))
+                .andExpect(jsonPath("$.walkerName").value("워커1"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatRoom_NoAccess_ShouldReturnForbidden() throws Exception {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(false);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room/room-1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getChatRoom_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room/room-1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatRoom_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatRoomService.findRoomById("room-1"))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room/room-1"))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createInquiryChatRoom_Success() throws Exception {
+        // Given
+        ChatRoomResponse createdChatRoom = ChatRoomResponse.builder()
+                .id(3L)
+                .roomId("room-3")
+                .userId(1L)
+                .walkerId(2L)
+                .bookingId(null)
+                .chatType(ChatRoom.ChatType.PRE_BOOKING)
+                .roomName("워커2와의 상담")
+                .isActive(true)
+                .createTime(LocalDateTime.now())
+                .modifyTime(LocalDateTime.now())
+                .userName("testuser")
+                .walkerName("워커2")
+                .build();
+
+        when(chatRoomService.createPreBookingChatRoom(eq("testuser"), any(CreateChatRoomRequest.class)))
+                .thenReturn(createdChatRoom);
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createChatRoomRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3L))
+                .andExpect(jsonPath("$.roomId").value("room-3"))
+                .andExpect(jsonPath("$.roomName").value("워커2와의 상담"))
+                .andExpect(jsonPath("$.chatType").value("PRE_BOOKING"))
+                .andExpect(jsonPath("$.isActive").value(true))
+                .andExpect(jsonPath("$.userName").value("testuser"))
+                .andExpect(jsonPath("$.walkerName").value("워커2"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createInquiryChatRoom_WithInvalidRequest_ShouldReturnBadRequest() throws Exception {
+        // Given - missing walkerId
+        CreateChatRoomRequest invalidRequest = CreateChatRoomRequest.builder()
+                .walkerId(null)
+                .initialMessage("안녕하세요!")
+                .build();
+
+        when(chatRoomService.createPreBookingChatRoom(eq("testuser"), any(CreateChatRoomRequest.class)))
+                .thenThrow(new IllegalArgumentException("WalkerId is required"));
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    void createInquiryChatRoom_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createChatRoomRequest)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createInquiryChatRoom_WithoutCsrf_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createChatRoomRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createInquiryChatRoom_WithoutInitialMessage() throws Exception {
+        // Given - request without initial message
+        CreateChatRoomRequest requestWithoutMessage = CreateChatRoomRequest.builder()
+                .walkerId(2L)
+                .initialMessage(null)
+                .build();
+
+        ChatRoomResponse createdChatRoom = ChatRoomResponse.builder()
+                .id(4L)
+                .roomId("room-4")
+                .userId(1L)
+                .walkerId(2L)
+                .bookingId(null)
+                .chatType(ChatRoom.ChatType.PRE_BOOKING)
+                .roomName("워커2와의 상담")
+                .isActive(true)
+                .createTime(LocalDateTime.now())
+                .modifyTime(LocalDateTime.now())
+                .userName("testuser")
+                .walkerName("워커2")
+                .build();
+
+        when(chatRoomService.createPreBookingChatRoom(eq("testuser"), any(CreateChatRoomRequest.class)))
+                .thenReturn(createdChatRoom);
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestWithoutMessage)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(4L))
+                .andExpect(jsonPath("$.roomId").value("room-4"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getUserChatRooms_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(chatRoomService.getUserChatRooms("testuser"))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/rooms"))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void createInquiryChatRoom_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(chatRoomService.createPreBookingChatRoom(eq("testuser"), any(CreateChatRoomRequest.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room/inquiry")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createChatRoomRequest)))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatRoom_NonExistentRoom_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("non-existent-room", "testuser")).thenReturn(true);
+        when(chatRoomService.findRoomById("non-existent-room"))
+                .thenThrow(new RuntimeException("Room not found"));
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room/non-existent-room"))
+                .andExpect(status().is5xxServerError());
+    }
+}

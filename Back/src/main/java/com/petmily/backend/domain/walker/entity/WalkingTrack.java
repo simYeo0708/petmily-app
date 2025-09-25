@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Builder
 public class WalkingTrack extends BaseTimeEntity {
 
     @Id
@@ -43,19 +44,6 @@ public class WalkingTrack extends BaseTimeEntity {
     @Column(columnDefinition = "DECIMAL(5,2)")
     private Double altitude; // 고도 (미터)
 
-    @Builder
-    public WalkingTrack(Long bookingId, Double latitude, Double longitude, 
-                       LocalDateTime timestamp, Double accuracy, TrackType trackType,
-                       Double speed, Double altitude) {
-        this.bookingId = bookingId;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.timestamp = timestamp;
-        this.accuracy = accuracy;
-        this.trackType = trackType;
-        this.speed = speed;
-        this.altitude = altitude;
-    }
 
     public enum TrackType {
         START,    // 산책 시작점

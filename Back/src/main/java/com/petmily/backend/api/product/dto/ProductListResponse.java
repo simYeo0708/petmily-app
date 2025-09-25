@@ -1,6 +1,7 @@
 package com.petmily.backend.api.product.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ProductListResponse {
     private List<ProductSummary> products;
     private int currentPage;

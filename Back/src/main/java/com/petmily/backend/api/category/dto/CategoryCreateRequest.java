@@ -2,11 +2,17 @@ package com.petmily.backend.api.category.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class CategoryCreateRequest {
     
     @NotBlank(message = "카테고리명은 필수입니다")
@@ -17,6 +23,8 @@ public class CategoryCreateRequest {
     private String imageUrl;
     private String iconUrl;
     private Long parentId;
+    @Builder.Default
     private Integer sortOrder = 0;
+    @Builder.Default
     private Boolean isActive = true;
 }

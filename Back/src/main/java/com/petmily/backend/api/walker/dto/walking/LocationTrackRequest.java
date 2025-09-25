@@ -1,11 +1,14 @@
 package com.petmily.backend.api.walker.dto.walking;
 
 import com.petmily.backend.domain.walker.entity.WalkingTrack;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LocationTrackRequest {
     private Double latitude;
     private Double longitude;
