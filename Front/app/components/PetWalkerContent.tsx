@@ -11,6 +11,11 @@ interface PetWalkerContentProps {
 export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   currentMode,
 }) => {
+  const handleMapPress = () => {
+    // TODO: 네비게이션 구현
+    console.log("산책 지도로 이동");
+  };
+
   return (
     <>
       <View style={homeScreenStyles.section}>
@@ -21,6 +26,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           actionText="지도 보기"
           borderColor={currentMode.color}
           backgroundColor={currentMode.color}
+          onPress={handleMapPress}
         />
       </View>
 

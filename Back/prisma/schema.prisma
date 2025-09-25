@@ -89,11 +89,11 @@ model Order {
   shippingAddress String
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-
+  petId String
   // Relations
   member User        @relation(fields: [userId], references: [id])
   items  OrderItem[]
-
+  pet Pet @relation(fields: [petId], references: [id])
   @@map("orders")
 }
 
@@ -156,7 +156,7 @@ model WalkerReview {
   id        String   @id @default(cuid())
   walkerId  String
   userId    String
-  rating    Int // 1-5
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
 
@@ -171,11 +171,12 @@ model ChatRoom {
   bookingId String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  userId String
 
   // Relations
   booking  WalkerBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   messages ChatMessage[]
-
+  user User @relation(fields: [userId], references: [id])
   @@map("chat_rooms")
 }
 

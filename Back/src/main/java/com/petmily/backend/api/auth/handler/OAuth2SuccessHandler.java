@@ -1,7 +1,7 @@
 package com.petmily.backend.api.auth.handler;
 
 import com.petmily.backend.api.auth.jwt.JwtTokenProvider;
-import com.petmily.backend.api.auth.jwt.TokenKey;
+import com.petmily.backend.domain.auth.token.TokenKey;
 import com.petmily.backend.api.auth.oauth.CustomOAuth2User;
 
 import com.petmily.backend.domain.auth.token.AuthRefreshToken;

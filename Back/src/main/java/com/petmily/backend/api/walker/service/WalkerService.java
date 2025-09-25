@@ -89,6 +89,11 @@ public class WalkerService {
 
         return allWalkers.stream()
                 .filter(walker -> {
+                    // Only show available walkers
+                    if (!walker.getIsAvailable()) {
+                        return false;
+                    }
+                    
                     try {
                         // Assuming walker.getLocation() returns "latitude,longitude"
                         String[] coords = walker.getLocation().split(",");
@@ -98,6 +103,29 @@ public class WalkerService {
                     } catch (NumberFormatException | NullPointerException | ArrayIndexOutOfBoundsException e) {
                         // Handle cases where walker location string is malformed or null
                         return false;
+                    }
+                })
+                .sorted((w1, w2) -> {
+                    // Sort by rating (highest first), then by distance
+                    try {
+                        String[] coords1 = w1.getLocation().split(",");
+                        String[] coords2 = w2.getLocation().split(",");
+                        double walker1Lat = Double.parseDouble(coords1[0]);
+                        double walker1Lon = Double.parseDouble(coords1[1]);
+                        double walker2Lat = Double.parseDouble(coords2[0]);
+                        double walker2Lon = Double.parseDouble(coords2[1]);
+                        
+                        double distance1 = calculateDistance(userLat, userLon, walker1Lat, walker1Lon);
+                        double distance2 = calculateDistance(userLat, userLon, walker2Lat, walker2Lon);
+                        
+                        // First sort by rating (descending), then by distance (ascending)
+                        int ratingComparison = Double.compare(w2.getRating(), w1.getRating());
+                        if (ratingComparison != 0) {
+                            return ratingComparison;
+                        }
+                        return Double.compare(distance1, distance2);
+                    } catch (Exception e) {
+                        return 0;
                     }
                 })
                 .map(WalkerProfileResponse::from)
