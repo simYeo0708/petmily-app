@@ -1,0 +1,48 @@
+// 루트 프로젝트 설정
+plugins {
+    id 'base'
+}
+
+// 서브프로젝트 공통 설정
+subprojects {
+    group = 'com.petmily'
+    version = '1.0.0'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 전체 프로젝트 빌드 태스크
+task buildAll {
+    dependsOn ':petmily-backend:build'
+    dependsOn ':petmily-frontend:buildFrontend'
+}
+
+// 개발 서버 동시 실행
+task dev {
+    group = 'application'
+    description = 'Start both backend and frontend development servers'
+    dependsOn ':petmily-backend:bootRun'
+}
+
+task startFrontend {
+    group = 'application'
+    description = 'Start frontend development server'
+    dependsOn ':petmily-frontend:startDev'
+}
+
+// 린트 검사 전체 실행
+task lintAll {
+    group = 'verification'
+    description = 'Run linting for all modules'
+    dependsOn ':petmily-frontend:lint'
+}
+
+// 전체 클린업
+task cleanAll {
+    group = 'build'
+    description = 'Clean all modules'
+    dependsOn ':petmily-backend:clean'
+    dependsOn ':petmily-frontend:cleanFrontend'
+}
