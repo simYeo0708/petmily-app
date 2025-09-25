@@ -62,7 +62,7 @@ apiClient.interceptors.response.use(
         // 리프레시 토큰도 만료된 경우 로그아웃 처리
         await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
         // 로그인 화면으로 리다이렉트 (네비게이션 로직 추가 필요)
-        console.error('토큰 갱신 실패, 재로그인 필요');
+        console.error('토큰 갱신 실패, 재로그인 필요', refreshError);
       }
     }
 
@@ -75,16 +75,19 @@ export const API_ENDPOINTS = {
   // 인증 관련
   AUTH: {
     LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
+    REGISTER: '/auth/signup',
     LOGOUT: '/auth/logout',
-    REFRESH: '/auth/refresh',
+    REFRESH: '/auth/reissue',
     PROFILE: '/auth/profile',
   },
 
   // 사용자 관련
   USERS: {
-    PROFILE: '/users/profile',
-    UPDATE: '/users/update',
+    PROFILE: '/users/me',
+    UPDATE: '/users/me',
+    GET_BY_ID: (id: number) => `/users/${id}`,
+    ALL: '/users/all',
+    CHANGE_PASSWORD: '/users/me/password',
   },
 
   // 워커 관련

@@ -14,14 +14,17 @@ import {
   View,
 } from "react-native";
 import { RootStackParamList } from "../index";
+import { authService } from "../../services/authService";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -52,17 +55,18 @@ const LoginScreen = ({ navigation }: Props) => {
   };
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+    if (!username || !password) {
+      Alert.alert("오류", "모든 필드를 입력해주세요");
       return;
     }
 
-    // 로그인 로직 구현 (여기서는 간단하게 처리)
+    setIsLoading(true);
     try {
+      await authService.login({ username, password });
+
       const hasPetInfo = await checkPetInfo();
 
       if (!hasPetInfo) {
-        // 반려동물 정보가 없을 때 팝업 표시
         Alert.alert(
           "반려동물 정보 등록",
           "반려동물 정보를 먼저 등록해주세요!\n더 나은 서비스를 제공할 수 있습니다.",
@@ -77,27 +81,35 @@ const LoginScreen = ({ navigation }: Props) => {
           { cancelable: false }
         );
       } else {
-        // 반려동물 정보가 있을 때 바로 홈으로 이동
         navigation.navigate("Main");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      navigation.navigate("Main");
+    } catch (error: any) {
+      Alert.alert("로그인 실패", error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSignup = () => {
-    if (!username || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+  const handleSignup = async () => {
+    if (!username || !name || !email || !password || !confirmPassword) {
+      Alert.alert("오류", "모든 필드를 입력해주세요");
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert("오류", "비밀번호가 일치하지 않습니다");
       return;
     }
-    // 회원가입 로직 구현
-    Alert.alert("Success", "Account created successfully");
-    setIsLogin(true);
+
+    setIsLoading(true);
+    try {
+      await authService.signup({ username, name, email, password });
+      Alert.alert("회원가입 성공", "계정이 생성되었습니다. 로그인해주세요.");
+      setIsLogin(true);
+    } catch (error: any) {
+      Alert.alert("회원가입 실패", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -129,26 +141,37 @@ const LoginScreen = ({ navigation }: Props) => {
 
             {/* Form Section */}
             <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder={isLogin ? "Username" : "Username"}
+                placeholderTextColor="#999"
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+
               {!isLogin && (
                 <TextInput
                   style={styles.input}
-                  placeholder="Username"
+                  placeholder="Name"
                   placeholderTextColor="#999"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
                 />
               )}
 
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+              {!isLogin && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor="#999"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              )}
 
               <TextInput
                 style={styles.input}
@@ -171,10 +194,11 @@ const LoginScreen = ({ navigation }: Props) => {
               )}
 
               <TouchableOpacity
-                style={styles.mainButton}
-                onPress={isLogin ? handleLogin : handleSignup}>
+                style={[styles.mainButton, isLoading && { opacity: 0.7 }]}
+                onPress={isLogin ? handleLogin : handleSignup}
+                disabled={isLoading}>
                 <Text style={styles.mainButtonText}>
-                  {isLogin ? "Login" : "Sign Up"}
+                  {isLoading ? "처리 중..." : (isLogin ? "Login" : "Sign Up")}
                 </Text>
               </TouchableOpacity>
 

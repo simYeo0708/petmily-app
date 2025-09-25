@@ -1,7 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   SafeAreaView,
@@ -13,6 +12,8 @@ import {
 } from "react-native";
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import { authService } from "../../services/authService";
+import { userService, User } from "../../services/userService";
 
 type SettingsScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
@@ -22,6 +23,27 @@ const SettingsScreen = () => {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, [loadCurrentUser]);
+
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      const user = await userService.getCurrentUser();
+      setCurrentUser(user);
+    } catch (error: any) {
+      console.error('Failed to load user:', error);
+      // 토큰이 만료되었거나 유효하지 않을 경우 로그인 화면으로
+      if (error.message.includes('401') || error.message.includes('로그인')) {
+        navigation.navigate("Login");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [navigation]);
 
   const settingSections = [
     {
@@ -99,16 +121,6 @@ const SettingsScreen = () => {
     },
   ];
 
-  const clearAsyncStorage = async () => {
-    try {
-      await AsyncStorage.clear();
-      console.log("AsyncStorage cleared successfully");
-    } catch (error) {
-      console.error("Failed to clear AsyncStorage:", error);
-      Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
-    }
-  };
-  //나중에 clearAsyncStorage 함수 삭제
   const handleLogout = () => {
     Alert.alert("로그아웃", "정말 로그아웃하시겠습니까?", [
       { text: "취소", style: "cancel" },
@@ -116,8 +128,14 @@ const SettingsScreen = () => {
         text: "로그아웃",
         style: "destructive",
         onPress: async () => {
-          await clearAsyncStorage();
-          navigation.navigate("Login");
+          try {
+            await authService.logout();
+            navigation.navigate("Login");
+          } catch (error: any) {
+            console.error('Logout failed:', error);
+            // 로그아웃 API 실패해도 로컬 토큰은 삭제됨
+            navigation.navigate("Login");
+          }
         },
       },
     ]);
@@ -135,6 +153,49 @@ const SettingsScreen = () => {
       </View>
 
       <ScrollView contentContainerStyle={homeScreenStyles.scrollContent}>
+        {/* 사용자 정보 섹션 */}
+        {currentUser && (
+          <View style={homeScreenStyles.section}>
+            <Text style={homeScreenStyles.sectionTitle}>내 정보</Text>
+            <View
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                borderRadius: 20,
+                padding: 20,
+                marginBottom: 20,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.12,
+                shadowRadius: 8,
+                elevation: 4,
+              }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                <Text style={{ fontSize: 20, marginRight: 12 }}>👤</Text>
+                <View>
+                  <Text style={{ fontSize: 18, fontWeight: "bold", color: "#333" }}>
+                    {currentUser.name}
+                  </Text>
+                  <Text style={{ fontSize: 14, color: "#666", marginTop: 2 }}>
+                    @{currentUser.username}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ fontSize: 16, marginRight: 12 }}>📧</Text>
+                <Text style={{ fontSize: 14, color: "#666" }}>
+                  {currentUser.email}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {loading && (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text style={{ color: "#666" }}>사용자 정보 로딩 중...</Text>
+          </View>
+        )}
+
         {settingSections.map((section, sectionIndex) => (
           <View key={sectionIndex} style={homeScreenStyles.section}>
             <Text style={homeScreenStyles.sectionTitle}>{section.title}</Text>
