@@ -9,4 +9,5 @@ public class WalkerSearchRequest {
     private Double minRating;
     private Double userLatitude;
     private Double userLongitude;
+    private boolean favoritesOnly = false; // 즐겨찾기 워커만 보기
 }

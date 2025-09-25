@@ -186,7 +186,7 @@ class WalkerBookingServiceTest {
     }
 
     @Test
-    void confirmBooking_Success() {
+    void updateBookingStatus_ConfirmBooking_Success() {
         // Given
         when(userRepository.findById(2L)).thenReturn(Optional.of(mockWalkerUser));
         when(walkerProfileRepository.findByUserId(2L)).thenReturn(Optional.of(mockWalkerProfile));
@@ -194,7 +194,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
         // When
-        WalkerBookingResponse result = walkerBookingService.confirmBooking(1L, 2L);
+        WalkerBookingResponse result = walkerBookingService.updateBookingStatus(1L, WalkerBooking.BookingStatus.CONFIRMED, 2L);
 
         // Then
         assertThat(result).isNotNull();
@@ -202,7 +202,7 @@ class WalkerBookingServiceTest {
     }
 
     @Test
-    void confirmBooking_NotWalkerOwner() {
+    void updateBookingStatus_NotWalkerOwner() {
         // Given
         User otherWalker = User.builder().id(3L).username("otherwalker").build();
         when(userRepository.findById(3L)).thenReturn(Optional.of(otherWalker));
@@ -210,7 +210,7 @@ class WalkerBookingServiceTest {
         when(walkerBookingRepository.findById(1L)).thenReturn(Optional.of(mockBooking));
 
         // When & Then
-        assertThatThrownBy(() -> walkerBookingService.confirmBooking(1L, 3L))
+        assertThatThrownBy(() -> walkerBookingService.updateBookingStatus(1L, WalkerBooking.BookingStatus.CONFIRMED, 3L))
                 .isInstanceOf(CustomException.class);
     }
 

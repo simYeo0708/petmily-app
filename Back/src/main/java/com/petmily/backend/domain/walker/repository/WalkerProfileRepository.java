@@ -1,6 +1,7 @@
 package com.petmily.backend.domain.walker.repository;
 
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,6 +34,9 @@ public interface WalkerProfileRepository extends JpaRepository<WalkerProfile, Lo
     // 최고 평점 워커 검색
     @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true AND w.rating >= :minRating ORDER BY w.rating DESC, w.totalWalks DESC")
     List<WalkerProfile> findTopRatedWalkers(@Param("minRating") Double minRating);
-    
+
+    // 즐겨찾기 워커 필터용
+    List<WalkerProfile> findByIdInAndStatusAndIsAvailable(List<Long> ids, WalkerStatus status, Boolean isAvailable);
+
 }
 

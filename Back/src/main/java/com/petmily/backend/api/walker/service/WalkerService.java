@@ -12,13 +12,16 @@ import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.FavoriteWalker;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.FavoriteWalkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +31,7 @@ public class WalkerService {
 
     private final UserRepository userRepository;
     private final WalkerProfileRepository walkerProfileRepository;
+    private final FavoriteWalkerRepository favoriteWalkerRepository;
     private final KakaoMapService kakaoMapService;
 
     // Earth's radius in kilometers
@@ -85,7 +89,24 @@ public class WalkerService {
         double userLat = userCoord.getLatitude();
         double userLon = userCoord.getLongitude();
 
-        List<WalkerProfile> allWalkers = walkerProfileRepository.findAll();
+        List<WalkerProfile> allWalkers;
+
+        // 즐겨찾기 워커만 보기 필터
+        if (searchRequest != null && searchRequest.isFavoritesOnly()) {
+            List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(currentUser.getId());
+            List<Long> favoriteWalkerIds = favoriteWalkers.stream()
+                    .map(FavoriteWalker::getWalkerId)
+                    .collect(Collectors.toList());
+
+            if (favoriteWalkerIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            allWalkers = walkerProfileRepository.findByIdInAndStatusAndIsAvailable(
+                favoriteWalkerIds, WalkerStatus.ACTIVE, true);
+        } else {
+            allWalkers = walkerProfileRepository.findAll();
+        }
 
         return allWalkers.stream()
                 .filter(walker -> {
@@ -100,7 +121,28 @@ public class WalkerService {
                         return false;
                     }
                 })
-                .map(WalkerProfileResponse::from)
+                .map(walker -> {
+                    boolean isFavorite = favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(
+                        currentUser.getId(), walker.getId());
+
+                    // Builder 패턴으로 즐겨찾기 여부 포함해서 생성
+                    User user = walker.getUser();
+                    return WalkerProfileResponse.builder()
+                            .id(walker.getId())
+                            .userId(walker.getUserId())
+                            .username(user != null ? user.getUsername() : null)
+                            .name(user != null ? user.getName() : null)
+                            .email(user != null ? user.getEmail() : null)
+                            .bio(walker.getBio())
+                            .experience(walker.getExperience())
+                            .rating(walker.getRating())
+                            .hourlyRate(walker.getHourlyRate())
+                            .status(walker.getStatus())
+                            .isAvailable(walker.getIsAvailable())
+                            .location(walker.getLocation())
+                            .isFavorite(isFavorite)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -130,6 +172,62 @@ public class WalkerService {
 
         walkerProfileRepository.save(walkerProfile);
         return WalkerProfileResponse.from(walkerProfile);
+    }
+
+    @Transactional
+    public WalkerProfileResponse addFavoriteWalker(Long walkerId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        WalkerProfile walker = walkerProfileRepository.findById(walkerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker not found"));
+
+        if (favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId)) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "Walker already in favorites");
+        }
+
+        FavoriteWalker favorite = FavoriteWalker.builder()
+                .userId(user.getId())
+                .walkerId(walkerId)
+                .isActive(true)
+                .build();
+
+        favoriteWalkerRepository.save(favorite);
+        return WalkerProfileResponse.from(walker);
+    }
+
+    @Transactional
+    public void removeFavoriteWalker(Long walkerId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        FavoriteWalker favorite = favoriteWalkerRepository.findByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Favorite walker not found"));
+
+        favorite.setIsActive(false);
+        favoriteWalkerRepository.save(favorite);
+    }
+
+    public List<WalkerProfileResponse> getFavoriteWalkers(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        List<FavoriteWalker> favorites = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(user.getId());
+
+        return favorites.stream()
+                .map(favorite -> {
+                    WalkerProfile walker = walkerProfileRepository.findById(favorite.getWalkerId()).orElse(null);
+                    return walker != null ? WalkerProfileResponse.from(walker) : null;
+                })
+                .filter(response -> response != null)
+                .collect(Collectors.toList());
+    }
+
+    public boolean isFavoriteWalker(Long walkerId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        return favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId);
     }
 
     // Haversine formula to calculate distance between two points on Earth

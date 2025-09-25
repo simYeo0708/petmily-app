@@ -4,14 +4,17 @@ import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewRequest;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewResponse;
+import com.petmily.backend.api.walker.dto.walkerReview.WalkerReportRequest;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import com.petmily.backend.domain.walker.entity.WalkerReview;
+import com.petmily.backend.domain.walker.entity.WalkerReport;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReviewRepository;
+import com.petmily.backend.domain.walker.repository.WalkerReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class WalkerReviewService {
     private final WalkerProfileRepository walkerProfileRepository;
     private final UserRepository userRepository;
     private final WalkerBookingRepository walkerBookingRepository;
+    private final WalkerReportRepository walkerReportRepository;
 
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
@@ -195,6 +199,64 @@ public class WalkerReviewService {
                     bookingInfo.put("actualEndTime", booking.getActualEndTime());
                     
                     return bookingInfo;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public String reportWalker(String username, WalkerReportRequest request) {
+        User user = findUserByUsername(username);
+        WalkerProfile walker = findWalkerById(request.getWalkerId());
+
+        // 중복 신고 체크
+        if (request.getBookingId() != null &&
+            walkerReportRepository.existsByReporterUserIdAndBookingId(user.getId(), request.getBookingId())) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "이미 해당 예약에 대해 신고를 접수하셨습니다.");
+        }
+
+        // 예약 검증 (예약 ID가 제공된 경우)
+        if (request.getBookingId() != null) {
+            WalkerBooking booking = findBookingById(request.getBookingId());
+            if (!booking.getUserId().equals(user.getId())) {
+                throw new CustomException(ErrorCode.NO_ACCESS, "본인이 예약한 산책에 대해서만 신고할 수 있습니다.");
+            }
+            if (!booking.getWalkerId().equals(request.getWalkerId())) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "예약의 워커와 신고 대상 워커가 일치하지 않습니다.");
+            }
+        }
+
+        WalkerReport report = WalkerReport.builder()
+                .reporterUserId(user.getId())
+                .reportedWalkerId(request.getWalkerId())
+                .bookingId(request.getBookingId())
+                .reportType(WalkerReport.ReportType.valueOf(request.getReportType().name()))
+                .reason(request.getReason())
+                .description(request.getDescription())
+                .status(WalkerReport.ReportStatus.PENDING)
+                .build();
+
+        walkerReportRepository.save(report);
+        return "신고가 접수되었습니다. 관리자 검토 후 처리됩니다.";
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getUserReports(String username) {
+        User user = findUserByUsername(username);
+
+        List<WalkerReport> reports = walkerReportRepository.findByReporterUserIdOrderByCreateTimeDesc(user.getId());
+
+        return reports.stream()
+                .map(report -> {
+                    Map<String, Object> reportInfo = new HashMap<>();
+                    reportInfo.put("id", report.getId());
+                    reportInfo.put("walkerId", report.getReportedWalkerId());
+                    reportInfo.put("bookingId", report.getBookingId());
+                    reportInfo.put("reportType", report.getReportType());
+                    reportInfo.put("reason", report.getReason());
+                    reportInfo.put("description", report.getDescription());
+                    reportInfo.put("status", report.getStatus());
+                    reportInfo.put("reportedAt", report.getCreateTime());
+                    return reportInfo;
                 })
                 .collect(Collectors.toList());
     }

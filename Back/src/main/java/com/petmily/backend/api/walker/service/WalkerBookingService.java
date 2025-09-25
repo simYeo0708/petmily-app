@@ -2,17 +2,16 @@ package com.petmily.backend.api.walker.service;
 
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerApplicationRequest;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerApplicationResponse;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingRequest;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
+import com.petmily.backend.api.walker.dto.walkerBooking.*;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.BookingChangeRequest;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.BookingChangeRequestRepository;
 import com.petmily.backend.api.chat.service.ChatRoomService;
 import com.petmily.backend.api.chat.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +31,7 @@ public class WalkerBookingService {
     private final WalkerBookingRepository walkerBookingRepository;
     private final WalkerProfileRepository walkerProfileRepository;
     private final UserRepository userRepository;
+    private final BookingChangeRequestRepository bookingChangeRequestRepository;
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
 
@@ -199,10 +200,6 @@ public class WalkerBookingService {
         return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CANCELLED, userId);
     }
 
-    @Transactional
-    public WalkerBookingResponse confirmBooking(Long bookingId, Long userId) {
-        return updateBookingStatus(bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
-    }
 
     public List<WalkerBookingResponse> getOpenRequests() {
         List<WalkerBooking> openRequests = walkerBookingRepository.findByBookingMethodAndStatusOrderByCreateTimeDesc(
@@ -337,22 +334,164 @@ public class WalkerBookingService {
         return WalkerBookingResponse.from(updatedApplication);
     }
 
+    @Transactional
+    public BookingChangeResponse requestBookingChange(Long bookingId, com.petmily.backend.api.walker.dto.walkerBooking.BookingChangeRequest request, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        WalkerBooking booking = walkerBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Booking not found"));
+
+        if (!booking.getUserId().equals(user.getId())) {
+            throw new CustomException(ErrorCode.NO_ACCESS, "Only booking owner can request changes");
+        }
+
+        if (booking.getStatus() != WalkerBooking.BookingStatus.CONFIRMED) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "Can only request changes for confirmed bookings");
+        }
+
+        com.petmily.backend.domain.walker.entity.BookingChangeRequest changeRequest = com.petmily.backend.domain.walker.entity.BookingChangeRequest.builder()
+                .bookingId(bookingId)
+                .requestedByUserId(user.getId())
+                .newDate(request.getNewDate())
+                .newDuration(request.getNewDuration())
+                .newPrice(request.getNewPrice())
+                .newPickupLocation(request.getNewPickupLocation())
+                .newPickupAddress(request.getNewPickupAddress())
+                .newDropoffLocation(request.getNewDropoffLocation())
+                .newDropoffAddress(request.getNewDropoffAddress())
+                .newNotes(request.getNewNotes())
+                .newInsuranceCovered(request.getNewInsuranceCovered())
+                .newEmergencyContact(request.getNewEmergencyContact())
+                .changeReason(request.getChangeReason())
+                .status(BookingChangeRequest.ChangeRequestStatus.PENDING)
+                .build();
+
+        BookingChangeRequest savedRequest = bookingChangeRequestRepository.save(changeRequest);
+        return BookingChangeResponse.from(savedRequest);
+    }
+
+    @Transactional
+    public BookingChangeResponse respondToChangeRequest(Long requestId, ChangeRequestDecisionRequest decision, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        BookingChangeRequest changeRequest = bookingChangeRequestRepository.findById(requestId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Change request not found"));
+
+        WalkerBooking booking = walkerBookingRepository.findById(changeRequest.getBookingId())
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Booking not found"));
+
+        WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId())
+                .orElse(null);
+        if (walker == null || !booking.getWalkerId().equals(walker.getId())) {
+            throw new CustomException(ErrorCode.NO_ACCESS, "Only assigned walker can respond to change requests");
+        }
+
+        if (changeRequest.getStatus() != BookingChangeRequest.ChangeRequestStatus.PENDING) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "Change request already processed");
+        }
+
+        changeRequest.setStatus(decision.getDecision());
+        changeRequest.setWalkerResponse(decision.getResponse());
+        changeRequest.setRespondedAt(LocalDateTime.now());
+
+        if (decision.getDecision() == BookingChangeRequest.ChangeRequestStatus.APPROVED) {
+            applyChangesToBooking(booking, changeRequest);
+            walkerBookingRepository.save(booking);
+        }
+
+        BookingChangeRequest updatedRequest = bookingChangeRequestRepository.save(changeRequest);
+        return BookingChangeResponse.from(updatedRequest);
+    }
+
+    private void applyChangesToBooking(WalkerBooking booking, BookingChangeRequest changeRequest) {
+        if (changeRequest.getNewDate() != null) {
+            booking.setDate(changeRequest.getNewDate());
+        }
+        if (changeRequest.getNewDuration() != null) {
+            booking.setDuration(changeRequest.getNewDuration());
+        }
+        if (changeRequest.getNewPrice() != null) {
+            booking.setTotalPrice(changeRequest.getNewPrice());
+        }
+        if (changeRequest.getNewPickupLocation() != null) {
+            booking.setPickupLocation(changeRequest.getNewPickupLocation());
+        }
+        if (changeRequest.getNewPickupAddress() != null) {
+            booking.setPickupAddress(changeRequest.getNewPickupAddress());
+        }
+        if (changeRequest.getNewDropoffLocation() != null) {
+            booking.setDropoffLocation(changeRequest.getNewDropoffLocation());
+        }
+        if (changeRequest.getNewDropoffAddress() != null) {
+            booking.setDropoffAddress(changeRequest.getNewDropoffAddress());
+        }
+        if (changeRequest.getNewNotes() != null) {
+            booking.setNotes(changeRequest.getNewNotes());
+        }
+        if (changeRequest.getNewInsuranceCovered() != null) {
+            booking.setInsuranceCovered(changeRequest.getNewInsuranceCovered());
+        }
+        if (changeRequest.getNewEmergencyContact() != null) {
+            booking.setEmergencyContact(changeRequest.getNewEmergencyContact());
+        }
+    }
+
+    public List<BookingChangeResponse> getBookingChangeRequests(Long bookingId, String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        WalkerBooking booking = walkerBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Booking not found"));
+
+        boolean hasAccess = booking.getUserId().equals(user.getId());
+        if (!hasAccess) {
+            WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId()).orElse(null);
+            hasAccess = walker != null && booking.getWalkerId().equals(walker.getId());
+        }
+
+        if (!hasAccess) {
+            throw new CustomException(ErrorCode.NO_ACCESS, "No access to this booking's change requests");
+        }
+
+        List<BookingChangeRequest> requests = bookingChangeRequestRepository.findByBookingIdOrderByCreateTimeDesc(bookingId);
+        return requests.stream()
+                .map(BookingChangeResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<BookingChangeResponse> getPendingChangeRequestsForWalker(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.NO_ACCESS, "Walker profile not found"));
+
+        List<BookingChangeRequest> requests = bookingChangeRequestRepository.findByBooking_WalkerIdAndStatusOrderByCreateTimeDesc(
+                walker.getId(), BookingChangeRequest.ChangeRequestStatus.PENDING);
+
+        return requests.stream()
+                .map(BookingChangeResponse::from)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 예약 확정 시 자동으로 채팅방 생성 및 예약 상세 시스템 메시지 발송
      */
     private void createBookingChatRoomAndSendSystemMessage(WalkerBooking booking) {
         try {
             var chatRoomResponse = chatRoomService.createPostBookingChatRoom(
-                    booking.getUserId(), 
-                    booking.getWalkerId(), 
+                    booking.getUserId(),
+                    booking.getWalkerId(),
                     booking.getId()
             );
-            
+
             chatMessageService.createBookingSystemMessage(chatRoomResponse.getId(), booking);
-            
-            log.info("예약 확정으로 인한 채팅방 생성 완료 - Booking ID: {}, Chat Room ID: {}", 
+
+            log.info("예약 확정으로 인한 채팅방 생성 완료 - Booking ID: {}, Chat Room ID: {}",
                     booking.getId(), chatRoomResponse.getRoomId());
-            
+
         } catch (Exception e) {
             log.error("예약 확정 시 채팅방 생성 중 오류 발생 - Booking ID: {}", booking.getId(), e);
         }

@@ -2,6 +2,7 @@ package com.petmily.backend.api.walker.controller;
 
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewRequest;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewResponse;
+import com.petmily.backend.api.walker.dto.walkerReview.WalkerReportRequest;
 import com.petmily.backend.api.walker.service.WalkerReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,6 +88,29 @@ public class WalkerReviewController {
         String username = authentication.getName();
         List<Map<String, Object>> reviewableBookings = walkerReviewService.getReviewableBookings(username);
         return ResponseEntity.ok(reviewableBookings);
+    }
+
+    /**
+     * 워커 신고
+     */
+    @PostMapping("/report")
+    public ResponseEntity<String> reportWalker(
+            @Valid @RequestBody WalkerReportRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        String result = walkerReviewService.reportWalker(username, request);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 내가 신고한 목록 조회
+     */
+    @GetMapping("/my-reports")
+    public ResponseEntity<List<Map<String, Object>>> getMyReports(
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<Map<String, Object>> reports = walkerReviewService.getUserReports(username);
+        return ResponseEntity.ok(reports);
     }
 
 }

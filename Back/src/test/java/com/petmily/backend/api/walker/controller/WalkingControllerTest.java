@@ -100,12 +100,18 @@ class WalkingControllerTest {
                 .status(WalkerBooking.BookingStatus.COMPLETED)
                 .build();
 
-        when(walkingService.completeWalk(eq(1L), eq("walker1")))
+        when(walkingService.completeWalk(eq(1L), any(WalkingEndRequest.class), eq("walker1")))
                 .thenReturn(completedBooking);
+
+        WalkingEndRequest request = WalkingEndRequest.builder()
+                .specialNotes("테스트 특이사항")
+                .walkingSummary("정상적인 산책 완료")
+                .build();
 
         mockMvc.perform(post("/api/walking/1/complete")
                         .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.status").value("COMPLETED"));

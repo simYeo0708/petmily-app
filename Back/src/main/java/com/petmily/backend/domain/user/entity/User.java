@@ -39,6 +39,45 @@ public class User extends BaseTimeEntity {
     private String name;
     private String phone;
 
+    // 비상연락망 정보
+    @Column(name = "emergency_contact_name", length = 50)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
+
+    @Column(name = "emergency_contact_relationship", length = 30)
+    private String emergencyContactRelationship; // 가족, 친구, 기타
+
+    // 알림 설정
+    @Builder.Default
+    @Column(name = "departure_alert_enabled")
+    private Boolean departureAlertEnabled = true;
+
+    @Builder.Default
+    @Column(name = "departure_distance_threshold") // 미터 단위
+    private Integer departureDistanceThreshold = 200;
+
+    @Builder.Default
+    @Column(name = "delay_alert_enabled")
+    private Boolean delayAlertEnabled = true;
+
+    @Builder.Default
+    @Column(name = "delay_time_threshold") // 분 단위
+    private Integer delayTimeThreshold = 10;
+
+    @Builder.Default
+    @Column(name = "walk_start_notification")
+    private Boolean walkStartNotification = true;
+
+    @Builder.Default
+    @Column(name = "walk_complete_notification")
+    private Boolean walkCompleteNotification = true;
+
+    @Builder.Default
+    @Column(name = "emergency_notification")
+    private Boolean emergencyNotification = true;
+
     @Column
     private String provider; // OAuth2 provider (e.g., google, kakao, naver)
 
@@ -59,6 +98,27 @@ public class User extends BaseTimeEntity {
     
     public String getProfileImageUrl() {
         return this.profile;
+    }
+
+    // 비상연락망 헬퍼 메소드
+    public boolean hasEmergencyContact() {
+        return emergencyContactPhone != null && !emergencyContactPhone.trim().isEmpty();
+    }
+
+    public String getEmergencyContactDisplay() {
+        if (!hasEmergencyContact()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        if (emergencyContactName != null && !emergencyContactName.trim().isEmpty()) {
+            sb.append(emergencyContactName);
+            if (emergencyContactRelationship != null && !emergencyContactRelationship.trim().isEmpty()) {
+                sb.append(" (").append(emergencyContactRelationship).append(")");
+            }
+            sb.append(" - ");
+        }
+        sb.append(emergencyContactPhone);
+        return sb.toString();
     }
 
 

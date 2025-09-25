@@ -128,7 +128,6 @@ public class LocationValidationService {
         return allSame;
     }
 
-    // === Private Helper Methods ===
 
     private boolean isValidLatitude(Double latitude) {
         return latitude >= -90.0 && latitude <= 90.0;

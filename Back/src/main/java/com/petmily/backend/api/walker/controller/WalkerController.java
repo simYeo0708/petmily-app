@@ -54,4 +54,51 @@ public class WalkerController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 즐겨찾기 워커 추가
+     */
+    @PostMapping("/{walkerId}/favorite")
+    public ResponseEntity<WalkerProfileResponse> addFavoriteWalker(
+            @PathVariable Long walkerId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        WalkerProfileResponse response = walkerService.addFavoriteWalker(walkerId, username);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 즐겨찾기 워커 제거
+     */
+    @DeleteMapping("/{walkerId}/favorite")
+    public ResponseEntity<Void> removeFavoriteWalker(
+            @PathVariable Long walkerId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        walkerService.removeFavoriteWalker(walkerId, username);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 즐겨찾기 워커 목록 조회
+     */
+    @GetMapping("/favorites")
+    public ResponseEntity<List<WalkerProfileResponse>> getFavoriteWalkers(
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<WalkerProfileResponse> favorites = walkerService.getFavoriteWalkers(username);
+        return ResponseEntity.ok(favorites);
+    }
+
+    /**
+     * 워커가 즐겨찾기에 있는지 확인
+     */
+    @GetMapping("/{walkerId}/favorite/check")
+    public ResponseEntity<Boolean> isFavoriteWalker(
+            @PathVariable Long walkerId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        boolean isFavorite = walkerService.isFavoriteWalker(walkerId, username);
+        return ResponseEntity.ok(isFavorite);
+    }
+
 }

@@ -21,6 +21,7 @@ public class WalkerProfileResponse {
     private WalkerStatus status;
     private boolean isAvailable;
     private String location;
+    private boolean isFavorite; // 즐겨찾기 여부
 
     public static WalkerProfileResponse from(WalkerProfile walkerProfile) {
         User user = walkerProfile.getUser();
@@ -37,6 +38,7 @@ public class WalkerProfileResponse {
                 .status(walkerProfile.getStatus())
                 .isAvailable(walkerProfile.getIsAvailable())
                 .location(walkerProfile.getLocation())
+                .isFavorite(false) // 기본값, 서비스에서 별도로 설정
                 .build();
     }
 }

@@ -27,14 +27,19 @@ public class WalkingController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 산책 완료 (특이사항 포함)
+     */
     @PostMapping("/{bookingId}/complete")
     public ResponseEntity<WalkerBookingResponse> completeWalk(
             @PathVariable Long bookingId,
+            @RequestBody WalkingEndRequest request,
             Authentication authentication) {
         String username = authentication.getName();
-        WalkerBookingResponse response = walkingService.completeWalk(bookingId, username);
+        WalkerBookingResponse response = walkingService.completeWalk(bookingId, request, username);
         return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/{bookingId}/track")
     public ResponseEntity<WalkingTrackResponse> saveWalkingTrack(
@@ -75,8 +80,8 @@ public class WalkingController {
         WalkerBookingResponse response = walkingService.updateLocation(bookingId, request, username);
         return ResponseEntity.ok(response);
     }
-
     // photoType: START, MIDDLE, END
+
     @PutMapping("/{bookingId}/photos")
     public ResponseEntity<WalkerBookingResponse> uploadPhoto(
             @PathVariable Long bookingId,
@@ -86,4 +91,32 @@ public class WalkingController {
         WalkerBookingResponse response = walkingService.uploadPhoto(bookingId, request, username);
         return ResponseEntity.ok(response);
     }
+
+
+    /**
+     * 긴급호출 (112/119/비상연락망)
+     */
+    @PostMapping("/{bookingId}/emergency-call")
+    public ResponseEntity<String> initiateEmergencyCall(
+            @PathVariable Long bookingId,
+            @RequestBody EmergencyCallRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        String contactNumber = walkingService.initiateEmergencyCall(bookingId, request, username);
+        return ResponseEntity.ok(contactNumber);
+    }
+
+    /**
+     * 산책 종료 요청 (양방향 동의 필요)
+     */
+    @PostMapping("/{bookingId}/request-termination")
+    public ResponseEntity<WalkerBookingResponse> requestWalkTermination(
+            @PathVariable Long bookingId,
+            @RequestBody WalkTerminationRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        WalkerBookingResponse response = walkingService.requestWalkTermination(bookingId, request, username);
+        return ResponseEntity.ok(response);
+    }
+
 }

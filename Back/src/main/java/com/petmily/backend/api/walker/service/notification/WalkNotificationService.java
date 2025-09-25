@@ -173,6 +173,76 @@ public class WalkNotificationService {
     }
 
     /**
+     * 긴급상황 알림 발송
+     */
+    public void sendEmergencyNotification(WalkerBooking booking, String petName, String emergencyType,
+                                        String location, String description) {
+        try {
+            String message = String.format(
+                "[긴급상황 발생]\n" +
+                "펫: %s\n" +
+                "긴급상황 유형: %s\n" +
+                "위치: %s\n" +
+                "상황 설명: %s\n" +
+                "즉시 확인 부탁드립니다.",
+                petName, emergencyType, location != null ? location : "위치 정보 없음",
+                description != null ? description : "상세 설명 없음"
+            );
+
+            String ownerContact = getOwnerContact(booking);
+            boolean sent = sendNotification(ownerContact, message);
+            if (sent) {
+                saveNotificationRecord(booking.getId(), "EMERGENCY");
+                log.info("긴급상황 알림 발송 완료 - Booking ID: {}, Type: {}", booking.getId(), emergencyType);
+            }
+        } catch (Exception e) {
+            log.error("긴급상황 알림 발송 중 오류 발생 - Booking ID: {}", booking.getId(), e);
+        }
+    }
+
+    /**
+     * 산책 종료 요청 알림 발송
+     */
+    public void sendWalkTerminationRequest(WalkerBooking booking, String petName, String requestedBy, String reason) {
+        try {
+            String message = String.format(
+                "[산책 종료 요청]\n" +
+                "펫: %s\n" +
+                "요청자: %s\n" +
+                "종료 사유: %s\n" +
+                "확인 후 응답 부탁드립니다.",
+                petName, requestedBy, reason
+            );
+
+            String targetContact = "WALKER".equals(requestedBy) ? getOwnerContact(booking) : getWalkerContact(booking);
+            boolean sent = sendNotification(targetContact, message);
+            if (sent) {
+                saveNotificationRecord(booking.getId(), "TERMINATION_REQUEST");
+                log.info("산책 종료 요청 알림 발송 완료 - Booking ID: {}, Requested by: {}", booking.getId(), requestedBy);
+            }
+        } catch (Exception e) {
+            log.error("산책 종료 요청 알림 발송 중 오류 발생 - Booking ID: {}", booking.getId(), e);
+        }
+    }
+
+    private String getOwnerContact(WalkerBooking booking) {
+        if (booking.getUser() != null) {
+            if (booking.getUser().getPhone() != null && !booking.getUser().getPhone().trim().isEmpty()) {
+                return booking.getUser().getPhone();
+            } else if (booking.getUser().getEmail() != null && !booking.getUser().getEmail().trim().isEmpty()) {
+                return booking.getUser().getEmail();
+            }
+        }
+        return "연락처 없음";
+    }
+
+    private String getWalkerContact(WalkerBooking booking) {
+        // WalkerProfile에서 연락처 정보를 가져오는 로직
+        // 현재는 기본값 반환
+        return "워커 연락처";
+    }
+
+    /**
      * 특정 booking의 알림 발송 이력 조회
      */
     public List<Object> getNotificationHistory(Long bookingId) {

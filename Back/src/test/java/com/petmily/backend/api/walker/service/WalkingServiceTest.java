@@ -234,7 +234,11 @@ class WalkingServiceTest {
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(inProgressBooking);
 
         // When
-        WalkerBookingResponse result = walkingService.completeWalk(2L, username);
+        WalkingEndRequest request = WalkingEndRequest.builder()
+                .specialNotes("정상 완료")
+                .walkingSummary("잘 걸었습니다")
+                .build();
+        WalkerBookingResponse result = walkingService.completeWalk(2L, request, username);
 
         // Then
         assertThat(result).isNotNull();
@@ -252,7 +256,10 @@ class WalkingServiceTest {
         when(validationService.validateWalkerBooking(1L, username)).thenReturn(walkerValidation);
 
         // When & Then
-        assertThatThrownBy(() -> walkingService.completeWalk(1L, username))
+        WalkingEndRequest request = WalkingEndRequest.builder()
+                .specialNotes("테스트")
+                .build();
+        assertThatThrownBy(() -> walkingService.completeWalk(1L, request, username))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST)
                 .hasMessageContaining("Can only complete walks in progress");
@@ -284,7 +291,10 @@ class WalkingServiceTest {
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(bookingWithoutStartTime);
 
         // When
-        WalkerBookingResponse result = walkingService.completeWalk(2L, username);
+        WalkingEndRequest request = WalkingEndRequest.builder()
+                .specialNotes("시작 시간 없는 경우 테스트")
+                .build();
+        WalkerBookingResponse result = walkingService.completeWalk(2L, request, username);
 
         // Then
         assertThat(result).isNotNull();

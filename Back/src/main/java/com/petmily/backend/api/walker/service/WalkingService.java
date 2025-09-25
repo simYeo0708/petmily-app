@@ -53,10 +53,11 @@ public class WalkingService {
         return WalkerBookingResponse.from(updatedBooking);
     }
 
+
     @Transactional
-    public WalkerBookingResponse completeWalk(Long bookingId, String username) {
+    public WalkerBookingResponse completeWalk(Long bookingId, WalkingEndRequest request, String username) {
         WalkingValidationService.WalkerBookingValidation validation = validationService.validateWalkerBooking(bookingId, username);
-        
+
         if (validation.booking.getStatus() != WalkerBooking.BookingStatus.IN_PROGRESS) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Can only complete walks in progress");
         }
@@ -67,8 +68,14 @@ public class WalkingService {
         }
         validation.booking.setActualEndTime(LocalDateTime.now());
 
+        // 워커의 특이사항 및 메모 저장
+        if (request.getSpecialNotes() != null) {
+            String existingNotes = validation.booking.getNotes() != null ? validation.booking.getNotes() : "";
+            validation.booking.setNotes(existingNotes + "\n[워커 메모] " + request.getSpecialNotes());
+        }
+
         WalkerBooking updatedBooking = walkerBookingRepository.save(validation.booking);
-        
+
         try {
             String petName = getPetName(updatedBooking);
             String ownerContact = getOwnerContact(updatedBooking);
@@ -76,7 +83,84 @@ public class WalkingService {
         } catch (Exception e) {
             log.warn("산책 완료 알림 발송 실패 - Booking ID: {}", updatedBooking.getId(), e);
         }
-        
+
+        return WalkerBookingResponse.from(updatedBooking);
+    }
+
+    public String initiateEmergencyCall(Long bookingId, EmergencyCallRequest request, String username) {
+        WalkingValidationService.WalkerBookingValidation validation = validationService.validateWalkerBooking(bookingId, username);
+
+        String contactNumber;
+        switch (request.getEmergencyType()) {
+            case POLICE_112:
+                contactNumber = "112";
+                break;
+            case FIRE_119:
+                contactNumber = "119";
+                break;
+            case EMERGENCY_CONTACT:
+                contactNumber = validation.booking.getEmergencyContact();
+                if (contactNumber == null || contactNumber.trim().isEmpty()) {
+                    throw new CustomException(ErrorCode.INVALID_REQUEST, "Emergency contact not set for this booking");
+                }
+                break;
+            default:
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "Invalid emergency type");
+        }
+
+        // 112나 119 호출 시 사용자에게 알림 발송
+        if (request.getEmergencyType() == EmergencyCallRequest.EmergencyType.POLICE_112 ||
+            request.getEmergencyType() == EmergencyCallRequest.EmergencyType.FIRE_119) {
+            try {
+                String petName = getPetName(validation.booking);
+                notificationService.sendEmergencyNotification(
+                    validation.booking,
+                    petName,
+                    request.getEmergencyType().getDisplayName(),
+                    request.getLocation(),
+                    request.getDescription()
+                );
+            } catch (Exception e) {
+                log.warn("긴급상황 알림 발송 실패 - Booking ID: {}", validation.booking.getId(), e);
+            }
+        }
+
+        log.info("긴급호출 요청 - Booking ID: {}, Type: {}, Location: {}",
+                 bookingId, request.getEmergencyType(), request.getLocation());
+
+        return contactNumber;
+    }
+
+    @Transactional
+    public WalkerBookingResponse requestWalkTermination(Long bookingId, WalkTerminationRequest request, String username) {
+        WalkingValidationService.WalkerBookingValidation validation = validationService.validateWalkerBooking(bookingId, username);
+
+        if (validation.booking.getStatus() != WalkerBooking.BookingStatus.IN_PROGRESS) {
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "Can only request termination for walks in progress");
+        }
+
+        // 종료 요청 로그 추가
+        String terminationLog = "[" + LocalDateTime.now() + "] 종료 요청 - 요청자: " + request.getRequestedBy() +
+                               ", 사유: " + request.getReason();
+
+        String existingNotes = validation.booking.getNotes() != null ? validation.booking.getNotes() : "";
+        validation.booking.setNotes(existingNotes + "\n" + terminationLog);
+
+        WalkerBooking updatedBooking = walkerBookingRepository.save(validation.booking);
+
+        // 상대방에게 종료 요청 알림 발송
+        try {
+            String petName = getPetName(updatedBooking);
+            notificationService.sendWalkTerminationRequest(
+                updatedBooking,
+                petName,
+                request.getRequestedBy(),
+                request.getReason()
+            );
+        } catch (Exception e) {
+            log.warn("산책 종료 요청 알림 발송 실패 - Booking ID: {}", updatedBooking.getId(), e);
+        }
+
         return WalkerBookingResponse.from(updatedBooking);
     }
 
@@ -184,6 +268,7 @@ public class WalkingService {
         return WalkerBookingResponse.from(updatedBooking);
     }
 
+
     private WalkingPathResponse.WalkingStatistics calculateWalkingStatistics(List<WalkingTrack> tracks) {
         if (tracks.isEmpty()) {
             return WalkingPathResponse.WalkingStatistics.builder()
@@ -285,6 +370,7 @@ public class WalkingService {
         }
         return "반려동물";
     }
+
 
     private String getOwnerContact(WalkerBooking booking) {
         if (booking.getUser() != null) {

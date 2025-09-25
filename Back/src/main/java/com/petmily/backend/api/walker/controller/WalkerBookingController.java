@@ -87,18 +87,6 @@ public class WalkerBookingController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * 예약 확정 (워커만 가능)
-     */
-    @PutMapping("/{bookingId}/confirm")
-    public ResponseEntity<WalkerBookingResponse> confirmBooking(
-            @PathVariable Long bookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.updateBookingStatus(
-            bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * 보호자가 등록한 요청 목록 조회 (워커들이 지원할 수 있는 요청들)
@@ -145,5 +133,54 @@ public class WalkerBookingController {
         Long userId = SecurityUtils.getUserId(authentication);
         WalkerBookingResponse response = walkerBookingService.respondToWalkerApplication(applicationId, accept, userId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 예약 변경 요청 (사용자가 요청)
+     */
+    @PostMapping("/{bookingId}/change-requests")
+    public ResponseEntity<BookingChangeResponse> requestBookingChange(
+            @PathVariable Long bookingId,
+            @RequestBody BookingChangeRequest request,
+            Authentication authentication) {
+        String username = authentication.getName();
+        BookingChangeResponse response = walkerBookingService.requestBookingChange(bookingId, request, username);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 예약 변경 요청에 대한 워커의 응답
+     */
+    @PutMapping("/change-requests/{requestId}/respond")
+    public ResponseEntity<BookingChangeResponse> respondToChangeRequest(
+            @PathVariable Long requestId,
+            @RequestBody ChangeRequestDecisionRequest decision,
+            Authentication authentication) {
+        String username = authentication.getName();
+        BookingChangeResponse response = walkerBookingService.respondToChangeRequest(requestId, decision, username);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 특정 예약에 대한 변경 요청 목록 조회
+     */
+    @GetMapping("/{bookingId}/change-requests")
+    public ResponseEntity<List<BookingChangeResponse>> getBookingChangeRequests(
+            @PathVariable Long bookingId,
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<BookingChangeResponse> requests = walkerBookingService.getBookingChangeRequests(bookingId, username);
+        return ResponseEntity.ok(requests);
+    }
+
+    /**
+     * 워커의 대기중인 변경 요청 목록 조회
+     */
+    @GetMapping("/walker/pending-change-requests")
+    public ResponseEntity<List<BookingChangeResponse>> getPendingChangeRequestsForWalker(
+            Authentication authentication) {
+        String username = authentication.getName();
+        List<BookingChangeResponse> requests = walkerBookingService.getPendingChangeRequestsForWalker(username);
+        return ResponseEntity.ok(requests);
     }
 }
