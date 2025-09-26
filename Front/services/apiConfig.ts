@@ -119,14 +119,25 @@ export const API_ENDPOINTS = {
     WALK_PROFILE: (petId: number) => `/pets/${petId}/walk-profile`,
   },
 
-  // 산책 예약 관련
-  BOOKINGS: {
-    LIST: '/bookings',
-    CREATE: '/bookings',
-    DETAIL: (bookingId: number) => `/bookings/${bookingId}`,
-    UPDATE_STATUS: (bookingId: number) => `/bookings/${bookingId}/status`,
-    CHANGE_REQUEST: (bookingId: number) => `/bookings/${bookingId}/change-request`,
-    RESPOND_CHANGE: (requestId: number) => `/bookings/change-requests/${requestId}/respond`,
+  // 산책 예약 관련 (WalkerBooking)
+  WALKER_BOOKINGS: {
+    CREATE: '/walker/bookings',
+    USER_BOOKINGS: '/walker/bookings/user',
+    WALKER_BOOKINGS: '/walker/bookings/walker',
+    DETAIL: (bookingId: number) => `/walker/bookings/${bookingId}`,
+    UPDATE_STATUS: (bookingId: number) => `/walker/bookings/${bookingId}/status`,
+    CANCEL: (bookingId: number) => `/walker/bookings/${bookingId}`,
+
+    // 오픈 요청 관련
+    OPEN_REQUESTS: '/walker/bookings/open-requests',
+    APPLY_TO_REQUEST: (openRequestId: number) => `/walker/bookings/open-requests/${openRequestId}/apply`,
+    WALKER_APPLICATIONS: (openRequestId: number) => `/walker/bookings/${openRequestId}/applications`,
+    RESPOND_APPLICATION: (applicationId: number) => `/walker/bookings/applications/${applicationId}/respond`,
+
+    // 예약 변경 요청 관련
+    CHANGE_REQUESTS: (bookingId: number) => `/walker/bookings/${bookingId}/change-requests`,
+    RESPOND_CHANGE: (requestId: number) => `/walker/bookings/change-requests/${requestId}/respond`,
+    PENDING_CHANGES_WALKER: '/walker/bookings/walker/pending-change-requests',
   },
 
   // 산책 관련
