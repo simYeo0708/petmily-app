@@ -163,8 +163,29 @@ export const API_ENDPOINTS = {
   // 상품 관련
   PRODUCTS: {
     LIST: '/products',
-    CATEGORIES: '/categories',
     DETAIL: (productId: number) => `/products/${productId}`,
+    SEARCH: '/products/search',
+    BY_CATEGORY: (categoryId: number) => `/products/category/${categoryId}`,
+    CREATE: '/products',
+    UPDATE: (productId: number) => `/products/${productId}`,
+    DELETE: (productId: number) => `/products/${productId}`,
+
+    // 상품 리뷰 관련
+    REVIEWS: (productId: number) => `/products/${productId}/reviews`,
+    REVIEW_STATS: (productId: number) => `/products/${productId}/reviews/stats`,
+    REVIEWS_BY_RATING: (productId: number, rating: number) => `/products/${productId}/reviews/rating/${rating}`,
+    REVIEWS_WITH_IMAGES: (productId: number) => `/products/${productId}/reviews/with-images`,
+    REVIEWS_BY_HELPFUL: (productId: number) => `/products/${productId}/reviews/helpful`,
+  },
+
+  // 카테고리 관련
+  CATEGORIES: {
+    LIST: '/categories',
+    DETAIL: (categoryId: number) => `/categories/${categoryId}`,
+    CHILDREN: (categoryId: number) => `/categories/${categoryId}/children`,
+    CREATE: '/categories',
+    UPDATE: (categoryId: number) => `/categories/${categoryId}`,
+    DELETE: (categoryId: number) => `/categories/${categoryId}`,
   },
 
   // 장바구니 관련
