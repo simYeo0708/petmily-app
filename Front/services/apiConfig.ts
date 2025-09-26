@@ -190,10 +190,54 @@ export const API_ENDPOINTS = {
 
   // 장바구니 관련
   CART: {
-    ITEMS: '/cart/items',
-    ADD: '/cart/add',
-    UPDATE: (itemId: number) => `/cart/items/${itemId}`,
-    DELETE: (itemId: number) => `/cart/items/${itemId}`,
+    GET: '/carts',
+    ADD_ITEM: '/carts/items',
+    UPDATE_ITEM: (itemId: number) => `/carts/items/${itemId}`,
+    REMOVE_ITEM: (itemId: number) => `/carts/items/${itemId}`,
+    TOGGLE_SELECT: (itemId: number) => `/carts/items/${itemId}/select`,
+    CLEAR: '/carts',
+    REMOVE_SELECTED: '/carts/items',
+  },
+
+  // 주문 관련
+  ORDERS: {
+    LIST: '/orders',
+    CREATE: '/orders',
+    DETAIL: (orderId: number) => `/orders/${orderId}`,
+    CANCEL: (orderId: number) => `/orders/${orderId}/cancel`,
+    CONFIRM: (orderId: number) => `/orders/${orderId}/confirm`,
+    TRACKING: (orderId: number) => `/orders/${orderId}/tracking`,
+
+    // 반품 관련
+    RETURNS: (orderId: number) => `/orders/${orderId}/returns`,
+    RETURN_DETAIL: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}`,
+    CREATE_RETURN: (orderId: number) => `/orders/${orderId}/returns`,
+    CANCEL_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}`,
+    APPROVE_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}/approve`,
+    REJECT_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}/reject`,
+    COLLECT_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}/collect`,
+    INSPECT_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}/inspect`,
+    REFUND_RETURN: (orderId: number, returnId: number) => `/orders/${orderId}/returns/${returnId}/refund`,
+
+    // 리뷰 관련
+    REVIEW: (orderId: number) => `/orders/${orderId}/review`,
+    CREATE_REVIEW: (orderId: number) => `/orders/${orderId}/review`,
+    UPDATE_REVIEW: (orderId: number) => `/orders/${orderId}/review`,
+    DELETE_REVIEW: (orderId: number) => `/orders/${orderId}/review`,
+    ADD_HELPFUL: (orderId: number) => `/orders/${orderId}/review/helpful`,
+    REMOVE_HELPFUL: (orderId: number) => `/orders/${orderId}/review/helpful`,
+  },
+
+  // 정기배송 관련
+  SUBSCRIPTIONS: {
+    LIST: '/subscriptions',
+    CREATE: '/subscriptions',
+    DETAIL: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
+    UPDATE: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
+    PAUSE: (subscriptionId: number) => `/subscriptions/${subscriptionId}/pause`,
+    RESUME: (subscriptionId: number) => `/subscriptions/${subscriptionId}/resume`,
+    CANCEL: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
+    HISTORY: (subscriptionId: number) => `/subscriptions/${subscriptionId}/history`,
   },
 } as const;
 
