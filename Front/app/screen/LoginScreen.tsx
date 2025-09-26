@@ -57,33 +57,7 @@ const LoginScreen = ({ navigation }: Props) => {
       return;
     }
 
-    // 로그인 로직 구현 (여기서는 간단하게 처리)
-    try {
-      const hasPetInfo = await checkPetInfo();
-
-      if (!hasPetInfo) {
-        // 반려동물 정보가 없을 때 팝업 표시
-        Alert.alert(
-          "반려동물 정보 등록",
-          "반려동물 정보를 먼저 등록해주세요!\n더 나은 서비스를 제공할 수 있습니다.",
-          [
-            {
-              text: "등록하기",
-              onPress: () => {
-                navigation.navigate("Main", { initialTab: "MyTab" });
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-      } else {
-        // 반려동물 정보가 있을 때 바로 홈으로 이동
-        navigation.navigate("Main");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      navigation.navigate("Main");
-    }
+    navigation.navigate("Main", { initialTab: "HomeTab" });
   };
 
   const handleSignup = () => {
