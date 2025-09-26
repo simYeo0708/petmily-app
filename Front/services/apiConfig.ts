@@ -93,10 +93,30 @@ export const API_ENDPOINTS = {
   // 워커 관련
   WALKERS: {
     LIST: '/walkers',
+    REGISTER: '/walkers',
     PROFILE: (walkerId: number) => `/walkers/${walkerId}`,
+    MY_PROFILE: '/walkers/me',
+    UPDATE_PROFILE: '/walkers/me',
     REVIEWS: (walkerId: number) => `/walkers/${walkerId}/reviews`,
     FAVORITES: '/walkers/favorites',
     ADD_FAVORITE: (walkerId: number) => `/walkers/${walkerId}/favorite`,
+    REMOVE_FAVORITE: (walkerId: number) => `/walkers/${walkerId}/favorite`,
+    CHECK_FAVORITE: (walkerId: number) => `/walkers/${walkerId}/favorite/check`,
+  },
+
+  // 반려동물 관련
+  PETS: {
+    LIST: '/pets/my',
+    CREATE: '/pets',
+    DETAIL: (petId: number) => `/pets/${petId}`,
+    UPDATE: (petId: number) => `/pets/${petId}`,
+    DELETE: (petId: number) => `/pets/${petId}`,
+    SEARCH: '/pets/search',
+    ALL: '/pets/all',
+    UPDATE_PHOTO: (petId: number) => `/pets/${petId}/photo`,
+    ONBOARDING: (userId: number) => `/pets/onboarding/${userId}`,
+    FITTING_INFO: (petId: number) => `/pets/${petId}/fitting-info`,
+    WALK_PROFILE: (petId: number) => `/pets/${petId}/walk-profile`,
   },
 
   // 산책 예약 관련
