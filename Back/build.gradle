@@ -46,6 +46,8 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
     implementation 'com.h2database:h2'
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
+    implementation 'com.google.firebase:firebase-admin:9.7.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.19.0'
     
     // ANTLR 버전 명시적 지정
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"

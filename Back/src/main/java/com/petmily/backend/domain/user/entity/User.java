@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,10 +91,17 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+
     public User update(String name, String profile) {
         this.name = name;
         this.profile = profile;
         return this;
+    }
+
+    public void updateLastLoginTime() {
+        this.lastLoginTime = LocalDateTime.now();
     }
     
     public String getProfileImageUrl() {

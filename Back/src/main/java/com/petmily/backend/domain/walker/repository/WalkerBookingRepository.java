@@ -53,5 +53,18 @@ public interface WalkerBookingRepository extends JpaRepository<WalkerBooking, Lo
     
     boolean existsByUserIdAndWalkerIdAndStatus(
             Long userId, Long walkerId, WalkerBooking.BookingStatus status);
+
+    // DashboardService용 추가 메서드들
+    List<WalkerBooking> findByPetIdAndStatusAndActualStartTimeAfter(
+            Long petId, WalkerBooking.BookingStatus status, LocalDateTime startTime);
+
+    List<WalkerBooking> findByUserIdAndStatusOrderByCreateTimeDesc(
+            Long userId, WalkerBooking.BookingStatus status);
+
+    List<WalkerBooking> findByUserIdAndStatusInOrderByDateAsc(
+            Long userId, List<WalkerBooking.BookingStatus> statuses);
+
+    List<WalkerBooking> findByUserIdAndStatusAndActualStartTimeAfter(
+            Long userId, WalkerBooking.BookingStatus status, LocalDateTime startTime);
 }
 

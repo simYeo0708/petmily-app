@@ -239,6 +239,22 @@ export const API_ENDPOINTS = {
     CANCEL: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
     HISTORY: (subscriptionId: number) => `/subscriptions/${subscriptionId}/history`,
   },
+
+  // 알림 관련
+  NOTIFICATIONS: {
+    SETTINGS: '/notifications/settings',
+    PUSH_TOKEN_REGISTER: '/notifications/push-token',
+    PUSH_TOKEN_UNREGISTER: '/notifications/push-token',
+    PUSH_SEND: '/notifications/push/send',
+    HISTORY: '/notifications/history',
+    WALK_HISTORY: (bookingId: number) => `/notifications/history/${bookingId}`,
+    ANNOUNCEMENT_ALL: '/notifications/announcement/all',
+    ANNOUNCEMENT_WALKERS: '/notifications/announcement/walkers',
+    CUSTOM: (userId: number) => `/notifications/custom/${userId}`,
+    EMERGENCY: (userId: number) => `/notifications/emergency/${userId}`,
+    TEST: '/notifications/test',
+    SYNC: '/notifications/sync',
+  },
 } as const;
 
 export default apiClient;

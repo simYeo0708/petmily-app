@@ -2,6 +2,7 @@ package com.petmily.backend.domain.walker.repository;
 
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -37,6 +38,10 @@ public interface WalkerProfileRepository extends JpaRepository<WalkerProfile, Lo
 
     // 즐겨찾기 워커 필터용
     List<WalkerProfile> findByIdInAndStatusAndIsAvailable(List<Long> ids, WalkerStatus status, Boolean isAvailable);
+
+    // DashboardService용 페이징 지원 메서드
+    @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true ORDER BY w.rating DESC")
+    List<WalkerProfile> findByIsAvailableTrueOrderByRatingDesc(Pageable pageable);
 
 }
 
