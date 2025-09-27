@@ -5,7 +5,9 @@ import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileUpdateRequest;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
 import com.petmily.backend.api.walker.service.WalkerService;
+import com.petmily.backend.api.walker.service.WalkerSearchService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import java.util.List;
 public class WalkerController {
 
     private final WalkerService walkerService;
+    private final WalkerSearchService walkerSearchService;
 
     @PostMapping
     public ResponseEntity<WalkerProfileResponse> registerWalker(@RequestBody WalkerProfileCreateRequest request) {
@@ -99,6 +102,18 @@ public class WalkerController {
         String username = authentication.getName();
         boolean isFavorite = walkerService.isFavoriteWalker(walkerId, username);
         return ResponseEntity.ok(isFavorite);
+    }
+
+    /**
+     * 고급 워커 검색 (페이징 지원)
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Page<WalkerProfileResponse>> searchWalkers(
+            @ModelAttribute WalkerSearchRequest searchRequest,
+            Authentication authentication) {
+        String username = authentication.getName();
+        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(searchRequest, username);
+        return ResponseEntity.ok(response);
     }
 
 }
