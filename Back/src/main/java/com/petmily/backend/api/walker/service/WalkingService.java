@@ -2,6 +2,7 @@ package com.petmily.backend.api.walker.service;
 
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
+import com.petmily.backend.api.walker.controller.WalkingWebSocketController;
 import com.petmily.backend.api.walker.dto.walkerBooking.*;
 import com.petmily.backend.api.walker.dto.walking.*;
 import com.petmily.backend.api.walker.service.notification.WalkNotificationService;
@@ -28,6 +29,7 @@ public class WalkingService {
     private final WalkingValidationService validationService;
     private final LocationValidationService locationValidationService;
     private final WalkNotificationService notificationService;
+    private final WalkingWebSocketController walkingWebSocketController;
 
     @Transactional
     public WalkerBookingResponse startWalk(Long bookingId, String username) {
@@ -49,7 +51,13 @@ public class WalkingService {
         } catch (Exception e) {
             log.warn("산책 시작 알림 발송 실패 - Booking ID: {}", updatedBooking.getId(), e);
         }
-        
+
+        try{
+            walkingWebSocketController.broadcastWalkingStatus(bookingId, "STARTED", updatedBooking);
+        } catch(Exception e){
+            log.warn("산책 시작 상태 브로드캐스트 실패 - Booking ID: {}", bookingId, e);
+        }
+
         return WalkerBookingResponse.from(updatedBooking);
     }
 
@@ -82,6 +90,12 @@ public class WalkingService {
             notificationService.sendWalkCompleteNotification(updatedBooking, petName, ownerContact);
         } catch (Exception e) {
             log.warn("산책 완료 알림 발송 실패 - Booking ID: {}", updatedBooking.getId(), e);
+        }
+
+        try{
+            walkingWebSocketController.broadcastWalkingStatus(bookingId, "COMPLETED", updatedBooking);
+        } catch(Exception e){
+            log.warn("산책 완료 상태 브로드캐스트 실패 - Booking ID: {}", bookingId, e);
         }
 
         return WalkerBookingResponse.from(updatedBooking);
@@ -192,7 +206,16 @@ public class WalkingService {
                 .build();
 
         WalkingTrack savedTrack = walkingTrackRepository.save(walkingTrack);
-        return WalkingTrackResponse.from(savedTrack);
+        WalkingTrackResponse response = WalkingTrackResponse.from(savedTrack);
+
+        try{
+            walkingWebSocketController.broadcastLocationUpdate(bookingId, response);
+        } catch(Exception e){
+            log.warn("실시간 위치 브로드캐스트 실패 - Booking ID: {}", bookingId, e);
+        }
+
+        return response;
+
     }
 
     public WalkingPathResponse getWalkingPath(Long bookingId, String username) {
