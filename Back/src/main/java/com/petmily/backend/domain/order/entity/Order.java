@@ -74,7 +74,12 @@ public class Order extends BaseTimeEntity {
     
     @Column(name = "payment_method")
     private String paymentMethod;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
     @Column(name = "is_subscription")
     @Builder.Default
     private Boolean isSubscription = false;
@@ -144,6 +149,27 @@ public class Order extends BaseTimeEntity {
         return this.items.stream()
             .map(OrderItem::getTotalPrice)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // 결제 상태 관련 메소드
+    public void markPaymentCompleted() {
+        this.paymentStatus = PaymentStatus.PAID;
+    }
+
+    public void markPaymentFailed() {
+        this.paymentStatus = PaymentStatus.FAILED;
+    }
+
+    public boolean isPaymentCompleted() {
+        return this.paymentStatus == PaymentStatus.PAID;
+    }
+
+    public enum PaymentStatus {
+        PENDING,    // 결제 대기
+        PAID,       // 결제 완료
+        FAILED,     // 결제 실패
+        CANCELLED,  // 결제 취소
+        REFUNDED    // 환불 완료
     }
 }
 
