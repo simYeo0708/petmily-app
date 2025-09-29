@@ -148,7 +148,7 @@ public class MockPaymentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND, "결제 내역을 찾을 수 없습니다"));
 
         if (!payment.getUserId().equals(userId)) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED, "결제 취소 권한이 없습니다");
+            throw new CustomException(ErrorCode.NO_ACCESS, "결제 취소 권한이 없습니다");
         }
 
         if (!payment.isCancellable()) {
@@ -170,7 +170,7 @@ public class MockPaymentService {
                 .orElseThrow(() -> new CustomException(ErrorCode.PAYMENT_NOT_FOUND, "결제 내역을 찾을 수 없습니다"));
 
         if (!payment.getUserId().equals(userId)) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED, "결제 조회 권한이 없습니다");
+            throw new CustomException(ErrorCode.NO_ACCESS, "결제 조회 권한이 없습니다");
         }
 
         return PaymentResponse.from(payment);
@@ -180,7 +180,7 @@ public class MockPaymentService {
      * 사용자의 결제 내역 목록 조회
      */
     public List<PaymentResponse> getUserPayments(Long userId) {
-        List<Payment> payments = paymentRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Payment> payments = paymentRepository.findByUserIdOrderByCreateTimeDesc(userId);
         return payments.stream()
                 .map(PaymentResponse::from)
                 .collect(Collectors.toList());
@@ -190,11 +190,11 @@ public class MockPaymentService {
      * 주문의 결제 내역 조회
      */
     public List<PaymentResponse> getOrderPayments(Long orderId, Long userId) {
-        List<Payment> payments = paymentRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+        List<Payment> payments = paymentRepository.findByOrderIdOrderByCreateTimeDesc(orderId);
 
         // 사용자 권한 확인 (첫 번째 결제만 확인)
         if (!payments.isEmpty() && !payments.get(0).getUserId().equals(userId)) {
-            throw new CustomException(ErrorCode.UNAUTHORIZED, "주문 결제 조회 권한이 없습니다");
+            throw new CustomException(ErrorCode.NO_ACCESS, "주문 결제 조회 권한이 없습니다");
         }
 
         return payments.stream()

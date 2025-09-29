@@ -47,6 +47,7 @@ public class Pet extends BaseTimeEntity {
     
     // Health and medical information
     @Column(name = "is_vaccinated")
+    @Builder.Default
     private Boolean isVaccinated = false;
     
     @Column(name = "medical_conditions")
@@ -71,6 +72,7 @@ public class Pet extends BaseTimeEntity {
     private Boolean goodWithOtherPets;
     
     @Column(name = "is_neutered")
+    @Builder.Default
     private Boolean isNeutered = false;
     
     @NotNull

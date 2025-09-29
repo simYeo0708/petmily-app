@@ -45,8 +45,8 @@ public class PaymentResponse {
                 .paidAt(payment.getPaidAt())
                 .cancelledAt(payment.getCancelledAt())
                 .memo(payment.getMemo())
-                .createdAt(payment.getCreatedAt())
-                .updatedAt(payment.getUpdatedAt())
+                .createdAt(payment.getCreateTime())
+                .updatedAt(payment.getUpdateTime())
                 .build();
     }
 }

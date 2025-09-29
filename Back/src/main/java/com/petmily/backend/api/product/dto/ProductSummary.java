@@ -1,5 +1,6 @@
 package com.petmily.backend.api.product.dto;
 
+import com.petmily.backend.domain.product.entity.Product;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,4 +21,19 @@ public class ProductSummary {
     private Integer reviewCount;
     private Integer stock;
     private String categoryName;
+
+    public static ProductSummary from(Product product) {
+        return new ProductSummary(
+            product.getId(),
+            product.getName(),
+            product.getPrice(),
+            product.getImageUrl(),
+            product.getBrand(),
+            product.getDiscountRate(),
+            product.getRatingAverage(),
+            product.getReviewCount(),
+            product.getStock(),
+            product.getCategory() != null ? product.getCategory().getName() : null
+        );
+    }
 }

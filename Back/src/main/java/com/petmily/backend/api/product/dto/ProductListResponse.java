@@ -1,5 +1,6 @@
 package com.petmily.backend.api.product.dto;
 
+import com.petmily.backend.domain.product.entity.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

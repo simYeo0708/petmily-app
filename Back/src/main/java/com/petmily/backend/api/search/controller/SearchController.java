@@ -2,6 +2,7 @@ package com.petmily.backend.api.search.controller;
 
 import com.petmily.backend.api.product.dto.ProductListResponse;
 import com.petmily.backend.api.product.dto.ProductSearchRequest;
+import com.petmily.backend.api.product.dto.ProductSummary;
 import com.petmily.backend.api.product.service.ProductSearchService;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
 import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
@@ -53,9 +54,15 @@ public class SearchController {
             "hasMore", walkerResults.hasNext()
         ));
         response.put("products", Map.of(
-            "items", productResults.getContent(),
-            "totalCount", productResults.getTotalElements(),
-            "hasMore", productResults.hasNext()
+            "items", productResults.getContent().isEmpty() ?
+                    new java.util.ArrayList<>() :
+                    productResults.getContent().get(0).getProducts(),
+            "totalCount", productResults.getContent().isEmpty() ?
+                    0 :
+                    productResults.getContent().get(0).getTotalElements(),
+            "hasMore", productResults.getContent().isEmpty() ?
+                    false :
+                    productResults.getContent().get(0).isHasNext()
         ));
 
         return ResponseEntity.ok(response);
@@ -103,7 +110,7 @@ public class SearchController {
         response.put("suggestions", results.getContent().stream()
                 .map(walker -> Map.of(
                     "id", walker.getId(),
-                    "name", walker.getUser() != null ? walker.getUser().getName() : "",
+                    "name", walker.getName() != null ? walker.getName() : "",
                     "serviceArea", walker.getServiceArea() != null ? walker.getServiceArea() : "",
                     "rating", walker.getRating() != null ? walker.getRating() : 0.0
                 ))
@@ -128,13 +135,14 @@ public class SearchController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("suggestions", results.getContent().stream()
+                .flatMap(productListResponse -> productListResponse.getProducts().stream())
                 .map(product -> Map.of(
                     "id", product.getId(),
                     "name", product.getName(),
                     "brand", product.getBrand() != null ? product.getBrand() : "",
                     "price", product.getPrice(),
-                    "imageUrl", product.getImageUrls() != null && !product.getImageUrls().isEmpty() ?
-                               product.getImageUrls().get(0) : ""
+                    "imageUrl", product.getImageUrl() != null && !product.getImageUrl().isEmpty() ?
+                               product.getImageUrl() : ""
                 ))
                 .toArray());
 

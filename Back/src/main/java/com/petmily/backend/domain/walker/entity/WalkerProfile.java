@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,14 +41,15 @@ public class WalkerProfile extends BaseTimeEntity {
     @NotNull
     @Positive
     @Column(name = "hourly_rate")
-    private Double hourlyRate;
+    private BigDecimal hourlyRate;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
     private WalkerStatus status = WalkerStatus.PENDING;
     
-    private String location;
+    @Column(name = "coordinates")
+    private String coordinates;
     
     @Column(name = "profile_image_url")
     private String profileImageUrl;
@@ -59,7 +61,46 @@ public class WalkerProfile extends BaseTimeEntity {
     @Column(name = "is_available")
     @Builder.Default
     private Boolean isAvailable = true;
-    
+
+    @Column(name = "introduction")
+    private String introduction;
+
+    @Column(name = "service_area")
+    private String serviceArea;
+
+    @Column(name = "experience_level")
+    private String experienceLevel;
+
+    @Column(name = "experience_years")
+    @Builder.Default
+    private Integer experienceYears = 0;
+
+    @Column(name = "pet_types")
+    private String petTypes;
+
+    @Column(name = "certifications")
+    private String certifications;
+
+    @Column(name = "is_insured")
+    @Builder.Default
+    private Boolean isInsured = false;
+
+    @Column(name = "instant_booking")
+    @Builder.Default
+    private Boolean instantBooking = false;
+
+    @Column(name = "weekend_available")
+    @Builder.Default
+    private Boolean weekendAvailable = false;
+
+    @Column(name = "emergency_service")
+    @Builder.Default
+    private Boolean emergencyService = false;
+
+    @Column(name = "reviews_count")
+    @Builder.Default
+    private Integer reviewsCount = 0;
+
     // Relations
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,21 +17,21 @@ public interface WalkerProfileRepository extends JpaRepository<WalkerProfile, Lo
     
     List<WalkerProfile> findByIsAvailableTrue();
     
-    @Query("SELECT w FROM WalkerProfile w WHERE w.location LIKE %:location% AND w.isAvailable = true")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.isAvailable = true")
     List<WalkerProfile> findByLocationAndAvailable(@Param("location") String location);
-    
+
     @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate <= :maxRate AND w.isAvailable = true")
-    List<WalkerProfile> findByHourlyRateLessThanEqualAndAvailable(@Param("maxRate") Double maxRate);
-    
+    List<WalkerProfile> findByHourlyRateLessThanEqualAndAvailable(@Param("maxRate") BigDecimal maxRate);
+
     Optional<WalkerProfile> findByUserId(Long userId);
-    
+
     // 모바일 최적화용 지역 기반 검색 (페이징 지원)
-    @Query("SELECT w FROM WalkerProfile w WHERE w.location LIKE %:location% AND w.isAvailable = true ORDER BY w.rating DESC")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.isAvailable = true ORDER BY w.rating DESC")
     List<WalkerProfile> findTopRatedByLocationAndAvailable(@Param("location") String location);
-    
+
     // 가격대별 검색 (페이징 지원)
     @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate BETWEEN :minRate AND :maxRate AND w.isAvailable = true ORDER BY w.hourlyRate ASC")
-    List<WalkerProfile> findByPriceRangeAndAvailable(@Param("minRate") Double minRate, @Param("maxRate") Double maxRate);
+    List<WalkerProfile> findByPriceRangeAndAvailable(@Param("minRate") BigDecimal minRate, @Param("maxRate") BigDecimal maxRate);
     
     // 최고 평점 워커 검색
     @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true AND w.rating >= :minRating ORDER BY w.rating DESC, w.totalWalks DESC")
@@ -42,6 +43,9 @@ public interface WalkerProfileRepository extends JpaRepository<WalkerProfile, Lo
     // DashboardService용 페이징 지원 메서드
     @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true ORDER BY w.rating DESC")
     List<WalkerProfile> findByIsAvailableTrueOrderByRatingDesc(Pageable pageable);
+
+    // WalkerSearchService용 메소드
+    List<WalkerProfile> findByStatusAndIsAvailable(WalkerStatus status, Boolean isAvailable);
 
 }
 

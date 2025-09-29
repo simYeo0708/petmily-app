@@ -31,10 +31,10 @@ public class WalkerSummaryResponse {
                 .username(walker.getUser() != null ? walker.getUser().getUsername() : null)
                 .name(walker.getUser() != null ? walker.getUser().getName() : null)
                 .profileImageUrl(walker.getProfileImageUrl())
-                .location(walker.getLocation())
+                .location(walker.getCoordinates())
                 .rating(walker.getRating())
                 .totalWalks(walker.getTotalWalks())
-                .pricePerHour(walker.getHourlyRate())
+                .pricePerHour(walker.getHourlyRate() != null ? walker.getHourlyRate().doubleValue() : null)
                 .status(walker.getStatus())
                 .isAvailable(walker.getIsAvailable())
                 .build();

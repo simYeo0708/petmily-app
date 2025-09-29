@@ -52,7 +52,7 @@ public class WalkerService {
                 .bio(request.getBio())
                 .experience(request.getExperience())
                 .status(WalkerStatus.PENDING)
-                .location(request.getServiceArea())
+                .coordinates(request.getServiceArea())
                 .user(user)
                 .build();
 
@@ -112,7 +112,7 @@ public class WalkerService {
                 .filter(walker -> {
                     try {
                         // Assuming walker.getLocation() returns "latitude,longitude"
-                        String[] coords = walker.getLocation().split(",");
+                        String[] coords = walker.getCoordinates().split(",");
                         double walkerLat = Double.parseDouble(coords[0]);
                         double walkerLon = Double.parseDouble(coords[1]);
                         return calculateDistance(userLat, userLon, walkerLat, walkerLon) <= MAX_DISTANCE_KM;
@@ -139,7 +139,7 @@ public class WalkerService {
                             .hourlyRate(walker.getHourlyRate())
                             .status(walker.getStatus())
                             .isAvailable(walker.getIsAvailable())
-                            .location(walker.getLocation())
+                            .coordinates(walker.getCoordinates())
                             .isFavorite(isFavorite)
                             .build();
                 })
@@ -156,7 +156,7 @@ public class WalkerService {
         walkerProfile.setIsAvailable(request.isAvailable());
         walkerProfile.setBio(request.getBio());
         walkerProfile.setExperience(request.getExperience());
-        walkerProfile.setLocation(request.getServiceArea());
+        walkerProfile.setCoordinates(request.getServiceArea());
         // Update other fields as needed
 
         walkerProfileRepository.save(walkerProfile);

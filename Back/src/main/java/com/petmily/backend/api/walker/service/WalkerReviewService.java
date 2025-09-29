@@ -112,7 +112,7 @@ public class WalkerReviewService {
         // Verify walker exists
         findWalkerById(walkerId);
 
-        List<WalkerReview> reviews = walkerReviewRepository.findByWalkerIdOrderByCreatedAtDesc(walkerId);
+        List<WalkerReview> reviews = walkerReviewRepository.findByWalkerIdOrderByCreateTimeDesc(walkerId);
         return reviews.stream()
                 .map(WalkerReviewResponse::from)
                 .collect(Collectors.toList());
@@ -137,7 +137,7 @@ public class WalkerReviewService {
     public List<WalkerReviewResponse> getUserReviews(String username) {
         User user = findUserByUsername(username);
 
-        List<WalkerReview> reviews = walkerReviewRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<WalkerReview> reviews = walkerReviewRepository.findByUserIdOrderByCreateTimeDesc(user.getId());
         return reviews.stream()
                 .map(WalkerReviewResponse::from)
                 .collect(Collectors.toList());

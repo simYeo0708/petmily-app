@@ -38,8 +38,8 @@ public class WalkerReviewResponse {
                 .bookingId(review.getBookingId())
                 .rating(review.getRating())
                 .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .updatedAt(review.getUpdatedAt())
+                .createdAt(review.getCreateTime())
+                .updatedAt(review.getUpdateTime())
                 .build();
     }
 

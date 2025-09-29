@@ -6,6 +6,8 @@ import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 public class WalkerProfileResponse {
@@ -17,10 +19,11 @@ public class WalkerProfileResponse {
     private String bio;
     private String experience;
     private Double rating;
-    private Double hourlyRate;
+    private BigDecimal hourlyRate;
     private WalkerStatus status;
     private boolean isAvailable;
-    private String location;
+    private String coordinates;
+    private String serviceArea;
     private boolean isFavorite; // 즐겨찾기 여부
 
     public static WalkerProfileResponse from(WalkerProfile walkerProfile) {
@@ -37,8 +40,29 @@ public class WalkerProfileResponse {
                 .hourlyRate(walkerProfile.getHourlyRate())
                 .status(walkerProfile.getStatus())
                 .isAvailable(walkerProfile.getIsAvailable())
-                .location(walkerProfile.getLocation())
+                .coordinates(walkerProfile.getCoordinates())
+                .serviceArea(walkerProfile.getServiceArea())
                 .isFavorite(false) // 기본값, 서비스에서 별도로 설정
+                .build();
+    }
+
+    public static WalkerProfileResponse from(WalkerProfile walkerProfile, boolean isFavorite) {
+        User user = walkerProfile.getUser();
+        return WalkerProfileResponse.builder()
+                .id(walkerProfile.getId())
+                .userId(walkerProfile.getUserId())
+                .username(user != null ? user.getUsername() : null)
+                .name(user != null ? user.getName() : null)
+                .email(user != null ? user.getEmail() : null)
+                .bio(walkerProfile.getBio())
+                .experience(walkerProfile.getExperience())
+                .rating(walkerProfile.getRating())
+                .hourlyRate(walkerProfile.getHourlyRate())
+                .status(walkerProfile.getStatus())
+                .isAvailable(walkerProfile.getIsAvailable())
+                .coordinates(walkerProfile.getCoordinates())
+                .serviceArea(walkerProfile.getServiceArea())
+                .isFavorite(isFavorite)
                 .build();
     }
 }

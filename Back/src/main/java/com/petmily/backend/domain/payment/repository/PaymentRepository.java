@@ -21,12 +21,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     /**
      * 주문 ID로 결제 내역 조회
      */
-    List<Payment> findByOrderIdOrderByCreatedAtDesc(Long orderId);
+    List<Payment> findByOrderIdOrderByCreateTimeDesc(Long orderId);
 
     /**
      * 사용자의 결제 내역 조회
      */
-    List<Payment> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Payment> findByUserIdOrderByCreateTimeDesc(Long userId);
 
     /**
      * 특정 상태의 결제 내역 조회
@@ -42,8 +42,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      * 사용자의 특정 기간 결제 내역
      */
     @Query("SELECT p FROM Payment p WHERE p.userId = :userId " +
-           "AND p.createdAt BETWEEN :startDate AND :endDate " +
-           "ORDER BY p.createdAt DESC")
+           "AND p.createTime BETWEEN :startDate AND :endDate " +
+           "ORDER BY p.createTime DESC")
     List<Payment> findByUserIdAndDateRange(@Param("userId") Long userId,
                                            @Param("startDate") LocalDateTime startDate,
                                            @Param("endDate") LocalDateTime endDate);
@@ -51,8 +51,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     /**
      * 결제 타입별 조회
      */
-    List<Payment> findByPaymentTypeAndStatusOrderByCreatedAtDesc(Payment.PaymentType paymentType,
-                                                                 Payment.PaymentStatus status);
+    List<Payment> findByPaymentTypeAndStatusOrderByCreateTimeDesc(Payment.PaymentType paymentType,
+                                                                   Payment.PaymentStatus status);
 
     /**
      * 외부 게이트웨이 거래 ID로 조회

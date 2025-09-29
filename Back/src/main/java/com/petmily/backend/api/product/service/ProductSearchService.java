@@ -2,6 +2,7 @@ package com.petmily.backend.api.product.service;
 
 import com.petmily.backend.api.product.dto.ProductListResponse;
 import com.petmily.backend.api.product.dto.ProductSearchRequest;
+import com.petmily.backend.api.product.dto.ProductSummary;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,14 +50,21 @@ public class ProductSearchService {
      */
     private List<Product> getBaseProductList(ProductSearchRequest request) {
         if (request.getCategoryId() != null) {
-            // 카테고리별 조회
-            return productRepository.findByCategoryIdAndIsActiveTrue(request.getCategoryId());
+            // 카테고리별 조회 - 활성 상품만 필터링
+            return productRepository.findByCategoryId(request.getCategoryId()).stream()
+                    .filter(product -> product.getIsActive() != null && product.getIsActive())
+                    .collect(Collectors.toList());
         } else if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
-            // 키워드 검색 (상품명, 설명에서 검색)
-            return productRepository.findByKeywordAndIsActiveTrue(request.getKeyword().trim());
+            // 키워드 검색 - 활성 상품만 필터링
+            return productRepository.findByKeyword(request.getKeyword().trim()).stream()
+                    .filter(product -> product.getIsActive() != null && product.getIsActive())
+                    .collect(Collectors.toList());
         } else {
-            // 전체 상품
-            return productRepository.findByIsActiveTrueOrderByCreatedAtDesc();
+            // 전체 상품 - 활성 상품만
+            return productRepository.findAll().stream()
+                    .filter(product -> product.getIsActive() != null && product.getIsActive())
+                    .sorted((p1, p2) -> p2.getCreateTime().compareTo(p1.getCreateTime()))
+                    .collect(Collectors.toList());
         }
     }
 
@@ -95,12 +106,12 @@ public class ProductSearchService {
 
     private boolean applyPriceFilter(Product product, ProductSearchRequest request) {
         if (request.getMinPrice() != null &&
-            (product.getPrice() == null || product.getPrice().compareTo(request.getMinPrice()) < 0)) {
+            (product.getPrice() == null || product.getPrice() < request.getMinPrice())) {
             return false;
         }
 
         if (request.getMaxPrice() != null &&
-            (product.getPrice() == null || product.getPrice().compareTo(request.getMaxPrice()) > 0)) {
+            (product.getPrice() == null || product.getPrice() > request.getMaxPrice())) {
             return false;
         }
 
@@ -109,12 +120,12 @@ public class ProductSearchService {
 
     private boolean applyRatingFilter(Product product, ProductSearchRequest request) {
         if (request.getMinRating() != null &&
-            (product.getAverageRating() == null || product.getAverageRating() < request.getMinRating())) {
+            (product.getRatingAverage() == null || product.getRatingAverage() < request.getMinRating())) {
             return false;
         }
 
         if (request.getMaxRating() != null &&
-            (product.getAverageRating() == null || product.getAverageRating() > request.getMaxRating())) {
+            (product.getRatingAverage() == null || product.getRatingAverage() > request.getMaxRating())) {
             return false;
         }
 
@@ -123,7 +134,7 @@ public class ProductSearchService {
 
     private boolean applyStockFilter(Product product, ProductSearchRequest request) {
         if (request.getInStock() != null && request.getInStock()) {
-            return product.getStockQuantity() != null && product.getStockQuantity() > 0;
+            return product.getStock() != null && product.getStock() > 0;
         }
         return true;
     }
@@ -138,7 +149,7 @@ public class ProductSearchService {
     private boolean applyNewArrivalFilter(Product product, ProductSearchRequest request) {
         if (request.getNewArrival() != null && request.getNewArrival()) {
             LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-            return product.getCreatedAt() != null && product.getCreatedAt().isAfter(thirtyDaysAgo);
+            return product.getCreateTime() != null && product.getCreateTime().isAfter(thirtyDaysAgo);
         }
         return true;
     }
@@ -237,14 +248,14 @@ public class ProductSearchService {
     private boolean applyReviewFilters(Product product, ProductSearchRequest request) {
         // 최소 리뷰 수 필터
         if (request.getMinReviewCount() != null) {
-            if (product.getReviewsCount() == null || product.getReviewsCount() < request.getMinReviewCount()) {
+            if (product.getReviewCount() == null || product.getReviewCount() < request.getMinReviewCount()) {
                 return false;
             }
         }
 
         // 포토 리뷰 필터 (임시로 리뷰 수가 있으면 포토 리뷰가 있다고 가정)
         if (request.getHasPhotos() != null && request.getHasPhotos()) {
-            return product.getReviewsCount() != null && product.getReviewsCount() > 0;
+            return product.getReviewCount() != null && product.getReviewCount() > 0;
         }
 
         return true;
@@ -256,7 +267,7 @@ public class ProductSearchService {
     private List<Product> applySorting(List<Product> products, ProductSearchRequest request) {
         Comparator<Product> comparator = getComparator(request);
 
-        if (request.getSortDirection() == ProductSearchRequest.SortDirection.DESC) {
+        if (request.getSortDirectionEnum() == ProductSearchRequest.SortDirection.DESC) {
             comparator = comparator.reversed();
         }
 
@@ -266,30 +277,30 @@ public class ProductSearchService {
     }
 
     private Comparator<Product> getComparator(ProductSearchRequest request) {
-        switch (request.getSortBy()) {
+        switch (request.getSortByEnum()) {
             case RELEVANCE:
                 // 키워드 관련도 정렬 (키워드가 있는 경우)
                 return getRelevanceComparator(request.getKeyword());
             case PRICE:
-                return Comparator.comparing(Product::getPrice, Comparator.nullsLast(java.math.BigDecimal::compareTo));
+                return Comparator.comparing(Product::getPrice, Comparator.nullsLast(Double::compareTo));
             case RATING:
-                return Comparator.comparing(Product::getAverageRating, Comparator.nullsLast(Double::compareTo));
+                return Comparator.comparing(Product::getRatingAverage, Comparator.nullsLast(Double::compareTo));
             case REVIEWS_COUNT:
-                return Comparator.comparing(Product::getReviewsCount, Comparator.nullsLast(Integer::compareTo));
+                return Comparator.comparing(Product::getReviewCount, Comparator.nullsLast(Integer::compareTo));
             case SALES_COUNT:
                 return Comparator.comparing(Product::getSalesCount, Comparator.nullsLast(Integer::compareTo));
             case DISCOUNT_RATE:
-                return Comparator.comparing(Product::getDiscountRate, Comparator.nullsLast(Integer::compareTo));
+                return Comparator.comparing(Product::getDiscountRate, Comparator.nullsLast(Double::compareTo));
             case CREATED_DATE:
             default:
-                return Comparator.comparing(Product::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));
+                return Comparator.comparing(Product::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
         }
     }
 
     private Comparator<Product> getRelevanceComparator(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             // 키워드가 없으면 기본 정렬 (생성일)
-            return Comparator.comparing(Product::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));
+            return Comparator.comparing(Product::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
         }
 
         String lowerKeyword = keyword.toLowerCase();
@@ -340,14 +351,32 @@ public class ProductSearchService {
         int end = Math.min((start + pageable.getPageSize()), products.size());
 
         if (start >= products.size()) {
-            return new PageImpl<>(new ArrayList<>(), pageable, products.size());
+            ProductListResponse emptyResponse = ProductListResponse.builder()
+                    .products(new ArrayList<>())
+                    .currentPage(pageable.getPageNumber())
+                    .totalPages(0)
+                    .totalElements(0)
+                    .hasNext(false)
+                    .hasPrevious(false)
+                    .build();
+            return new PageImpl<>(List.of(emptyResponse), pageable, 0);
         }
 
         List<Product> pageContent = products.subList(start, end);
-        List<ProductListResponse> responses = pageContent.stream()
-                .map(ProductListResponse::from)
+        List<ProductSummary> productSummaries = pageContent.stream()
+                .map(ProductSummary::from)
                 .collect(Collectors.toList());
 
-        return new PageImpl<>(responses, pageable, products.size());
+        int totalPages = (int) Math.ceil((double) products.size() / pageable.getPageSize());
+        ProductListResponse response = ProductListResponse.builder()
+                .products(productSummaries)
+                .currentPage(pageable.getPageNumber())
+                .totalPages(totalPages)
+                .totalElements(products.size())
+                .hasNext(pageable.getPageNumber() < totalPages - 1)
+                .hasPrevious(pageable.getPageNumber() > 0)
+                .build();
+
+        return new PageImpl<>(List.of(response), pageable, 1);
     }
 }

@@ -20,8 +20,8 @@ public enum ErrorCode {
     // member
     USER_NOT_FOUND(NOT_FOUND, "회원을 찾을 수 없습니다."),
 
-    // payment history
-    INVALID_PAYMENT(BAD_REQUEST, "결제 정보가 일치하지 않습니다."),
+    // payment
+    PAYMENT_NOT_FOUND(NOT_FOUND, "결제 내역을 찾을 수 없습니다"),
 
     // notification
     NOTIFICATION_NOT_FOUND(NOT_FOUND, "알림을 찾을 수 없습니다."),

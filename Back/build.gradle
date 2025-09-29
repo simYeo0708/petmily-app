@@ -22,6 +22,7 @@ configurations {
     }
     all {
         resolutionStrategy {
+            // ANTLR runtime 버전만 강제로 맞춤 (Spring AI 의존성 문제 방지)
             force "org.antlr:antlr4-runtime:${antlrVersion}"
         }
     }
@@ -47,7 +48,7 @@ dependencies {
     implementation 'com.h2database:h2'
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
     implementation 'com.google.firebase:firebase-admin:9.7.0'
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.19.0'
+    // Jackson 버전을 Spring Boot와 일치시킴 (명시적 지정 제거)
     
     // ANTLR 버전 명시적 지정
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
@@ -80,11 +81,17 @@ dependencyManagement {
 
 tasks.named('test') {
     useJUnitPlatform()
-    maxParallelForks = 1
+    maxParallelForks = Runtime.runtime.availableProcessors()
     testLogging {
         events "passed", "skipped", "failed"
     }
     systemProperties = [
         'spring.profiles.active': 'test'
     ]
+}
+
+// Gradle 빌드 성능 최적화
+tasks.withType(JavaCompile) {
+    options.incremental = true
+    options.fork = true
 }

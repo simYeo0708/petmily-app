@@ -46,6 +46,7 @@ public class WalkerBooking extends BaseTimeEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
     
     @NotNull
@@ -81,12 +82,14 @@ public class WalkerBooking extends BaseTimeEntity {
     private LocalDateTime actualEndTime;
     
     @Column(name = "insurance_covered")
+    @Builder.Default
     private Boolean insuranceCovered = true;
     
     @Column(name = "emergency_contact")
     private String emergencyContact;
     
     @Column(name = "is_regular_package")
+    @Builder.Default
     private Boolean isRegularPackage = false;
     
     @Column(name = "package_frequency")
@@ -94,6 +97,7 @@ public class WalkerBooking extends BaseTimeEntity {
     
     @Enumerated(EnumType.STRING)
     @Column(name = "booking_method")
+    @Builder.Default
     private BookingMethod bookingMethod = BookingMethod.WALKER_SELECTION;
     
     @Column(name = "pickup_location")

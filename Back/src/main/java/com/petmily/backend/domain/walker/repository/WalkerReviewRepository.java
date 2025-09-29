@@ -14,7 +14,7 @@ public interface WalkerReviewRepository extends JpaRepository<WalkerReview, Long
     
     List<WalkerReview> findByWalkerId(Long walkerId);
     
-    List<WalkerReview> findByWalkerIdOrderByCreatedAtDesc(Long walkerId);
+    List<WalkerReview> findByWalkerIdOrderByCreateTimeDesc(Long walkerId);
     
     @Query("SELECT AVG(wr.rating) FROM WalkerReview wr WHERE wr.walkerId = :walkerId")
     Double findAverageRatingByWalkerId(@Param("walkerId") Long walkerId);
@@ -23,7 +23,7 @@ public interface WalkerReviewRepository extends JpaRepository<WalkerReview, Long
     
     List<WalkerReview> findByUserId(Long userId);
     
-    List<WalkerReview> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<WalkerReview> findByUserIdOrderByCreateTimeDesc(Long userId);
     
     Optional<WalkerReview> findByWalkerIdAndUserId(Long walkerId, Long userId);
     

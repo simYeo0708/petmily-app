@@ -136,10 +136,10 @@ public class WalkerSearchService {
 
     // 개별 필터 메소드들
     private boolean applyDistanceFilter(WalkerProfile walker, WalkerSearchRequest request, Coord userCoord) {
-        if (walker.getLocation() == null) return false;
+        if (walker.getCoordinates() == null) return false;
 
         try {
-            String[] coords = walker.getLocation().split(",");
+            String[] coords = walker.getCoordinates().split(",");
             double walkerLat = Double.parseDouble(coords[0]);
             double walkerLon = Double.parseDouble(coords[1]);
 
@@ -306,17 +306,17 @@ public class WalkerSearchService {
             case EXPERIENCE:
                 return Comparator.comparing(WalkerProfile::getExperienceYears, Comparator.nullsLast(Integer::compareTo));
             case CREATED_DATE:
-                return Comparator.comparing(WalkerProfile::getCreatedAt, Comparator.nullsLast(java.time.LocalDateTime::compareTo));
+                return Comparator.comparing(WalkerProfile::getCreateTime, Comparator.nullsLast(java.time.LocalDateTime::compareTo));
             default:
                 return Comparator.comparingDouble(walker -> calculateWalkerDistance(walker, userCoord));
         }
     }
 
     private double calculateWalkerDistance(WalkerProfile walker, Coord userCoord) {
-        if (walker.getLocation() == null) return Double.MAX_VALUE;
+        if (walker.getCoordinates() == null) return Double.MAX_VALUE;
 
         try {
-            String[] coords = walker.getLocation().split(",");
+            String[] coords = walker.getCoordinates().split(",");
             double walkerLat = Double.parseDouble(coords[0]);
             double walkerLon = Double.parseDouble(coords[1]);
 

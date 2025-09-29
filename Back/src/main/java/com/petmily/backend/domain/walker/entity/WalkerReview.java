@@ -1,5 +1,6 @@
 package com.petmily.backend.domain.walker.entity;
 
+import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "walker_reviews")
 @Builder
-public class WalkerReview {
+public class WalkerReview extends BaseTimeEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,14 +44,6 @@ public class WalkerReview {
     
     @Column(columnDefinition = "TEXT")
     private String comment;
-    
-    @CreationTimestamp
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-    
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
     
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)

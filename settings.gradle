@@ -1,7 +1,0 @@
-rootProject.name = 'petmily'
-
-include 'Back'
-include 'Front'
-
-project(':Back').name = 'petmily-backend'
-project(':Front').name = 'petmily-frontend'

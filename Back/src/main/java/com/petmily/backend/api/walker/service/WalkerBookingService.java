@@ -59,7 +59,7 @@ public class WalkerBookingService {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Walker is not currently available");
         }
 
-        double hourlyRate = walker.getHourlyRate() != null ? walker.getHourlyRate() : 20000.0;
+        double hourlyRate = walker.getHourlyRate() != null ? walker.getHourlyRate().doubleValue() : 20000.0;
         double totalPrice = hourlyRate * (request.getDuration() / 60.0);
 
         WalkerBooking booking = new WalkerBooking();

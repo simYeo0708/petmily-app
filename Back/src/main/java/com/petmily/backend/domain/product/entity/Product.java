@@ -68,12 +68,42 @@ public class Product extends BaseTimeEntity {
     @Column(name = "review_count")
     @Builder.Default
     private Integer reviewCount = 0;
-    
+
+    @Column(name = "sale_count")
+    @Builder.Default
+    private Integer saleCount = 0;
+
+    @Column(name = "sales_count")
+    @Builder.Default
+    private Integer salesCount = 0;
+
     @NotNull
     @Column(name = "stock")
     @Builder.Default
     private Integer stock = 0;
-    
+
+    @Column(name = "is_free_shipping")
+    @Builder.Default
+    private Boolean isFreeShipping = false;
+
+    @Column(name = "pet_type")
+    private String petType;
+
+    @Column(name = "pet_size")
+    private String petSize;
+
+    @Column(name = "pet_age")
+    private String petAge;
+
+    @Column(name = "material")
+    private String material;
+
+    @Column(name = "features")
+    private String features;
+
+    @Column(name = "origin")
+    private String origin;
+
     @NotNull
     @Column(name = "category_id")
     private Long categoryId;

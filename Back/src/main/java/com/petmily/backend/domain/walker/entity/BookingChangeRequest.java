@@ -60,6 +60,7 @@ public class BookingChangeRequest extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
+    @Builder.Default
     private ChangeRequestStatus status = ChangeRequestStatus.PENDING;
 
     @Column(name = "walker_response", columnDefinition = "TEXT")

@@ -65,6 +65,15 @@ public class ProductSearchRequest {
         DESC  // 내림차순
     }
 
+    // Enum 반환 메소드들 (새로운 버전)
+    public SortBy getSortByEnum() {
+        return this.sortBy;
+    }
+
+    public SortDirection getSortDirectionEnum() {
+        return this.sortDirection;
+    }
+
     // 기존 호환성을 위한 메소드들 (Deprecated)
     @Deprecated
     public String getSortBy() {
