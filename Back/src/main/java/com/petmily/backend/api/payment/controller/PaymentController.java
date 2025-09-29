@@ -1,9 +1,9 @@
 package com.petmily.backend.api.payment.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.payment.dto.PaymentRequest;
 import com.petmily.backend.api.payment.dto.PaymentResponse;
 import com.petmily.backend.api.payment.service.MockPaymentService;
-import com.petmily.backend.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,7 +17,6 @@ import java.util.List;
 public class PaymentController {
 
     private final MockPaymentService mockPaymentService;
-    private final UserService userService;
 
     /**
      * 결제 처리 (Mock)
@@ -27,9 +26,7 @@ public class PaymentController {
             @RequestBody PaymentRequest request,
             Authentication authentication) {
 
-        String username = authentication.getName();
-        Long userId = userService.findByUsername(username).getId();
-
+        Long userId = SecurityUtils.getUserId(authentication);
         PaymentResponse response = mockPaymentService.processPayment(request, userId);
         return ResponseEntity.ok(response);
     }
@@ -42,9 +39,7 @@ public class PaymentController {
             @PathVariable String transactionId,
             Authentication authentication) {
 
-        String username = authentication.getName();
-        Long userId = userService.findByUsername(username).getId();
-
+        Long userId = SecurityUtils.getUserId(authentication);
         PaymentResponse response = mockPaymentService.cancelPayment(transactionId, userId);
         return ResponseEntity.ok(response);
     }
@@ -57,9 +52,7 @@ public class PaymentController {
             @PathVariable String transactionId,
             Authentication authentication) {
 
-        String username = authentication.getName();
-        Long userId = userService.findByUsername(username).getId();
-
+        Long userId = SecurityUtils.getUserId(authentication);
         PaymentResponse response = mockPaymentService.getPayment(transactionId, userId);
         return ResponseEntity.ok(response);
     }
@@ -69,9 +62,7 @@ public class PaymentController {
      */
     @GetMapping("/my")
     public ResponseEntity<List<PaymentResponse>> getMyPayments(Authentication authentication) {
-        String username = authentication.getName();
-        Long userId = userService.findByUsername(username).getId();
-
+        Long userId = SecurityUtils.getUserId(authentication);
         List<PaymentResponse> responses = mockPaymentService.getUserPayments(userId);
         return ResponseEntity.ok(responses);
     }
@@ -84,9 +75,7 @@ public class PaymentController {
             @PathVariable Long orderId,
             Authentication authentication) {
 
-        String username = authentication.getName();
-        Long userId = userService.findByUsername(username).getId();
-
+        Long userId = SecurityUtils.getUserId(authentication);
         List<PaymentResponse> responses = mockPaymentService.getOrderPayments(orderId, userId);
         return ResponseEntity.ok(responses);
     }

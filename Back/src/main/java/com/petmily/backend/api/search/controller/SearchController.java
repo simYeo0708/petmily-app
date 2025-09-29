@@ -37,7 +37,7 @@ public class SearchController {
         WalkerSearchRequest walkerRequest = new WalkerSearchRequest();
         walkerRequest.setKeyword(keyword);
         walkerRequest.setSize(walkerLimit);
-        Page<WalkerProfileResponse> walkerResults = walkerSearchService.searchWalkers(walkerRequest, authentication.getName());
+        Page<WalkerProfileResponse> walkerResults = walkerSearchService.searchWalkers(walkerRequest, authentication);
 
         // 상품 검색
         ProductSearchRequest productRequest = new ProductSearchRequest();
@@ -69,7 +69,7 @@ public class SearchController {
             @ModelAttribute WalkerSearchRequest request,
             Authentication authentication) {
 
-        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication.getName());
+        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication);
         return ResponseEntity.ok(results);
     }
 
@@ -97,7 +97,7 @@ public class SearchController {
         request.setKeyword(query);
         request.setSize(limit);
 
-        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication.getName());
+        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication);
 
         Map<String, Object> response = new HashMap<>();
         response.put("suggestions", results.getContent().stream()

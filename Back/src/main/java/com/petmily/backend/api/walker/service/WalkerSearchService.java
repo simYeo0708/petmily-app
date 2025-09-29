@@ -1,5 +1,6 @@
 package com.petmily.backend.api.walker.service;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.map.dto.Coord;
@@ -40,10 +41,16 @@ public class WalkerSearchService {
     /**
      * 고급 워커 검색
      */
-    public Page<WalkerProfileResponse> searchWalkers(WalkerSearchRequest request, String username) {
-        // 1. 현재 사용자 정보 및 위치 확인
-        User currentUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "인증된 사용자를 찾을 수 없습니다."));
+    public Page<WalkerProfileResponse> searchWalkers(WalkerSearchRequest request,
+                                                    org.springframework.security.core.Authentication authentication) {
+        // 1. SecurityUtils로 현재 사용자 정보 가져오기
+        User currentUser = SecurityUtils.getUser(authentication);
+
+        // 최신 주소 정보가 필요한 경우만 DB에서 다시 조회
+        if (request.getUserLatitude() == null && request.getUserLongitude() == null) {
+            currentUser = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        }
 
         Coord userCoord = getUserCoordinates(currentUser, request);
 

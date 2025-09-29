@@ -111,8 +111,7 @@ public class WalkerController {
     public ResponseEntity<Page<WalkerProfileResponse>> searchWalkers(
             @ModelAttribute WalkerSearchRequest searchRequest,
             Authentication authentication) {
-        String username = authentication.getName();
-        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(searchRequest, username);
+        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(searchRequest, authentication);
         return ResponseEntity.ok(response);
     }
 
