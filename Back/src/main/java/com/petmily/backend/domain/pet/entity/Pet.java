@@ -20,12 +20,16 @@ public class Pet extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotNull
+    @Column(name = "user_id")
+    private Long userId;
     
     @NotBlank
     private String name;
     
     @NotBlank
-    private String species; // 개, 고양이 등
+    private String species; // 개, 고양이, 기타
     
     private String breed; // 품종
     
@@ -74,18 +78,14 @@ public class Pet extends BaseTimeEntity {
     @Column(name = "is_neutered")
     @Builder.Default
     private Boolean isNeutered = false;
-    
-    @NotNull
-    @Column(name = "user_id")
-    private Long userId;
-    
-    
-    
+
+
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private User user;
-    
+
+
     // Enums
     public enum Size {
         SMALL,   // 소형견/고양이 (5kg 미만)

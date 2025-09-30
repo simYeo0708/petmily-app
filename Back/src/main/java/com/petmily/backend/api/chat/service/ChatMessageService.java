@@ -11,7 +11,7 @@ import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -80,7 +80,7 @@ public class ChatMessageService {
 
     // 예약 상세 정보가 포함된 시스템 메시지 생성
     @Transactional
-    public ChatMessageResponse createBookingSystemMessage(Long chatRoomId, WalkerBooking booking) {
+    public ChatMessageResponse createBookingSystemMessage(Long chatRoomId, WalkBooking booking) {
         try {
             // 예약 정보를 JSON으로 변환
             Map<String, Object> bookingData = new HashMap<>();

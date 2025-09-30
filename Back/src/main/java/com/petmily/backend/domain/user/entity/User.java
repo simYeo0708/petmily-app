@@ -40,45 +40,6 @@ public class User extends BaseTimeEntity {
     private String name;
     private String phone;
 
-    // 비상연락망 정보
-    @Column(name = "emergency_contact_name", length = 50)
-    private String emergencyContactName;
-
-    @Column(name = "emergency_contact_phone", length = 20)
-    private String emergencyContactPhone;
-
-    @Column(name = "emergency_contact_relationship", length = 30)
-    private String emergencyContactRelationship; // 가족, 친구, 기타
-
-    // 알림 설정
-    @Builder.Default
-    @Column(name = "departure_alert_enabled")
-    private Boolean departureAlertEnabled = true;
-
-    @Builder.Default
-    @Column(name = "departure_distance_threshold") // 미터 단위
-    private Integer departureDistanceThreshold = 200;
-
-    @Builder.Default
-    @Column(name = "delay_alert_enabled")
-    private Boolean delayAlertEnabled = true;
-
-    @Builder.Default
-    @Column(name = "delay_time_threshold") // 분 단위
-    private Integer delayTimeThreshold = 10;
-
-    @Builder.Default
-    @Column(name = "walk_start_notification")
-    private Boolean walkStartNotification = true;
-
-    @Builder.Default
-    @Column(name = "walk_complete_notification")
-    private Boolean walkCompleteNotification = true;
-
-    @Builder.Default
-    @Column(name = "emergency_notification")
-    private Boolean emergencyNotification = true;
-
     @Column
     private String provider; // OAuth2 provider (e.g., google, kakao, naver)
 
@@ -91,8 +52,78 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Column(name = "last_login_time")
-    private LocalDateTime lastLoginTime;
+    // 비상연락망 정보
+    @Column(name = "emergency_contact_name", length = 50)
+    private String emergencyContactName;
+
+    @Column(name = "emergency_contact_phone", length = 20)
+    private String emergencyContactPhone;
+
+    @Column(name = "emergency_contact_relationship", length = 30)
+    private String emergencyContactRelationship; // 가족, 친구, 기타
+
+    // ===========================================
+    // 알림 설정 관련 필드들
+    // ===========================================
+
+    /**
+     * 워커 출발 알림 활성화 여부
+     * 워커가 사용자 위치로부터 특정 거리에 접근했을 때 알림을 받을지 설정
+     */
+    @Builder.Default
+    @Column(name = "departure_alert_enabled")
+    private Boolean departureAlertEnabled = true;
+
+    /**
+     * 출발 알림 거리 임계값 (미터 단위)
+     * 워커가 이 거리 내에 접근하면 알림이 발송됨
+     * 기본값: 200미터
+     */
+    @Builder.Default
+    @Column(name = "departure_distance_threshold")
+    private Integer departureDistanceThreshold = 200;
+
+    /**
+     * 지연 알림 활성화 여부
+     * 예약된 산책 시간보다 늦어질 때 알림을 받을지 설정
+     */
+    @Builder.Default
+    @Column(name = "delay_alert_enabled")
+    private Boolean delayAlertEnabled = true;
+
+    /**
+     * 지연 알림 시간 임계값 (분 단위)
+     * 예약 시간보다 이 시간만큼 지연되면 알림이 발송됨
+     * 기본값: 10분
+     */
+    @Builder.Default
+    @Column(name = "delay_time_threshold")
+    private Integer delayTimeThreshold = 10;
+
+    /**
+     * 산책 시작 알림 활성화 여부
+     * 워커가 실제로 산책을 시작했을 때 알림을 받을지 설정
+     */
+    @Builder.Default
+    @Column(name = "walk_start_notification")
+    private Boolean walkStartNotification = true;
+
+    /**
+     * 산책 완료 알림 활성화 여부
+     * 산책이 완료되고 사진/리포트가 업로드되었을 때 알림을 받을지 설정
+     */
+    @Builder.Default
+    @Column(name = "walk_complete_notification")
+    private Boolean walkCompleteNotification = true;
+
+    /**
+     * 응급상황 알림 활성화 여부
+     * 산책 중 응급상황 발생 시 즉시 알림을 받을지 설정
+     * 보안상 중요하므로 기본값은 항상 true로 설정
+     */
+    @Builder.Default
+    @Column(name = "emergency_notification")
+    private Boolean emergencyNotification = true;
 
     public User update(String name, String profile) {
         this.name = name;
@@ -100,36 +131,9 @@ public class User extends BaseTimeEntity {
         return this;
     }
 
-    public void updateLastLoginTime() {
-        this.lastLoginTime = LocalDateTime.now();
-    }
-    
     public String getProfileImageUrl() {
         return this.profile;
     }
-
-    // 비상연락망 헬퍼 메소드
-    public boolean hasEmergencyContact() {
-        return emergencyContactPhone != null && !emergencyContactPhone.trim().isEmpty();
-    }
-
-    public String getEmergencyContactDisplay() {
-        if (!hasEmergencyContact()) {
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        if (emergencyContactName != null && !emergencyContactName.trim().isEmpty()) {
-            sb.append(emergencyContactName);
-            if (emergencyContactRelationship != null && !emergencyContactRelationship.trim().isEmpty()) {
-                sb.append(" (").append(emergencyContactRelationship).append(")");
-            }
-            sb.append(" - ");
-        }
-        sb.append(emergencyContactPhone);
-        return sb.toString();
-    }
-
-
 
     // Relations
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -140,7 +144,7 @@ public class User extends BaseTimeEntity {
     @Builder.Default
     private List<Order> orders = new ArrayList<>();
     
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private WalkerProfile walkerProfile;
     
 }

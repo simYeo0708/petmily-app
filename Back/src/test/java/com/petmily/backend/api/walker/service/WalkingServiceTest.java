@@ -4,7 +4,7 @@ import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.walking.*;
-import com.petmily.backend.api.walker.service.notification.WalkNotificationService;
+import com.petmily.backend.api.walk.service.notification.WalkNotificationService;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;

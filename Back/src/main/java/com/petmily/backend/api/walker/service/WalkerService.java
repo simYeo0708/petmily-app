@@ -49,8 +49,7 @@ public class WalkerService {
 
         WalkerProfile walkerProfile = WalkerProfile.builder()
                 .userId(user.getId())
-                .bio(request.getBio())
-                .experience(request.getExperience())
+                .detailDescription(request.getDetailDescription())
                 .status(WalkerStatus.PENDING)
                 .coordinates(request.getServiceArea())
                 .user(user)
@@ -102,8 +101,8 @@ public class WalkerService {
                 return new ArrayList<>();
             }
 
-            allWalkers = walkerProfileRepository.findByIdInAndStatusAndIsAvailable(
-                favoriteWalkerIds, WalkerStatus.ACTIVE, true);
+            allWalkers = walkerProfileRepository.findByIdInAndStatus(
+                favoriteWalkerIds, WalkerStatus.ACTIVE);
         } else {
             allWalkers = walkerProfileRepository.findAll();
         }
@@ -133,12 +132,10 @@ public class WalkerService {
                             .username(user != null ? user.getUsername() : null)
                             .name(user != null ? user.getName() : null)
                             .email(user != null ? user.getEmail() : null)
-                            .bio(walker.getBio())
-                            .experience(walker.getExperience())
+                            .detailDescription(walker.getDetailDescription())
                             .rating(walker.getRating())
                             .hourlyRate(walker.getHourlyRate())
                             .status(walker.getStatus())
-                            .isAvailable(walker.getIsAvailable())
                             .coordinates(walker.getCoordinates())
                             .isFavorite(isFavorite)
                             .build();
@@ -153,9 +150,7 @@ public class WalkerService {
         WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found for this user."));
 
-        walkerProfile.setIsAvailable(request.isAvailable());
-        walkerProfile.setBio(request.getBio());
-        walkerProfile.setExperience(request.getExperience());
+        walkerProfile.setDetailDescription(request.getDetailDescription());
         walkerProfile.setCoordinates(request.getServiceArea());
         // Update other fields as needed
 

@@ -7,11 +7,13 @@ import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewResponse;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReportRequest;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
+import com.petmily.backend.domain.walk.entity.WalkDetail;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import com.petmily.backend.domain.walker.entity.WalkerReview;
 import com.petmily.backend.domain.walker.entity.WalkerReport;
-import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
+import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
+import com.petmily.backend.domain.walk.repository.WalkDetailRepository;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReviewRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReportRepository;
@@ -31,7 +33,8 @@ public class WalkerReviewService {
     private final WalkerReviewRepository walkerReviewRepository;
     private final WalkerProfileRepository walkerProfileRepository;
     private final UserRepository userRepository;
-    private final WalkerBookingRepository walkerBookingRepository;
+    private final WalkBookingRepository walkBookingRepository;
+    private final WalkDetailRepository walkDetailRepository;
     private final WalkerReportRepository walkerReportRepository;
 
     private User findUserByUsername(String username) {
@@ -55,8 +58,8 @@ public class WalkerReviewService {
         }
     }
 
-    private WalkerBooking findBookingById(Long bookingId) {
-        return walkerBookingRepository.findById(bookingId)
+    private WalkBooking findBookingById(Long bookingId) {
+        return walkBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "예약을 찾을 수 없습니다."));
     }
 
@@ -67,10 +70,10 @@ public class WalkerReviewService {
      * - 한 예약에 대해 한 번만 리뷰 작성 가능
      */
     private void validateReviewEligibility(User user, Long bookingId, Long walkerId) {
-        WalkerBooking booking = findBookingById(bookingId);
+        WalkBooking booking = findBookingById(bookingId);
         
         // 핵심 보안 체크 4가지
-        if (booking.getStatus() != WalkerBooking.BookingStatus.COMPLETED) {
+        if (booking.getStatus() != WalkBooking.BookingStatus.COMPLETED) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "완료된 산책에 대해서만 리뷰를 작성할 수 있습니다.");
         }
         
@@ -184,8 +187,8 @@ public class WalkerReviewService {
         User user = findUserByUsername(username);
         
         // 완료된 예약 중 리뷰가 아직 작성되지 않은 것들만 조회
-        List<WalkerBooking> completedBookings = walkerBookingRepository
-                .findByUserIdAndStatus(user.getId(), WalkerBooking.BookingStatus.COMPLETED);
+        List<WalkBooking> completedBookings = walkBookingRepository
+                .findByUserIdAndStatus(user.getId(), WalkBooking.BookingStatus.COMPLETED);
         
         return completedBookings.stream()
                 .filter(booking -> !walkerReviewRepository.existsByBookingId(booking.getId()))
@@ -195,9 +198,17 @@ public class WalkerReviewService {
                     bookingInfo.put("walkerId", booking.getWalkerId());
                     bookingInfo.put("date", booking.getDate());
                     bookingInfo.put("duration", booking.getDuration());
-                    bookingInfo.put("actualStartTime", booking.getActualStartTime());
-                    bookingInfo.put("actualEndTime", booking.getActualEndTime());
-                    
+
+                    // Get timing information from WalkDetail
+                    WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(booking.getId()).orElse(null);
+                    if (walkDetail != null) {
+                        bookingInfo.put("actualStartTime", walkDetail.getActualStartTime());
+                        bookingInfo.put("actualEndTime", walkDetail.getActualEndTime());
+                    } else {
+                        bookingInfo.put("actualStartTime", null);
+                        bookingInfo.put("actualEndTime", null);
+                    }
+
                     return bookingInfo;
                 })
                 .collect(Collectors.toList());
@@ -216,7 +227,7 @@ public class WalkerReviewService {
 
         // 예약 검증 (예약 ID가 제공된 경우)
         if (request.getBookingId() != null) {
-            WalkerBooking booking = findBookingById(request.getBookingId());
+            WalkBooking booking = findBookingById(request.getBookingId());
             if (!booking.getUserId().equals(user.getId())) {
                 throw new CustomException(ErrorCode.NO_ACCESS, "본인이 예약한 산책에 대해서만 신고할 수 있습니다.");
             }

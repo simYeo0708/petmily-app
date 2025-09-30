@@ -2,6 +2,7 @@ package com.petmily.backend.domain.walker.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.user.entity.User;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -27,59 +28,48 @@ public class WalkerProfile extends BaseTimeEntity {
     @NotNull
     @Column(name = "user_id", unique = true)
     private Long userId;
-    
+
+    @Column(name = "introduction")
+    private String introduction;
+
     @Column(columnDefinition = "TEXT")
-    private String bio;
-    
-    @Column(columnDefinition = "TEXT")
-    private String experience;
-    
-    @Column(name = "rating")
-    @Builder.Default
-    private Double rating = 0.0;
-    
+    private String detailDescription;
+
+    @Column(name = "profile_image_url")
+    private String profileImageUrl;
+
     @NotNull
     @Positive
     @Column(name = "hourly_rate")
     private BigDecimal hourlyRate;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    @Builder.Default
-    private WalkerStatus status = WalkerStatus.PENDING;
-    
     @Column(name = "coordinates")
     private String coordinates;
-    
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
-    
-    @Column(name = "total_walks")
-    @Builder.Default
-    private Integer totalWalks = 0;
-    
-    @Column(name = "is_available")
-    @Builder.Default
-    private Boolean isAvailable = true;
-
-    @Column(name = "introduction")
-    private String introduction;
 
     @Column(name = "service_area")
     private String serviceArea;
-
-    @Column(name = "experience_level")
-    private String experienceLevel;
-
-    @Column(name = "experience_years")
-    @Builder.Default
-    private Integer experienceYears = 0;
 
     @Column(name = "pet_types")
     private String petTypes;
 
     @Column(name = "certifications")
     private String certifications;
+
+    @Column(name = "rating")
+    @Builder.Default
+    private Double rating = 0.0;
+
+    @Column(name = "walks_count")
+    @Builder.Default
+    private Integer walksCount = 0;
+
+    @Column(name = "reviews_count")
+    @Builder.Default
+    private Integer reviewsCount = 0;
+
+    @Column(name = "experience_years")
+    @Builder.Default
+    private Integer experienceYears = 0;
 
     @Column(name = "is_insured")
     @Builder.Default
@@ -97,9 +87,10 @@ public class WalkerProfile extends BaseTimeEntity {
     @Builder.Default
     private Boolean emergencyService = false;
 
-    @Column(name = "reviews_count")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     @Builder.Default
-    private Integer reviewsCount = 0;
+    private WalkerStatus status = WalkerStatus.PENDING;
 
     // Relations
     @OneToOne(fetch = FetchType.LAZY)
@@ -108,7 +99,7 @@ public class WalkerProfile extends BaseTimeEntity {
     
     @OneToMany(mappedBy = "walker", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<WalkerBooking> bookings = new ArrayList<>();
+    private List<WalkBooking> bookings = new ArrayList<>();
     
     @OneToMany(mappedBy = "walker", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default

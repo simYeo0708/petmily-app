@@ -1,6 +1,7 @@
 package com.petmily.backend.domain.walker.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -52,7 +53,7 @@ public class WalkerReview extends BaseTimeEntity {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", insertable = false, updatable = false)
-    private WalkerBooking booking;
+    private WalkBooking booking;
 
 }
 

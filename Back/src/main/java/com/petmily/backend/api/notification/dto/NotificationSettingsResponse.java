@@ -1,6 +1,6 @@
 package com.petmily.backend.api.notification.dto;
 
-import com.petmily.backend.domain.walker.entity.NotificationSetting;
+import com.petmily.backend.domain.walk.entity.NotificationSetting;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

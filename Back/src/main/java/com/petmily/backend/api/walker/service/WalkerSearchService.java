@@ -104,11 +104,11 @@ public class WalkerSearchService {
                     .map(FavoriteWalker::getWalkerId)
                     .collect(Collectors.toList());
 
-            return walkerProfileRepository.findByIdInAndStatusAndIsAvailable(
-                    favoriteWalkerIds, WalkerStatus.ACTIVE, true);
+            return walkerProfileRepository.findByIdInAndStatus(
+                    favoriteWalkerIds, WalkerStatus.ACTIVE);
         } else {
             // 모든 활성 워커
-            return walkerProfileRepository.findByStatusAndIsAvailable(WalkerStatus.ACTIVE, true);
+            return walkerProfileRepository.findByStatus(WalkerStatus.ACTIVE);
         }
     }
 
@@ -123,7 +123,6 @@ public class WalkerSearchService {
                 .filter(walker -> applyKeywordFilter(walker, request))
                 .filter(walker -> applyRatingFilter(walker, request))
                 .filter(walker -> applyHourlyRateFilter(walker, request))
-                .filter(walker -> applyExperienceFilter(walker, request))
                 .filter(walker -> applyServiceAreaFilter(walker, request))
                 .filter(walker -> applyPetTypesFilter(walker, request))
                 .filter(walker -> applyCertificationsFilter(walker, request))
@@ -196,14 +195,6 @@ public class WalkerSearchService {
         }
 
         return true;
-    }
-
-    private boolean applyExperienceFilter(WalkerProfile walker, WalkerSearchRequest request) {
-        if (request.getExperienceLevel() == null || request.getExperienceLevel().trim().isEmpty()) {
-            return true;
-        }
-
-        return Objects.equals(walker.getExperienceLevel(), request.getExperienceLevel());
     }
 
     private boolean applyServiceAreaFilter(WalkerProfile walker, WalkerSearchRequest request) {

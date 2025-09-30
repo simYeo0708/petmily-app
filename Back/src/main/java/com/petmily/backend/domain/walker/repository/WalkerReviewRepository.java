@@ -1,6 +1,7 @@
 package com.petmily.backend.domain.walker.repository;
 
 import com.petmily.backend.domain.walker.entity.WalkerReview;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,7 +34,7 @@ public interface WalkerReviewRepository extends JpaRepository<WalkerReview, Long
     boolean existsByBookingId(Long bookingId);
     
     // Check if user has completed bookings with the walker
-    @Query("SELECT COUNT(wb) FROM WalkerBooking wb WHERE wb.userId = :userId AND wb.walkerId = :walkerId AND wb.status = 'COMPLETED'")
+    @Query("SELECT COUNT(wb) FROM WalkBooking wb WHERE wb.userId = :userId AND wb.walkerId = :walkerId AND wb.status = 'COMPLETED'")
     Long countCompletedBookingsByUserAndWalker(@Param("userId") Long userId, @Param("walkerId") Long walkerId);
     
 }

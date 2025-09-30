@@ -15,37 +15,35 @@ import java.util.Optional;
 @Repository
 public interface WalkerProfileRepository extends JpaRepository<WalkerProfile, Long> {
     
-    List<WalkerProfile> findByIsAvailableTrue();
-    
-    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.isAvailable = true")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.status = 'ACTIVE'")
     List<WalkerProfile> findByLocationAndAvailable(@Param("location") String location);
 
-    @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate <= :maxRate AND w.isAvailable = true")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate <= :maxRate AND w.status = 'ACTIVE'")
     List<WalkerProfile> findByHourlyRateLessThanEqualAndAvailable(@Param("maxRate") BigDecimal maxRate);
 
     Optional<WalkerProfile> findByUserId(Long userId);
 
     // 모바일 최적화용 지역 기반 검색 (페이징 지원)
-    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.isAvailable = true ORDER BY w.rating DESC")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.coordinates LIKE %:location% AND w.status = 'ACTIVE' ORDER BY w.rating DESC")
     List<WalkerProfile> findTopRatedByLocationAndAvailable(@Param("location") String location);
 
     // 가격대별 검색 (페이징 지원)
-    @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate BETWEEN :minRate AND :maxRate AND w.isAvailable = true ORDER BY w.hourlyRate ASC")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.hourlyRate BETWEEN :minRate AND :maxRate AND w.status = 'ACTIVE' ORDER BY w.hourlyRate ASC")
     List<WalkerProfile> findByPriceRangeAndAvailable(@Param("minRate") BigDecimal minRate, @Param("maxRate") BigDecimal maxRate);
-    
+
     // 최고 평점 워커 검색
-    @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true AND w.rating >= :minRating ORDER BY w.rating DESC, w.totalWalks DESC")
+    @Query("SELECT w FROM WalkerProfile w WHERE w.status = 'ACTIVE' AND w.rating >= :minRating ORDER BY w.rating DESC, w.walksCount DESC")
     List<WalkerProfile> findTopRatedWalkers(@Param("minRating") Double minRating);
 
     // 즐겨찾기 워커 필터용
-    List<WalkerProfile> findByIdInAndStatusAndIsAvailable(List<Long> ids, WalkerStatus status, Boolean isAvailable);
+    List<WalkerProfile> findByIdInAndStatus(List<Long> ids, WalkerStatus status);
 
     // DashboardService용 페이징 지원 메서드
-    @Query("SELECT w FROM WalkerProfile w WHERE w.isAvailable = true ORDER BY w.rating DESC")
-    List<WalkerProfile> findByIsAvailableTrueOrderByRatingDesc(Pageable pageable);
+    @Query("SELECT w FROM WalkerProfile w WHERE w.status = 'ACTIVE' ORDER BY w.rating DESC")
+    List<WalkerProfile> findByStatusActiveOrderByRatingDesc(Pageable pageable);
 
     // WalkerSearchService용 메소드
-    List<WalkerProfile> findByStatusAndIsAvailable(WalkerStatus status, Boolean isAvailable);
+    List<WalkerProfile> findByStatus(WalkerStatus status);
 
 }
 

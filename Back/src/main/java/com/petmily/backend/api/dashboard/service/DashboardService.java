@@ -4,14 +4,14 @@ import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.pet.dto.PetSummaryResponse;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.WalkBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
+import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -28,7 +28,7 @@ public class DashboardService {
 
     private final UserRepository userRepository;
     private final PetRepository petRepository;
-    private final WalkerBookingRepository walkerBookingRepository;
+    private final WalkBookingRepository walkBookingRepository;
     private final WalkerProfileRepository walkerProfileRepository;
 
     public DashboardResponse getDashboard(String username) {
@@ -55,7 +55,6 @@ public class DashboardService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .profileImageUrl(user.getProfileImageUrl())
-                .lastLoginTime(user.getLastLoginTime())
                 .membershipLevel("일반") // 향후 확장 가능
                 .build();
     }
@@ -88,56 +87,56 @@ public class DashboardService {
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
         return (int) pets.stream()
                 .filter(pet -> {
-                    List<WalkerBooking> recentWalks = walkerBookingRepository
-                            .findByPetIdAndStatusAndActualStartTimeAfter(
+                    List<WalkBooking> recentWalks = walkBookingRepository
+                            .findByPetIdAndStatusAndCreateTimeAfter(
                                     pet.getId(),
-                                    WalkerBooking.BookingStatus.COMPLETED,
+                                    WalkBooking.BookingStatus.COMPLETED,
                                     threeDaysAgo);
                     return recentWalks.isEmpty();
                 })
                 .count();
     }
 
-    private List<WalkerBookingResponse> getRecentBookings(Long userId) {
-        return walkerBookingRepository
-                .findByUserIdAndStatusOrderByCreateTimeDesc(userId, WalkerBooking.BookingStatus.COMPLETED)
+    private List<WalkBookingResponse> getRecentBookings(Long userId) {
+        return walkBookingRepository
+                .findByUserIdAndStatusOrderByCreateTimeDesc(userId, WalkBooking.BookingStatus.COMPLETED)
                 .stream()
                 .limit(3)
-                .map(WalkerBookingResponse::from)
+                .map(WalkBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
-    private List<WalkerBookingResponse> getUpcomingBookings(Long userId) {
-        return walkerBookingRepository
+    private List<WalkBookingResponse> getUpcomingBookings(Long userId) {
+        return walkBookingRepository
                 .findByUserIdAndStatusInOrderByDateAsc(userId,
-                        List.of(WalkerBooking.BookingStatus.PENDING,
-                               WalkerBooking.BookingStatus.CONFIRMED))
+                        List.of(WalkBooking.BookingStatus.PENDING,
+                               WalkBooking.BookingStatus.CONFIRMED))
                 .stream()
                 .limit(5)
-                .map(WalkerBookingResponse::from)
+                .map(WalkBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
     private DashboardResponse.WalkingStats buildWalkingStats(Long userId) {
-        List<WalkerBooking> completedWalks = walkerBookingRepository
-                .findByUserIdAndStatus(userId, WalkerBooking.BookingStatus.COMPLETED);
+        List<WalkBooking> completedWalks = walkBookingRepository
+                .findByUserIdAndStatus(userId, WalkBooking.BookingStatus.COMPLETED);
 
-        List<WalkerBooking> upcomingWalks = walkerBookingRepository
+        List<WalkBooking> upcomingWalks = walkBookingRepository
                 .findByUserIdAndStatusIn(userId,
-                        List.of(WalkerBooking.BookingStatus.PENDING,
-                               WalkerBooking.BookingStatus.CONFIRMED));
+                        List.of(WalkBooking.BookingStatus.PENDING,
+                               WalkBooking.BookingStatus.CONFIRMED));
 
         // 이번 달 산책 시간 계산
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0);
-        int walkingHoursThisMonth = walkerBookingRepository
-                .findByUserIdAndStatusAndActualStartTimeAfter(userId,
-                        WalkerBooking.BookingStatus.COMPLETED, startOfMonth)
+        int walkingHoursThisMonth = walkBookingRepository
+                .findByUserIdAndStatusAndCreateTimeAfter(userId,
+                        WalkBooking.BookingStatus.COMPLETED, startOfMonth)
                 .stream()
-                .mapToInt(WalkerBooking::getDuration)
+                .mapToInt(WalkBooking::getDuration)
                 .sum() / 60; // 분을 시간으로 변환
 
         Double totalSpent = completedWalks.stream()
-                .mapToDouble(WalkerBooking::getTotalPrice)
+                .mapToDouble(WalkBooking::getTotalPrice)
                 .sum();
 
         return DashboardResponse.WalkingStats.builder()
@@ -152,7 +151,7 @@ public class DashboardService {
     private List<WalkerSummaryResponse> getRecommendedWalkers(Long userId) {
         // 평점 높은 순으로 추천
         return walkerProfileRepository
-                .findByIsAvailableTrueOrderByRatingDesc(PageRequest.of(0, 5))
+                .findByStatusActiveOrderByRatingDesc(PageRequest.of(0, 5))
                 .stream()
                 .map(WalkerSummaryResponse::from)
                 .collect(Collectors.toList());
@@ -186,7 +185,7 @@ public class DashboardService {
     }
 
     private DashboardResponse.OverallStats buildOverallStats(User user) {
-        int totalActivities = walkerBookingRepository
+        int totalActivities = walkBookingRepository
                 .findByUserId(user.getId()).size();
 
         return DashboardResponse.OverallStats.builder()

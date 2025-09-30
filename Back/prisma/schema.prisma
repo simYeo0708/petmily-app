@@ -50,6 +50,7 @@ model User {
 
 model Pet {
   id                 BigInt         @id @default(autoincrement())
+  userId             BigInt         @map("user_id")
   name               String
   species            String
   breed              String?
@@ -67,7 +68,6 @@ model Pet {
   goodWithChildren   Boolean?       @map("good_with_children")
   goodWithOtherPets  Boolean?       @map("good_with_other_pets")
   isNeutered         Boolean?       @default(false) @map("is_neutered")
-  userId             BigInt         @map("user_id")
   createTime         DateTime       @default(now())
   updateTime         DateTime?      @updatedAt
 
@@ -171,30 +171,27 @@ model OrderItem {
 }
 
 model WalkerProfile {
-  id                BigInt       @id @default(autoincrement())
-  userId            BigInt       @unique @map("user_id")
-  bio               String?      @db.Text
-  experience        String?      @db.Text
-  rating            Float?       @default(0.0)
-  hourlyRate        Decimal      @map("hourly_rate")
-  status            WalkerStatus @default(PENDING)
-  coordinates       String?
-  profileImageUrl   String?      @map("profile_image_url")
-  totalWalks        Int?         @default(0) @map("total_walks")
-  isAvailable       Boolean?     @default(true) @map("is_available")
-  introduction      String?
-  serviceArea       String?      @map("service_area")
-  experienceLevel   String?      @map("experience_level")
-  experienceYears   Int?         @default(0) @map("experience_years")
-  petTypes          String?      @map("pet_types")
-  certifications    String?
-  isInsured         Boolean?     @default(false) @map("is_insured")
-  instantBooking    Boolean?     @default(false) @map("instant_booking")
-  weekendAvailable  Boolean?     @default(false) @map("weekend_available")
-  emergencyService  Boolean?     @default(false) @map("emergency_service")
-  reviewsCount      Int?         @default(0) @map("reviews_count")
-  createTime        DateTime     @default(now())
-  updateTime        DateTime?    @updatedAt
+  id               BigInt       @id @default(autoincrement())
+  userId           BigInt       @unique @map("user_id")
+  detailDescription String?     @db.Text @map("detail_description")
+  rating           Float?       @default(0.0)
+  hourlyRate       Decimal      @map("hourly_rate")
+  status           WalkerStatus @default(PENDING)
+  coordinates      String?
+  profileImageUrl  String?      @map("profile_image_url")
+  walksCount       Int?         @default(0) @map("walks_count")
+  introduction     String?
+  serviceArea      String?      @map("service_area")
+  experienceYears  Int?         @default(0) @map("experience_years")
+  petTypes         String?      @map("pet_types")
+  certifications   String?
+  isInsured        Boolean?     @default(false) @map("is_insured")
+  instantBooking   Boolean?     @default(false) @map("instant_booking")
+  weekendAvailable Boolean?     @default(false) @map("weekend_available")
+  emergencyService Boolean?     @default(false) @map("emergency_service")
+  reviewsCount     Int?         @default(0) @map("reviews_count")
+  createTime       DateTime     @default(now())
+  updateTime       DateTime?    @updatedAt
 
   user            User             @relation(fields: [userId], references: [id])
   bookings        WalkerBooking[]
@@ -206,45 +203,87 @@ model WalkerProfile {
   @@map("walker_profiles")
 }
 
-model WalkerBooking {
-  id                BigInt        @id @default(autoincrement())
-  userId            BigInt        @map("user_id")
-  walkerId          BigInt        @map("walker_id")
-  petId             BigInt        @map("pet_id")
-  date              DateTime
-  duration          Int
-  status            BookingStatus @default(PENDING)
-  totalPrice        Float         @map("total_price")
-  notes             String?       @db.Text
-  walkerLocation    String?       @map("walker_location")
-  walkStartLocation String?       @map("walk_start_location")
-  walkEndLocation   String?       @map("walk_end_location")
-  startPhotoUrl     String?       @map("start_photo_url")
-  middlePhotoUrl    String?       @map("middle_photo_url")
-  endPhotoUrl       String?       @map("end_photo_url")
-  actualStartTime   DateTime?     @map("actual_start_time")
-  actualEndTime     DateTime?     @map("actual_end_time")
-  insuranceCovered  Boolean?      @default(true) @map("insurance_covered")
-  emergencyContact  String?       @map("emergency_contact")
-  isRegularPackage  Boolean?      @default(false) @map("is_regular_package")
-  packageFrequency  String?       @map("package_frequency")
-  bookingMethod     BookingMethod @default(WALKER_SELECTION) @map("booking_method")
-  pickupLocation    String?       @map("pickup_location")
-  pickupAddress     String?       @map("pickup_address")
-  dropoffLocation   String?       @map("dropoff_location")
-  dropoffAddress    String?       @map("dropoff_address")
-  createTime        DateTime      @default(now())
-  updateTime        DateTime?     @updatedAt
+model WalkBooking {
+  id               BigInt        @id @default(autoincrement())
+  userId           BigInt        @map("user_id")
+  walkerId         BigInt        @map("walker_id")
+  petId            BigInt        @map("pet_id")
+  date             DateTime
+  duration         Int
+  status           BookingStatus @default(PENDING)
+  totalPrice       Float         @map("total_price")
+  notes            String?       @db.Text
+  pickupLocation   String?       @map("pickup_location")
+  pickupAddress    String?       @map("pickup_address")
+  dropoffLocation  String?       @map("dropoff_location")
+  dropoffAddress   String?       @map("dropoff_address")
+  insuranceCovered Boolean?      @default(true) @map("insurance_covered")
+  emergencyContact String?       @map("emergency_contact")
+  isRegularPackage Boolean?      @default(false) @map("is_regular_package")
+  packageFrequency String?       @map("package_frequency")
+  bookingMethod    BookingMethod @default(WALKER_SELECTION) @map("booking_method")
+  createTime       DateTime      @default(now())
+  updateTime       DateTime?     @updatedAt
 
   user           User                   @relation(fields: [userId], references: [id])
   walker         WalkerProfile          @relation(fields: [walkerId], references: [id])
   pet            Pet                    @relation(fields: [petId], references: [id])
+  walkDetail     WalkDetail?
+  walkReport     WalkReport?
   reviews        WalkerReview[]
   walkingTracks  WalkingTrack[]
   chatRooms      ChatRoom[]
   changeRequests BookingChangeRequest[]
 
-  @@map("walker_bookings")
+  @@map("walk_bookings")
+}
+
+model WalkDetail {
+  id                BigInt       @id @default(autoincrement())
+  walkBookingId     BigInt       @unique @map("walk_booking_id")
+  actualStartTime   DateTime?    @map("actual_start_time")
+  actualEndTime     DateTime?    @map("actual_end_time")
+  walkerLocation    String?      @map("walker_location")
+  walkStartLocation String?      @map("walk_start_location")
+  walkEndLocation   String?      @map("walk_end_location")
+  walkingRoute      String?      @db.Text @map("walking_route")
+  totalDistance     Float?       @map("total_distance")
+  weatherCondition  String?      @map("weather_condition")
+  temperature       Int?         @map("temperature")
+  specialIncidents  String?      @db.Text @map("special_incidents")
+  walkStatus        WalkStatus   @default(NOT_STARTED) @map("walk_status")
+  createTime        DateTime     @default(now())
+  updateTime        DateTime?    @updatedAt
+
+  walkBooking WalkBooking @relation(fields: [walkBookingId], references: [id])
+
+  @@map("walk_details")
+}
+
+model WalkReport {
+  id                BigInt       @id @default(autoincrement())
+  walkBookingId     BigInt       @unique @map("walk_booking_id")
+  startPhotoUrl     String?      @map("start_photo_url")
+  middlePhotoUrl    String?      @map("middle_photo_url")
+  endPhotoUrl       String?      @map("end_photo_url")
+  additionalPhotos  String?      @db.Text @map("additional_photos")
+  walkerNotes       String?      @db.Text @map("walker_notes")
+  petBehavior       String?      @db.Text @map("pet_behavior")
+  healthNotes       String?      @db.Text @map("health_notes")
+  feedingInfo       String?      @map("feeding_info")
+  bathroomBreaks    Int?         @map("bathroom_breaks")
+  energyLevel       EnergyLevel? @map("energy_level")
+  mood              Mood?        @map("mood")
+  socializationNotes String?     @map("socialization_notes")
+  walkerRating      Int?         @map("walker_rating")
+  ownerFeedback     String?      @db.Text @map("owner_feedback")
+  reportCompleted   Boolean?     @default(false) @map("report_completed")
+  createTime        DateTime     @default(now())
+  updateTime        DateTime?    @updatedAt
+
+  walkBooking WalkBooking @relation(fields: [walkBookingId], references: [id])
+
+  @@map("walk_reports")
 }
 
 model WalkerReview {
@@ -564,6 +603,7 @@ enum WalkerStatus {
   REJECTED
   ACTIVE
   INACTIVE
+  UNAVAILABLE
   SUSPENDED
 }
 
@@ -580,6 +620,30 @@ enum BookingStatus {
 enum BookingMethod {
   WALKER_SELECTION
   OPEN_REQUEST
+}
+
+enum WalkStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  INTERRUPTED
+}
+
+enum EnergyLevel {
+  VERY_LOW
+  LOW
+  NORMAL
+  HIGH
+  VERY_HIGH
+}
+
+enum Mood {
+  EXCELLENT
+  GOOD
+  NORMAL
+  ANXIOUS
+  STRESSED
 }
 
 enum ChatType {

@@ -214,7 +214,7 @@ public class PetService {
         pet.setGoodWithChildren(request.getGoodWithChildren());
         pet.setGoodWithOtherPets(request.getGoodWithOtherPets());
         pet.setIsNeutered(request.getIsNeutered());
-        pet.setUserId(userId);
+        pet.setUserId(user.getId());
 
         Pet savedPet = petRepository.save(pet);
         return PetResponse.from(savedPet);

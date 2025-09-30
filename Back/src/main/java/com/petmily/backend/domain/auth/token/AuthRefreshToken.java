@@ -21,7 +21,7 @@ public class AuthRefreshToken {
     private String token;
 
     @Column(nullable = false)
-    private Long userId; // Assuming userId is a Long, adjust if User entity uses a different type
+    private Long userId;
 
     @Column(nullable = false)
     private Instant expirationDate;

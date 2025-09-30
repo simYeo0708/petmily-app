@@ -20,10 +20,9 @@ public class WalkerSummaryResponse {
     private String profileImageUrl;
     private String location;
     private Double rating;
-    private Integer totalWalks;
+    private Integer walksCount;
     private Double pricePerHour;
     private WalkerStatus status;
-    private Boolean isAvailable;
     
     public static WalkerSummaryResponse from(WalkerProfile walker) {
         return WalkerSummaryResponse.builder()
@@ -33,10 +32,9 @@ public class WalkerSummaryResponse {
                 .profileImageUrl(walker.getProfileImageUrl())
                 .location(walker.getCoordinates())
                 .rating(walker.getRating())
-                .totalWalks(walker.getTotalWalks())
+                .walksCount(walker.getWalksCount())
                 .pricePerHour(walker.getHourlyRate() != null ? walker.getHourlyRate().doubleValue() : null)
                 .status(walker.getStatus())
-                .isAvailable(walker.getIsAvailable())
                 .build();
     }
 }

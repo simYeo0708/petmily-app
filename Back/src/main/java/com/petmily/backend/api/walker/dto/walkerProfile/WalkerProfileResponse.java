@@ -16,12 +16,10 @@ public class WalkerProfileResponse {
     private String username;
     private String name;
     private String email;
-    private String bio;
-    private String experience;
+    private String detailDescription;
     private Double rating;
     private BigDecimal hourlyRate;
     private WalkerStatus status;
-    private boolean isAvailable;
     private String coordinates;
     private String serviceArea;
     private boolean isFavorite; // 즐겨찾기 여부
@@ -34,12 +32,10 @@ public class WalkerProfileResponse {
                 .username(user != null ? user.getUsername() : null)
                 .name(user != null ? user.getName() : null)
                 .email(user != null ? user.getEmail() : null)
-                .bio(walkerProfile.getBio())
-                .experience(walkerProfile.getExperience())
+                .detailDescription(walkerProfile.getDetailDescription())
                 .rating(walkerProfile.getRating())
                 .hourlyRate(walkerProfile.getHourlyRate())
                 .status(walkerProfile.getStatus())
-                .isAvailable(walkerProfile.getIsAvailable())
                 .coordinates(walkerProfile.getCoordinates())
                 .serviceArea(walkerProfile.getServiceArea())
                 .isFavorite(false) // 기본값, 서비스에서 별도로 설정
@@ -54,12 +50,10 @@ public class WalkerProfileResponse {
                 .username(user != null ? user.getUsername() : null)
                 .name(user != null ? user.getName() : null)
                 .email(user != null ? user.getEmail() : null)
-                .bio(walkerProfile.getBio())
-                .experience(walkerProfile.getExperience())
+                .detailDescription(walkerProfile.getDetailDescription())
                 .rating(walkerProfile.getRating())
                 .hourlyRate(walkerProfile.getHourlyRate())
                 .status(walkerProfile.getStatus())
-                .isAvailable(walkerProfile.getIsAvailable())
                 .coordinates(walkerProfile.getCoordinates())
                 .serviceArea(walkerProfile.getServiceArea())
                 .isFavorite(isFavorite)
