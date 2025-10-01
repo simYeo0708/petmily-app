@@ -9,9 +9,7 @@ import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.entity.WalkDetail;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
-import com.petmily.backend.domain.walker.entity.WalkerReview;
-import com.petmily.backend.domain.walker.entity.WalkerReport;
+import com.petmily.backend.domain.walker.entity.*;
 import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walk.repository.WalkDetailRepository;
 import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
@@ -200,7 +198,7 @@ public class WalkerReviewService {
                     bookingInfo.put("duration", booking.getDuration());
 
                     // Get timing information from WalkDetail
-                    WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(booking.getId()).orElse(null);
+                    WalkDetail walkDetail = walkDetailRepository.findByBookingId(booking.getId()).orElse(null);
                     if (walkDetail != null) {
                         bookingInfo.put("actualStartTime", walkDetail.getActualStartTime());
                         bookingInfo.put("actualEndTime", walkDetail.getActualEndTime());
@@ -240,10 +238,10 @@ public class WalkerReviewService {
                 .reporterUserId(user.getId())
                 .reportedWalkerId(request.getWalkerId())
                 .bookingId(request.getBookingId())
-                .reportType(WalkerReport.ReportType.valueOf(request.getReportType().name()))
+                .reportType(ReportType.valueOf(request.getReportType().name()))
                 .reason(request.getReason())
                 .description(request.getDescription())
-                .status(WalkerReport.ReportStatus.PENDING)
+                .status(ReportStatus.PENDING)
                 .build();
 
         walkerReportRepository.save(report);

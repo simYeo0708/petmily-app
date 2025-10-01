@@ -49,6 +49,7 @@ public class WalkerProfile extends BaseTimeEntity {
     @Column(name = "service_area")
     private String serviceArea;
 
+    // 산책 가능한 펫 종류
     @Column(name = "pet_types")
     private String petTypes;
 

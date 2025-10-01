@@ -16,5 +16,4 @@ public interface FavoriteWalkerRepository extends JpaRepository<FavoriteWalker, 
 
     boolean existsByUserIdAndWalkerIdAndIsActiveTrue(Long userId, Long walkerId);
 
-    void deleteByUserIdAndWalkerId(Long userId, Long walkerId);
 }

@@ -44,38 +44,4 @@ public class WalkerReport extends BaseTimeEntity {
     @Column(name = "admin_notes", columnDefinition = "TEXT")
     private String adminNotes;
 
-    public enum ReportType {
-        INAPPROPRIATE_BEHAVIOR("부적절한 행동"),
-        NO_SHOW("노쇼"),
-        POOR_SERVICE("서비스 불량"),
-        SAFETY_ISSUE("안전 문제"),
-        COMMUNICATION_ISSUE("의사소통 문제"),
-        OTHER("기타");
-
-        private final String displayName;
-
-        ReportType(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
-
-    public enum ReportStatus {
-        PENDING("검토중"),
-        RESOLVED("해결완료"),
-        DISMISSED("기각");
-
-        private final String displayName;
-
-        ReportStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
 }

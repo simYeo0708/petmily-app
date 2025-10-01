@@ -70,7 +70,6 @@ public class WalkBookingService {
         booking.setDuration(request.getDuration());
         booking.setTotalPrice(totalPrice);
         booking.setNotes(request.getNotes());
-        booking.setEmergencyContact(request.getEmergencyContact());
         booking.setIsRegularPackage(request.getIsRegularPackage());
         booking.setPackageFrequency(request.getPackageFrequency());
         booking.setBookingMethod(WalkBooking.BookingMethod.WALKER_SELECTION);
@@ -100,7 +99,6 @@ public class WalkBookingService {
         booking.setDuration(request.getDuration());
         booking.setTotalPrice(estimatedPrice);
         booking.setNotes(request.getNotes());
-        booking.setEmergencyContact(request.getEmergencyContact());
         booking.setIsRegularPackage(request.getIsRegularPackage());
         booking.setPackageFrequency(request.getPackageFrequency());
         booking.setBookingMethod(WalkBooking.BookingMethod.OPEN_REQUEST);
@@ -249,7 +247,6 @@ public class WalkBookingService {
         application.setDuration(openRequest.getDuration());
         application.setTotalPrice(request.getProposedPrice() != null ? request.getProposedPrice() : openRequest.getTotalPrice());
         application.setNotes(request.getMessage());
-        application.setEmergencyContact(openRequest.getEmergencyContact());
         application.setIsRegularPackage(openRequest.getIsRegularPackage());
         application.setPackageFrequency(openRequest.getPackageFrequency());
         application.setBookingMethod(WalkBooking.BookingMethod.OPEN_REQUEST);
@@ -362,7 +359,6 @@ public class WalkBookingService {
                 .newDropoffAddress(request.getNewDropoffAddress())
                 .newNotes(request.getNewNotes())
                 .newInsuranceCovered(request.getNewInsuranceCovered())
-                .newEmergencyContact(request.getNewEmergencyContact())
                 .changeReason(request.getChangeReason())
                 .status(BookingChangeRequest.ChangeRequestStatus.PENDING)
                 .build();
@@ -432,9 +428,6 @@ public class WalkBookingService {
         }
         if (changeRequest.getNewInsuranceCovered() != null) {
             booking.setInsuranceCovered(changeRequest.getNewInsuranceCovered());
-        }
-        if (changeRequest.getNewEmergencyContact() != null) {
-            booking.setEmergencyContact(changeRequest.getNewEmergencyContact());
         }
     }
 

@@ -27,9 +27,6 @@ public class WalkBookingResponse {
     private String notes;
     
     // Location and tracking
-    private String walkerLocation;
-    private String walkStartLocation;
-    private String walkEndLocation;
     
     // Photo verification
     private String startPhotoUrl;
@@ -79,7 +76,7 @@ public class WalkBookingResponse {
                 .totalPrice(booking.getTotalPrice())
                 .notes(booking.getNotes())
                 .insuranceCovered(booking.getInsuranceCovered())
-                .emergencyContact(booking.getEmergencyContact())
+                .emergencyContact(booking.getUser() != null ? booking.getUser().getEmergencyContactPhone() : null)
                 .isRegularPackage(booking.getIsRegularPackage())
                 .packageFrequency(booking.getPackageFrequency())
                 .bookingMethod(booking.getBookingMethod())
@@ -96,9 +93,7 @@ public class WalkBookingResponse {
 
         // Add WalkDetail fields if present
         if (detail != null) {
-            builder.walkerLocation(detail.getWalkerLocation())
-                   .walkStartLocation(detail.getWalkStartLocation())
-                   .walkEndLocation(detail.getWalkEndLocation())
+            builder
                    .actualStartTime(detail.getActualStartTime())
                    .actualEndTime(detail.getActualEndTime());
         }

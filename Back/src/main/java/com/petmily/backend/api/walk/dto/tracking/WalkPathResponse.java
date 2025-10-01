@@ -23,6 +23,5 @@ public class WalkPathResponse {
         private LocalDateTime startTime;    // 시작 시간
         private LocalDateTime endTime;      // 종료 시간
         private Integer totalPoints;        // 총 위치 포인트 수
-        private String walkingRoute;        // 경로 요약 (텍스트)
     }
 }

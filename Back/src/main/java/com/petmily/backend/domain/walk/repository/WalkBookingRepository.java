@@ -16,17 +16,11 @@ public interface WalkBookingRepository extends JpaRepository<WalkBooking, Long> 
     // 사용자별 예약 조회
     List<WalkBooking> findByUserId(Long userId);
 
-    // 워커별 예약 조회
-    List<WalkBooking> findByWalkerId(Long walkerId);
-
     // 상태별 예약 조회
     List<WalkBooking> findByUserIdAndStatus(Long userId, WalkBooking.BookingStatus status);
 
     // 여러 상태로 조회
     List<WalkBooking> findByUserIdAndStatusIn(Long userId, List<WalkBooking.BookingStatus> statuses);
-
-    // 날짜 범위로 조회
-    List<WalkBooking> findByUserIdAndDateBetween(Long userId, LocalDateTime startDate, LocalDateTime endDate);
 
     // 최근 예약 조회 (상태별, 생성시간 역순)
     List<WalkBooking> findByUserIdAndStatusOrderByCreateTimeDesc(Long userId, WalkBooking.BookingStatus status);
@@ -36,21 +30,6 @@ public interface WalkBookingRepository extends JpaRepository<WalkBooking, Long> 
 
     // 특정 시간 이후 완료된 예약 조회
     List<WalkBooking> findByUserIdAndStatusAndCreateTimeAfter(Long userId, WalkBooking.BookingStatus status, LocalDateTime time);
-
-    // 펫별 예약 조회
-    List<WalkBooking> findByPetIdAndStatusOrderByCreateTimeDesc(Long petId, WalkBooking.BookingStatus status);
-
-    // 워커의 오늘 예약 조회
-    @Query("SELECT w FROM WalkBooking w WHERE w.walkerId = :walkerId AND DATE(w.date) = DATE(:date)")
-    List<WalkBooking> findByWalkerIdAndDate(@Param("walkerId") Long walkerId, @Param("date") LocalDateTime date);
-
-    // 대시보드용 통계 쿼리들
-    @Query("SELECT COUNT(w) FROM WalkBooking w WHERE w.userId = :userId AND w.status = :status")
-    Long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") WalkBooking.BookingStatus status);
-
-    // 월별 산책 시간 계산
-    @Query("SELECT SUM(w.duration) FROM WalkBooking w WHERE w.userId = :userId AND w.status = 'COMPLETED' AND w.createTime >= :startOfMonth")
-    Integer sumDurationByUserIdAndStatusAndCreateTimeAfter(@Param("userId") Long userId, @Param("startOfMonth") LocalDateTime startOfMonth);
 
     // WalkerBookingService에서 필요한 추가 메서드들
     List<WalkBooking> findByUserIdOrderByDateDesc(Long userId);

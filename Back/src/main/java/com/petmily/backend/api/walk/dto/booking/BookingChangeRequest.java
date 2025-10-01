@@ -21,6 +21,5 @@ public class BookingChangeRequest {
     private String newDropoffAddress;
     private String newNotes;
     private Boolean newInsuranceCovered;
-    private String newEmergencyContact;
     private String changeReason;
 }

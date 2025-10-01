@@ -25,7 +25,6 @@ public class BookingChangeResponse {
     private String newDropoffAddress;
     private String newNotes;
     private Boolean newInsuranceCovered;
-    private String newEmergencyContact;
     private String changeReason;
     private BookingChangeRequest.ChangeRequestStatus status;
     private String walkerResponse;
@@ -46,7 +45,6 @@ public class BookingChangeResponse {
                 .newDropoffAddress(request.getNewDropoffAddress())
                 .newNotes(request.getNewNotes())
                 .newInsuranceCovered(request.getNewInsuranceCovered())
-                .newEmergencyContact(request.getNewEmergencyContact())
                 .changeReason(request.getChangeReason())
                 .status(request.getStatus())
                 .walkerResponse(request.getWalkerResponse())

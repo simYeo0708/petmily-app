@@ -52,9 +52,6 @@ public class BookingChangeRequest extends BaseTimeEntity {
     @Column(name = "new_insurance_covered")
     private Boolean newInsuranceCovered;
 
-    @Column(name = "new_emergency_contact")
-    private String newEmergencyContact;
-
     @Column(name = "change_reason", columnDefinition = "TEXT")
     private String changeReason;
 
@@ -64,7 +61,7 @@ public class BookingChangeRequest extends BaseTimeEntity {
     private ChangeRequestStatus status = ChangeRequestStatus.PENDING;
 
     @Column(name = "walker_response", columnDefinition = "TEXT")
-    private String walkerResponse;
+    private String walkerResponse; // 수정필요******************
 
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;

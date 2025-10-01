@@ -74,9 +74,6 @@ public class WalkBooking extends BaseTimeEntity {
     @Builder.Default
     private Boolean insuranceCovered = true;
 
-    @Column(name = "emergency_contact")
-    private String emergencyContact;
-
     @Column(name = "is_regular_package")
     @Builder.Default
     private Boolean isRegularPackage = false;

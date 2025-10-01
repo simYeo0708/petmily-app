@@ -45,9 +45,9 @@ public class WalkService {
         validation.booking.setStatus(WalkBooking.BookingStatus.IN_PROGRESS);
 
         // Create or update WalkDetail for timing information
-        WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(bookingId)
+        WalkDetail walkDetail = walkDetailRepository.findByBookingId(bookingId)
                 .orElse(WalkDetail.builder()
-                        .walkBookingId(bookingId)
+                        .bookingId(bookingId)
                         .walkStatus(WalkDetail.WalkStatus.IN_PROGRESS)
                         .build());
         walkDetail.setActualStartTime(LocalDateTime.now());
@@ -85,9 +85,9 @@ public class WalkService {
         validation.booking.setStatus(WalkBooking.BookingStatus.COMPLETED);
 
         // Update WalkDetail with completion information
-        WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(bookingId)
+        WalkDetail walkDetail = walkDetailRepository.findByBookingId(bookingId)
                 .orElse(WalkDetail.builder()
-                        .walkBookingId(bookingId)
+                        .bookingId(bookingId)
                         .build());
 
         if (walkDetail.getActualStartTime() == null) {
@@ -134,7 +134,7 @@ public class WalkService {
                 contactNumber = "119";
                 break;
             case EMERGENCY_CONTACT:
-                contactNumber = validation.booking.getEmergencyContact();
+                contactNumber = validation.booking.getUser() != null ? validation.booking.getUser().getEmergencyContactPhone() : null;
                 if (contactNumber == null || contactNumber.trim().isEmpty()) {
                     throw new CustomException(ErrorCode.INVALID_REQUEST, "Emergency contact not set for this booking");
                 }
@@ -272,21 +272,7 @@ public class WalkService {
         locationValidationService.requireLocation(request.getLatitude(), request.getLongitude(), "위치 업데이트");
         locationValidationService.validateLocationChange(bookingId, request.getLatitude(), request.getLongitude());
 
-        // Update WalkDetail with location information
-        WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(bookingId)
-                .orElse(WalkDetail.builder()
-                        .walkBookingId(bookingId)
-                        .build());
-
-        walkDetail.setWalkerLocation(request.getFormattedLocation());
-
-        if (validation.booking.getStatus() == WalkBooking.BookingStatus.IN_PROGRESS && walkDetail.getWalkStartLocation() == null) {
-            walkDetail.setWalkStartLocation(request.getFormattedLocation());
-        } else if (validation.booking.getStatus() == WalkBooking.BookingStatus.COMPLETED) {
-            walkDetail.setWalkEndLocation(request.getFormattedLocation());
-        }
-
-        walkDetailRepository.save(walkDetail);
+        // Location information is now tracked only in WalkTrack table
 
         WalkBooking updatedBooking = walkBookingRepository.save(validation.booking);
         return WalkBookingResponse.from(updatedBooking);
@@ -297,24 +283,17 @@ public class WalkService {
         WalkValidationService.WalkBookingValidation validation = validationService.validateWalkBooking(bookingId, username);
 
         // Get WalkDetail for location updates
-        WalkDetail walkDetail = walkDetailRepository.findByWalkBookingId(bookingId)
+        WalkDetail walkDetail = walkDetailRepository.findByBookingId(bookingId)
                 .orElse(WalkDetail.builder()
-                        .walkBookingId(bookingId)
+                        .bookingId(bookingId)
                         .build());
 
+        // Photo location is now tracked in WalkTrack table only
         switch (request.getPhotoType().toUpperCase()) {
             case "START":
-                if (walkDetail.getWalkStartLocation() == null && request.getLocation() != null) {
-                    walkDetail.setWalkStartLocation(request.getLocation());
-                }
-                break;
             case "MIDDLE":
-                // Middle photo processing
-                break;
             case "END":
-                if (walkDetail.getWalkEndLocation() == null && request.getLocation() != null) {
-                    walkDetail.setWalkEndLocation(request.getLocation());
-                }
+                // Photo processing without location storage in WalkDetail
                 break;
             default:
                 throw new CustomException(ErrorCode.INVALID_REQUEST, "Invalid photo type. Must be START, MIDDLE, or END");
@@ -335,7 +314,6 @@ public class WalkService {
                     .averageSpeed(0.0)
                     .maxSpeed(0.0)
                     .totalPoints(0)
-                    .walkingRoute("산책 데이터가 없습니다")
                     .build();
         }
 
@@ -352,8 +330,6 @@ public class WalkService {
 
         double averageSpeed = totalDurationMinutes > 0 ? (totalDistance / (totalDurationMinutes / 60.0)) : 0.0;
 
-        String walkingRoute = generateWalkingRouteSummary(tracks);
-
         return WalkPathResponse.WalkingStatistics.builder()
                 .totalDistance(totalDistance)
                 .totalDuration(totalDurationMinutes)
@@ -362,7 +338,6 @@ public class WalkService {
                 .startTime(startTime)
                 .endTime(endTime)
                 .totalPoints(tracks.size())
-                .walkingRoute(walkingRoute)
                 .build();
     }
 

@@ -1,6 +1,6 @@
-package com.petmily.backend.domain.walk.repository;
+package com.petmily.backend.domain.user.repository;
 
-import com.petmily.backend.domain.walk.entity.NotificationSetting;
+import com.petmily.backend.domain.user.entity.NotificationSetting;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -240,7 +240,7 @@ model WalkBooking {
 
 model WalkDetail {
   id                BigInt       @id @default(autoincrement())
-  walkBookingId     BigInt       @unique @map("walk_booking_id")
+  bookingId         BigInt       @unique @map("booking_id")
   actualStartTime   DateTime?    @map("actual_start_time")
   actualEndTime     DateTime?    @map("actual_end_time")
   walkerLocation    String?      @map("walker_location")
@@ -255,14 +255,14 @@ model WalkDetail {
   createTime        DateTime     @default(now())
   updateTime        DateTime?    @updatedAt
 
-  walkBooking WalkBooking @relation(fields: [walkBookingId], references: [id])
+  walkBooking WalkBooking @relation(fields: [bookingId], references: [id])
 
   @@map("walk_details")
 }
 
 model WalkReport {
   id                BigInt       @id @default(autoincrement())
-  walkBookingId     BigInt       @unique @map("walk_booking_id")
+  bookingId         BigInt       @unique @map("booking_id")
   startPhotoUrl     String?      @map("start_photo_url")
   middlePhotoUrl    String?      @map("middle_photo_url")
   endPhotoUrl       String?      @map("end_photo_url")
@@ -281,7 +281,7 @@ model WalkReport {
   createTime        DateTime     @default(now())
   updateTime        DateTime?    @updatedAt
 
-  walkBooking WalkBooking @relation(fields: [walkBookingId], references: [id])
+  walkBooking WalkBooking @relation(fields: [bookingId], references: [id])
 
   @@map("walk_reports")
 }
