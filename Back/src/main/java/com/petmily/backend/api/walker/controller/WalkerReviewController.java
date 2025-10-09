@@ -25,8 +25,8 @@ public class WalkerReviewController {
             @Valid @RequestBody WalkerReviewRequest request,
             Authentication authentication) {
         String username = authentication.getName();
-        WalkerReviewResponse walkerReviewResponse = walkerReviewService.createReview(username, request);
-        return ResponseEntity.ok(walkerReviewResponse);
+        WalkerReviewResponse response = walkerReviewService.createReview(username, request);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/walker/{walkerId}")

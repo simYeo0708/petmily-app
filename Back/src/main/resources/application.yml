@@ -73,7 +73,7 @@ jwt:
 kakao:
   map:
     api:
-      key: ${KAKAO_NATIVE_APP_KEY:dummy-key-for-development}  # 카카오맵용 Native 키
+      key: ${KAKAO_REST_APP_KEY:dummy-key-for-development}  # 카카오맵용 Native 키
   message:
     api:
       key: ${KAKAO_MESSAGE_API_KEY:dummy-message-api-key}     # 메시지 발송용 REST API 키

@@ -48,37 +48,12 @@ public class Pet extends BaseTimeEntity {
     
     @Enumerated(EnumType.STRING)
     private Size size; // SMALL, MEDIUM, LARGE
-    
-    // Health and medical information
-    @Column(name = "is_vaccinated")
-    @Builder.Default
-    private Boolean isVaccinated = false;
-    
+
     @Column(name = "medical_conditions")
     private String medicalConditions; // 알러지, 질병 등
     
     @Column(name = "special_notes")
     private String specialNotes; // 특별 주의사항
-    
-    // Activity level and preferences
-    @Enumerated(EnumType.STRING)
-    @Column(name = "activity_level")
-    private ActivityLevel activityLevel; // LOW, MODERATE, HIGH
-    
-    @Column(name = "favorite_activities")
-    private String favoriteActivities; // 좋아하는 활동들
-    
-    // Social behavior
-    @Column(name = "good_with_children")
-    private Boolean goodWithChildren;
-    
-    @Column(name = "good_with_other_pets")
-    private Boolean goodWithOtherPets;
-    
-    @Column(name = "is_neutered")
-    @Builder.Default
-    private Boolean isNeutered = false;
-
 
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)

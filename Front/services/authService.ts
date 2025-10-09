@@ -15,7 +15,6 @@ export interface SignupRequest {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
 }
 
 export interface User {
@@ -28,12 +27,13 @@ export interface User {
 class AuthService {
   async login(request: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, request);
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, request, {
+        withCredentials: true, // 쿠키 포함
+      });
       const authData = response.data;
 
-      // 토큰 저장
+      // AccessToken만 저장 (RefreshToken은 HttpOnly 쿠키로 자동 관리됨)
       await AsyncStorage.setItem('access_token', authData.accessToken);
-      await AsyncStorage.setItem('refresh_token', authData.refreshToken);
 
       return authData;
     } catch (error: any) {
@@ -54,12 +54,14 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {}, {
+        withCredentials: true, // RefreshToken 쿠키 포함
+      });
     } catch (error) {
       console.error('Logout API failed:', error);
     } finally {
-      // 로컬 토큰 삭제
-      await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+      // AccessToken만 삭제 (RefreshToken은 서버에서 쿠키 삭제)
+      await AsyncStorage.removeItem('access_token');
     }
   }
 

@@ -84,7 +84,7 @@ public class WalkerReviewService {
         }
         
         if (walkerReviewRepository.existsByBookingId(bookingId)) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "이미 해당 산책에 대한 리뷰를 작성하셨습니다.");
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "이미 해당 산책에 대한 리뷰를 작성했습니다.");
         }
     }
 

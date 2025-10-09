@@ -90,18 +90,16 @@ public class AuthService {
 
     @Transactional
     public TokenResponse reissue(String refreshToken) {
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new TokenException(ErrorCode.INVALID_TOKEN);
-        }
+        // JwtTokenProvider를 통해 RefreshToken 검증 및 Authentication 추출
+        Authentication authentication = jwtTokenProvider.validateRefreshToken(refreshToken);
 
-        Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
+        // 새로운 토큰 생성
+        String newAccessToken = jwtTokenProvider.generateAccessToken(authentication);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(authentication);
 
+        // DB의 RefreshToken 업데이트 (Refresh Token Rotation)
         AuthRefreshToken storedRefreshToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new TokenException(ErrorCode.TOKEN_EXPIRED));
-
-        String newAccessToken = jwtTokenProvider.generateAccessToken(authentication);
-
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(authentication);
 
         storedRefreshToken.updateToken(newRefreshToken, Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()));
         refreshTokenRepository.save(storedRefreshToken);

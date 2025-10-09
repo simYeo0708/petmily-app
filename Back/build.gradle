@@ -49,7 +49,7 @@ dependencies {
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
     implementation 'com.google.firebase:firebase-admin:9.7.0'
     // Jackson 버전을 Spring Boot와 일치시킴 (명시적 지정 제거)
-    
+
     // ANTLR 버전 명시적 지정
     implementation "org.antlr:antlr4-runtime:${antlrVersion}"
 

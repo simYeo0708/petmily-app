@@ -6,7 +6,6 @@ import com.petmily.backend.api.auth.dto.request.SignupRequest;
 import com.petmily.backend.api.auth.dto.response.TokenResponse;
 import com.petmily.backend.api.auth.service.AuthService;
 import com.petmily.backend.domain.user.entity.User;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,24 +32,31 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         TokenResponse token = authService.login(request);
-        CookieUtils.setCookie(response, token);
-        return ResponseEntity.ok(token);
+
+        CookieUtils.setRefreshTokenCookie(response, token.getRefreshToken());
+
+        return ResponseEntity.ok(TokenResponse.builder()
+                .accessToken(token.getAccessToken())
+                .build());
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<TokenResponse> reissue(@RequestHeader("Refresh-Token") String refreshToken, HttpServletResponse response) {
+    public ResponseEntity<TokenResponse> reissue(@CookieValue("refreshToken") String refreshToken, HttpServletResponse response) {
         TokenResponse token = authService.reissue(refreshToken);
-        CookieUtils.setCookie(response, token);
-        return ResponseEntity.ok(token);
+
+        CookieUtils.setRefreshTokenCookie(response, token.getRefreshToken());
+
+        return ResponseEntity.ok(TokenResponse.builder()
+                .accessToken(token.getAccessToken())
+                .build());
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        String refreshToken = CookieUtils.getCookie(request, "refreshToken");
-        if (refreshToken != null) {
-            authService.logout(refreshToken);
-        }
-        CookieUtils.deleteCookie(response);
+    public ResponseEntity<Void> logout(@CookieValue("refreshToken") String refreshToken, HttpServletResponse response) {
+        authService.logout(refreshToken);
+
+        CookieUtils.deleteRefreshTokenCookie(response);
+
         return ResponseEntity.ok().build();
     }
 
@@ -58,7 +64,9 @@ public class AuthController {
     public ResponseEntity<Void> withdraw(HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         authService.withdraw(authentication.getName());
-        CookieUtils.deleteCookie(response);
+
+        CookieUtils.deleteRefreshTokenCookie(response);
+
         return ResponseEntity.ok().build();
     }
 }

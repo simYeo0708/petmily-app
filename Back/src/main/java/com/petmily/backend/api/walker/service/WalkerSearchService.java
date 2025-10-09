@@ -20,8 +20,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,8 +44,7 @@ public class WalkerSearchService {
     /**
      * 고급 워커 검색
      */
-    public Page<WalkerProfileResponse> searchWalkers(WalkerSearchRequest request,
-                                                    org.springframework.security.core.Authentication authentication) {
+    public Page<WalkerProfileResponse> searchWalkers(WalkerSearchRequest request, Authentication authentication) {
         // 1. SecurityUtils로 현재 사용자 정보 가져오기
         User currentUser = SecurityUtils.getUser(authentication);
 
@@ -126,10 +128,8 @@ public class WalkerSearchService {
                 .filter(walker -> applyServiceAreaFilter(walker, request))
                 .filter(walker -> applyPetTypesFilter(walker, request))
                 .filter(walker -> applyCertificationsFilter(walker, request))
-                .filter(walker -> applyInsuranceFilter(walker, request))
                 .filter(walker -> applyInstantBookingFilter(walker, request))
                 .filter(walker -> applyWeekendAvailableFilter(walker, request))
-                .filter(walker -> applyEmergencyServiceFilter(walker, request))
                 .collect(Collectors.toList());
     }
 
@@ -235,14 +235,6 @@ public class WalkerSearchService {
                 .anyMatch(cert -> request.getCertifications().contains(cert.trim()));
     }
 
-    private boolean applyInsuranceFilter(WalkerProfile walker, WalkerSearchRequest request) {
-        if (request.getIsInsured() == null) {
-            return true;
-        }
-
-        return Objects.equals(walker.getIsInsured(), request.getIsInsured());
-    }
-
     private boolean applyInstantBookingFilter(WalkerProfile walker, WalkerSearchRequest request) {
         if (request.getInstantBooking() == null) {
             return true;
@@ -257,14 +249,6 @@ public class WalkerSearchService {
         }
 
         return Objects.equals(walker.getWeekendAvailable(), request.getWeekendAvailable());
-    }
-
-    private boolean applyEmergencyServiceFilter(WalkerProfile walker, WalkerSearchRequest request) {
-        if (request.getEmergencyService() == null) {
-            return true;
-        }
-
-        return Objects.equals(walker.getEmergencyService(), request.getEmergencyService());
     }
 
     /**
@@ -291,13 +275,13 @@ public class WalkerSearchService {
             case RATING:
                 return Comparator.comparing(WalkerProfile::getRating, Comparator.nullsLast(Double::compareTo));
             case HOURLY_RATE:
-                return Comparator.comparing(WalkerProfile::getHourlyRate, Comparator.nullsLast(java.math.BigDecimal::compareTo));
+                return Comparator.comparing(WalkerProfile::getHourlyRate, Comparator.nullsLast(BigDecimal::compareTo));
             case REVIEWS_COUNT:
                 return Comparator.comparing(WalkerProfile::getReviewsCount, Comparator.nullsLast(Integer::compareTo));
             case EXPERIENCE:
                 return Comparator.comparing(WalkerProfile::getExperienceYears, Comparator.nullsLast(Integer::compareTo));
             case CREATED_DATE:
-                return Comparator.comparing(WalkerProfile::getCreateTime, Comparator.nullsLast(java.time.LocalDateTime::compareTo));
+                return Comparator.comparing(WalkerProfile::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
             default:
                 return Comparator.comparingDouble(walker -> calculateWalkerDistance(walker, userCoord));
         }

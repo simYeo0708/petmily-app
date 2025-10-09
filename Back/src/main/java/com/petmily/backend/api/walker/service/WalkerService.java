@@ -65,15 +65,7 @@ public class WalkerService {
         return WalkerProfileResponse.from(walkerProfile);
     }
 
-    public WalkerProfileResponse getWalkerProfileByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found for this user."));
-        return WalkerProfileResponse.from(walkerProfile);
-    }
-
-    public List<WalkerProfileResponse> getAllWalkers(WalkerSearchRequest searchRequest) {
+    public List<WalkerProfileResponse> getAllWalkers(WalkerSearchRequest request) {
         // Get current authenticated user's address
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
@@ -91,7 +83,7 @@ public class WalkerService {
         List<WalkerProfile> allWalkers;
 
         // 즐겨찾기 워커만 보기 필터
-        if (searchRequest != null && searchRequest.isFavoritesOnly()) {
+        if (request != null && request.isFavoritesOnly()) {
             List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(currentUser.getId());
             List<Long> favoriteWalkerIds = favoriteWalkers.stream()
                     .map(FavoriteWalker::getWalkerId)
@@ -102,7 +94,7 @@ public class WalkerService {
             }
 
             allWalkers = walkerProfileRepository.findByIdInAndStatus(
-                favoriteWalkerIds, WalkerStatus.ACTIVE);
+                    favoriteWalkerIds, WalkerStatus.ACTIVE);
         } else {
             allWalkers = walkerProfileRepository.findAll();
         }
@@ -122,7 +114,7 @@ public class WalkerService {
                 })
                 .map(walker -> {
                     boolean isFavorite = favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(
-                        currentUser.getId(), walker.getId());
+                            currentUser.getId(), walker.getId());
 
                     // Builder 패턴으로 즐겨찾기 여부 포함해서 생성
                     User user = walker.getUser();
@@ -143,12 +135,20 @@ public class WalkerService {
                 .collect(Collectors.toList());
     }
 
+    public WalkerProfileResponse getWalkerProfileByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
+        return WalkerProfileResponse.from(walkerProfile);
+    }
+
     @Transactional
     public WalkerProfileResponse updateWalkerProfile(String username, WalkerProfileUpdateRequest request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found for this user."));
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
 
         walkerProfile.setDetailDescription(request.getDetailDescription());
         walkerProfile.setCoordinates(request.getServiceArea());
@@ -170,12 +170,9 @@ public class WalkerService {
     }
 
     @Transactional
-    public WalkerProfileResponse addFavoriteWalker(Long walkerId, String username) {
+    public void addFavoriteWalker(Long walkerId, String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        WalkerProfile walker = walkerProfileRepository.findById(walkerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker not found"));
 
         if (favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId)) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Walker already in favorites");
@@ -188,7 +185,6 @@ public class WalkerService {
                 .build();
 
         favoriteWalkerRepository.save(favorite);
-        return WalkerProfileResponse.from(walker);
     }
 
     @Transactional

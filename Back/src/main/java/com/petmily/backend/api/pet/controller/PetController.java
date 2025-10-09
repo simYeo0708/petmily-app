@@ -65,10 +65,10 @@ public class PetController {
 
     @GetMapping("/search")
     public ResponseEntity<List<PetResponse>> searchPets(
-            @ModelAttribute PetSearchRequest searchRequest,
+            @ModelAttribute PetSearchRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        List<PetResponse> pets = petService.searchPets(searchRequest, page, size);
+        List<PetResponse> pets = petService.searchPets(request, page, size);
         return ResponseEntity.ok(pets);
     }
 
@@ -80,51 +80,4 @@ public class PetController {
         return ResponseEntity.ok(pets);
     }
 
-    @PutMapping("/{petId}/photo")
-    public ResponseEntity<PetResponse> updatePetPhoto(
-            @PathVariable Long petId,
-            @RequestBody String imageUrl,
-            Authentication authentication) {
-        String username = authentication.getName();
-        
-        PetUpdateRequest request = new PetUpdateRequest();
-        request.setImageUrl(imageUrl);
-        
-        PetResponse response = petService.updatePet(petId, username, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/onboarding/{userId}")
-    public ResponseEntity<PetResponse> createOnboardingPet(
-            @PathVariable Long userId,
-            @RequestBody PetCreateRequest request) {
-        PetResponse response = petService.createOnboardingPet(userId, request);
-        return ResponseEntity.ok(response);
-    }
-
-    /**
-     * 반려동물 의상 가상 착용 체험 정보 조회 (AI 서비스용)
-     */
-    @GetMapping("/{petId}/fitting-info")
-    public ResponseEntity<PetResponse> getPetFittingInfo(
-            @PathVariable Long petId,
-            Authentication authentication) {
-        String username = authentication.getName();
-        PetResponse pet = petService.getPet(petId, username);
-        
-        return ResponseEntity.ok(pet);
-    }
-
-    /**
-     * 산책 매칭용 반려동물 정보 조회
-     */
-    @GetMapping("/{petId}/walk-profile")
-    public ResponseEntity<PetResponse> getPetWalkProfile(
-            @PathVariable Long petId,
-            Authentication authentication) {
-        String username = authentication.getName();
-        PetResponse pet = petService.getPet(petId, username);
-        
-        return ResponseEntity.ok(pet);
-    }
 }

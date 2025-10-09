@@ -17,17 +17,6 @@ public class PetCreateRequest {
     private Double weight; // kg
     private Pet.Size size; // SMALL, MEDIUM, LARGE
     
-    // Health and medical information
-    private Boolean isVaccinated = false;
     private String medicalConditions; // 알러지, 질병 등
     private String specialNotes; // 특별 주의사항
-    
-    // Activity level and preferences
-    private Pet.ActivityLevel activityLevel; // LOW, MODERATE, HIGH
-    private String favoriteActivities; // 좋아하는 활동들
-    
-    // Social behavior
-    private Boolean goodWithChildren;
-    private Boolean goodWithOtherPets;
-    private Boolean isNeutered = false;
 }

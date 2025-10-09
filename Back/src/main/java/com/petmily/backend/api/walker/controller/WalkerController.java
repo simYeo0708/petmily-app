@@ -38,8 +38,8 @@ public class WalkerController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WalkerProfileResponse>> getAllWalkers(@ModelAttribute WalkerSearchRequest searchRequest) {
-        List<WalkerProfileResponse> response = walkerService.getAllWalkers(searchRequest);
+    public ResponseEntity<List<WalkerProfileResponse>> getAllWalkers(@ModelAttribute WalkerSearchRequest request) {
+        List<WalkerProfileResponse> response = walkerService.getAllWalkers(request);
         return ResponseEntity.ok(response);
     }
 
@@ -61,12 +61,12 @@ public class WalkerController {
      * 즐겨찾기 워커 추가
      */
     @PostMapping("/{walkerId}/favorite")
-    public ResponseEntity<WalkerProfileResponse> addFavoriteWalker(
+    public ResponseEntity<Void> addFavoriteWalker(
             @PathVariable Long walkerId,
             Authentication authentication) {
         String username = authentication.getName();
-        WalkerProfileResponse response = walkerService.addFavoriteWalker(walkerId, username);
-        return ResponseEntity.ok(response);
+        walkerService.addFavoriteWalker(walkerId, username);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -109,9 +109,9 @@ public class WalkerController {
      */
     @GetMapping("/search")
     public ResponseEntity<Page<WalkerProfileResponse>> searchWalkers(
-            @ModelAttribute WalkerSearchRequest searchRequest,
+            @ModelAttribute WalkerSearchRequest request,
             Authentication authentication) {
-        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(searchRequest, authentication);
+        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(request, authentication);
         return ResponseEntity.ok(response);
     }
 

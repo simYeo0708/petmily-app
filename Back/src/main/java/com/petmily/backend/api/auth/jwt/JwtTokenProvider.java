@@ -100,24 +100,23 @@ public class JwtTokenProvider {
         ));
     }
 
-    public String reissueAccessToken(String refreshToken) {
+    // RefreshToken으로부터 Authentication 추출 및 검증
+    public Authentication validateRefreshToken(String refreshToken) {
         // refresh token 유효성 검사
         if(!StringUtils.hasText(refreshToken)) {
             throw new TokenException(ErrorCode.INVALID_TOKEN);
-        } else if(!validateToken(refreshToken)) {
-            throw new TokenException(ErrorCode.TOKEN_EXPIRED);
-        } else {
-            // DB에 refresh token 존재 여부 확인
-            refreshTokenRepository.findByToken(refreshToken)
-                    .orElseThrow(() -> new TokenException(ErrorCode.TOKEN_EXPIRED));
-
-            // refresh token에서 authentication 정보 가져오기
-            Authentication authentication = getAuthentication(refreshToken);
-
-            // 새로운 access token 생성
-            return generateAccessToken(authentication);
         }
 
+        if(!validateToken(refreshToken)) {
+            throw new TokenException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        // DB에 refresh token 존재 여부 확인
+        refreshTokenRepository.findByToken(refreshToken)
+                .orElseThrow(() -> new TokenException(ErrorCode.TOKEN_EXPIRED));
+
+        // refresh token에서 authentication 정보 반환
+        return getAuthentication(refreshToken);
     }
 
     public boolean validateToken(String token) {

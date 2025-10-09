@@ -13,6 +13,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // 쿠키 자동 포함
 });
 
 // Request Interceptor - JWT 토큰 자동 포함
@@ -45,22 +46,22 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken: refreshToken,
-          });
+        // RefreshToken은 HttpOnly 쿠키로 자동 전송됨
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/reissue`,
+          {},
+          { withCredentials: true }
+        );
 
-          const newAccessToken = response.data.accessToken;
-          await AsyncStorage.setItem('access_token', newAccessToken);
+        const newAccessToken = response.data.accessToken;
+        await AsyncStorage.setItem('access_token', newAccessToken);
 
-          // 원래 요청을 새로운 토큰으로 재시도
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          return apiClient(originalRequest);
-        }
+        // 원래 요청을 새로운 토큰으로 재시도
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
         // 리프레시 토큰도 만료된 경우 로그아웃 처리
-        await AsyncStorage.multiRemove(['access_token', 'refresh_token']);
+        await AsyncStorage.removeItem('access_token');
         // 로그인 화면으로 리다이렉트 (네비게이션 로직 추가 필요)
         console.error('토큰 갱신 실패, 재로그인 필요', refreshError);
       }

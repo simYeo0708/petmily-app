@@ -45,14 +45,8 @@ public class PetService {
         pet.setImageUrl(request.getImageUrl());
         pet.setWeight(request.getWeight());
         pet.setSize(request.getSize());
-        pet.setIsVaccinated(request.getIsVaccinated());
         pet.setMedicalConditions(request.getMedicalConditions());
         pet.setSpecialNotes(request.getSpecialNotes());
-        pet.setActivityLevel(request.getActivityLevel());
-        pet.setFavoriteActivities(request.getFavoriteActivities());
-        pet.setGoodWithChildren(request.getGoodWithChildren());
-        pet.setGoodWithOtherPets(request.getGoodWithOtherPets());
-        pet.setIsNeutered(request.getIsNeutered());
         pet.setUserId(user.getId());
 
         Pet savedPet = petRepository.save(pet);
@@ -104,14 +98,8 @@ public class PetService {
         if (request.getImageUrl() != null) pet.setImageUrl(request.getImageUrl());
         if (request.getWeight() != null) pet.setWeight(request.getWeight());
         if (request.getSize() != null) pet.setSize(request.getSize());
-        if (request.getIsVaccinated() != null) pet.setIsVaccinated(request.getIsVaccinated());
         if (request.getMedicalConditions() != null) pet.setMedicalConditions(request.getMedicalConditions());
         if (request.getSpecialNotes() != null) pet.setSpecialNotes(request.getSpecialNotes());
-        if (request.getActivityLevel() != null) pet.setActivityLevel(request.getActivityLevel());
-        if (request.getFavoriteActivities() != null) pet.setFavoriteActivities(request.getFavoriteActivities());
-        if (request.getGoodWithChildren() != null) pet.setGoodWithChildren(request.getGoodWithChildren());
-        if (request.getGoodWithOtherPets() != null) pet.setGoodWithOtherPets(request.getGoodWithOtherPets());
-        if (request.getIsNeutered() != null) pet.setIsNeutered(request.getIsNeutered());
 
         Pet updatedPet = petRepository.save(pet);
         return PetResponse.from(updatedPet);
@@ -132,50 +120,38 @@ public class PetService {
         petRepository.delete(pet);
     }
 
-    public List<PetResponse> searchPets(PetSearchRequest searchRequest, int page, int size) {
+    public List<PetResponse> searchPets(PetSearchRequest request, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createTime"));
         
         Page<Pet> pets;
         
-        if (searchRequest.getSpecies() != null) {
-            pets = petRepository.findBySpeciesContainingIgnoreCase(searchRequest.getSpecies(), pageable);
+        if (request.getSpecies() != null) {
+            pets = petRepository.findBySpeciesContainingIgnoreCase(request.getSpecies(), pageable);
         } else {
             pets = petRepository.findAll(pageable);
         }
 
         return pets.getContent().stream()
-                .filter(pet -> matchesSearchCriteria(pet, searchRequest))
+                .filter(pet -> matchesSearchCriteria(pet, request))
                 .map(PetResponse::from)
                 .collect(Collectors.toList());
     }
 
-    private boolean matchesSearchCriteria(Pet pet, PetSearchRequest searchRequest) {
-        if (searchRequest.getBreed() != null && 
-            (pet.getBreed() == null || !pet.getBreed().toLowerCase().contains(searchRequest.getBreed().toLowerCase()))) {
+    private boolean matchesSearchCriteria(Pet pet, PetSearchRequest request) {
+        if (request.getBreed() != null &&
+            (pet.getBreed() == null || !pet.getBreed().toLowerCase().contains(request.getBreed().toLowerCase()))) {
             return false;
         }
         
-        if (searchRequest.getSize() != null && !searchRequest.getSize().equals(pet.getSize())) {
+        if (request.getSize() != null && !request.getSize().equals(pet.getSize())) {
+            return false;
+        }
+
+        if (request.getMinAge() != null && (pet.getAge() == null || pet.getAge() < request.getMinAge())) {
             return false;
         }
         
-        if (searchRequest.getActivityLevel() != null && !searchRequest.getActivityLevel().equals(pet.getActivityLevel())) {
-            return false;
-        }
-        
-        if (searchRequest.getGoodWithChildren() != null && !searchRequest.getGoodWithChildren().equals(pet.getGoodWithChildren())) {
-            return false;
-        }
-        
-        if (searchRequest.getGoodWithOtherPets() != null && !searchRequest.getGoodWithOtherPets().equals(pet.getGoodWithOtherPets())) {
-            return false;
-        }
-        
-        if (searchRequest.getMinAge() != null && (pet.getAge() == null || pet.getAge() < searchRequest.getMinAge())) {
-            return false;
-        }
-        
-        if (searchRequest.getMaxAge() != null && (pet.getAge() == null || pet.getAge() > searchRequest.getMaxAge())) {
+        if (request.getMaxAge() != null && (pet.getAge() == null || pet.getAge() > request.getMaxAge())) {
             return false;
         }
         
@@ -191,32 +167,4 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public PetResponse createOnboardingPet(Long userId, PetCreateRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Pet pet = new Pet();
-        pet.setName(request.getName());
-        pet.setSpecies(request.getSpecies());
-        pet.setBreed(request.getBreed());
-        pet.setAge(request.getAge());
-        pet.setGender(request.getGender());
-        pet.setPersonality(request.getPersonality());
-        pet.setImageUrl(request.getImageUrl());
-        pet.setWeight(request.getWeight());
-        pet.setSize(request.getSize());
-        pet.setIsVaccinated(request.getIsVaccinated());
-        pet.setMedicalConditions(request.getMedicalConditions());
-        pet.setSpecialNotes(request.getSpecialNotes());
-        pet.setActivityLevel(request.getActivityLevel());
-        pet.setFavoriteActivities(request.getFavoriteActivities());
-        pet.setGoodWithChildren(request.getGoodWithChildren());
-        pet.setGoodWithOtherPets(request.getGoodWithOtherPets());
-        pet.setIsNeutered(request.getIsNeutered());
-        pet.setUserId(user.getId());
-
-        Pet savedPet = petRepository.save(pet);
-        return PetResponse.from(savedPet);
-    }
 }

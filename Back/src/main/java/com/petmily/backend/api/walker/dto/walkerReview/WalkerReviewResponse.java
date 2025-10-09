@@ -27,8 +27,8 @@ public class WalkerReviewResponse {
     private Long bookingId;
     private Integer rating;
     private String comment;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
     public static WalkerReviewResponse from(WalkerReview review) {
         return WalkerReviewResponse.builder()
@@ -38,8 +38,8 @@ public class WalkerReviewResponse {
                 .bookingId(review.getBookingId())
                 .rating(review.getRating())
                 .comment(review.getComment())
-                .createdAt(review.getCreateTime())
-                .updatedAt(review.getUpdateTime())
+                .createTime(review.getCreateTime())
+                .updateTime(review.getUpdateTime())
                 .build();
     }
 

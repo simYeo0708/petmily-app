@@ -9,7 +9,6 @@ import java.util.List;
 public class WalkerSearchRequest {
     // 기존 필드들
     private String serviceArea;
-    private String experienceLevel;
     private Double minRating;
     private Double maxRating;
     private Double userLatitude;

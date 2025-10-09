@@ -21,6 +21,7 @@ public class PetResponse {
     public static class PetResponseBuilder {
     }
     private Long id;
+    private Long userId;
     private String name;
     private String species; // 개, 고양이 등
     private String breed; // 품종
@@ -28,29 +29,18 @@ public class PetResponse {
     private String gender; // 수컷, 암컷
     private String personality; // 성격
     private String imageUrl;
-    private Long userId;
-    
+
     // Weight and size information
     private Double weight; // kg
     private Pet.Size size; // SMALL, MEDIUM, LARGE
     
     // Health and medical information
-    private Boolean isVaccinated;
     private String medicalConditions; // 알러지, 질병 등
     private String specialNotes; // 특별 주의사항
-    
-    // Activity level and preferences
-    private Pet.ActivityLevel activityLevel; // LOW, MODERATE, HIGH
-    private String favoriteActivities; // 좋아하는 활동들
-    
-    // Social behavior
-    private Boolean goodWithChildren;
-    private Boolean goodWithOtherPets;
-    private Boolean isNeutered;
-    
+
     // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime createdTime;
+    private LocalDateTime updatedTime;
     
     // Owner information
     private String ownerUsername;
@@ -59,6 +49,7 @@ public class PetResponse {
     public static PetResponse from(Pet pet) {
         return PetResponse.builder()
                 .id(pet.getId())
+                .userId(pet.getUserId())
                 .name(pet.getName())
                 .species(pet.getSpecies())
                 .breed(pet.getBreed())
@@ -66,19 +57,12 @@ public class PetResponse {
                 .gender(pet.getGender())
                 .personality(pet.getPersonality())
                 .imageUrl(pet.getImageUrl())
-                .userId(pet.getUserId())
                 .weight(pet.getWeight())
                 .size(pet.getSize())
-                .isVaccinated(pet.getIsVaccinated())
                 .medicalConditions(pet.getMedicalConditions())
                 .specialNotes(pet.getSpecialNotes())
-                .activityLevel(pet.getActivityLevel())
-                .favoriteActivities(pet.getFavoriteActivities())
-                .goodWithChildren(pet.getGoodWithChildren())
-                .goodWithOtherPets(pet.getGoodWithOtherPets())
-                .isNeutered(pet.getIsNeutered())
-                .createdAt(pet.getCreateTime())
-                .updatedAt(pet.getUpdateTime())
+                .createdTime(pet.getCreateTime())
+                .updatedTime(pet.getUpdateTime())
                 .ownerUsername(pet.getUser() != null ? pet.getUser().getUsername() : null)
                 .ownerName(pet.getUser() != null ? pet.getUser().getName() : null)
                 .build();

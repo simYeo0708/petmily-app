@@ -22,7 +22,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class User extends BaseTimeEntity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
@@ -52,7 +52,7 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    // 비상연락망 정보
+    // Emergency contact information
     @Column(name = "emergency_contact_name", length = 50)
     private String emergencyContactName;
 
@@ -60,10 +60,10 @@ public class User extends BaseTimeEntity {
     private String emergencyContactPhone;
 
     @Column(name = "emergency_contact_relationship", length = 30)
-    private String emergencyContactRelationship; // 가족, 친구, 기타
+    private String emergencyContactRelationship; // family, friend, etc
 
     // ===========================================
-    // 관계 설정
+    // Relationships
     // ===========================================
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -84,12 +84,12 @@ public class User extends BaseTimeEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Pet> pets = new ArrayList<>();
-    
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Order> orders = new ArrayList<>();
-    
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private WalkerProfile walkerProfile;
-    
+
 }

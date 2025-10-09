@@ -5,7 +5,6 @@ import lombok.Data;
 @Data
 public class WalkerProfileCreateRequest {
     private String detailDescription; // 상세 설명 (bio + experience 통합)
-    private String availableTime; // e.g., "Mon-Fri 9-5"
     private String serviceArea; // e.g., "Gangnam-gu"
     // Add other fields necessary for initial walker registration
 }
