@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,31 +6,412 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   Modal,
   TextInput,
   ScrollView,
   Alert,
+  Animated,
+  Image,
+  PanResponder,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
+import MapService, { MapConfigResponse, LocationResponse } from '../services/MapService';
 
 const { width, height } = Dimensions.get('window');
 
+// MapService 인스턴스
+const mapService = MapService.getInstance();
+
 interface WalkingMapScreenProps {
   navigation: any;
+}
+
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  timestamp: number;
 }
 
 const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [isWalking, setIsWalking] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
+  const [locationHistory, setLocationHistory] = useState<LocationData[]>([]);
+  const [isTracking, setIsTracking] = useState(false);
+  const [walkingDistance, setWalkingDistance] = useState(0);
+  const [walkingTime, setWalkingTime] = useState(0);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const startTime = useRef<number | null>(null);
   const [customTime, setCustomTime] = useState('');
   const [selectedAddress, setSelectedAddress] = useState('');
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
   const [newAddress, setNewAddress] = useState('');
+  const [showGuide, setShowGuide] = useState(true);
+  const [hasActiveService, setHasActiveService] = useState(false);
+  const arrowAnimation = useRef(new Animated.Value(0)).current;
+  
+  // 현재 워킹 정보
+  const [currentWalking, setCurrentWalking] = useState<any>(null);
+  const [showTopModal, setShowTopModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 100 });
+  const [isModalMinimized, setIsModalMinimized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // 지도 설정 및 위치 정보
+  const [mapConfig, setMapConfig] = useState<MapConfigResponse | null>(null);
+  const [userLocation, setUserLocation] = useState<LocationResponse | null>(null);
+  const [activeLocations, setActiveLocations] = useState<LocationResponse[]>([]);
+
+  useEffect(() => {
+    loadMapConfig();
+    requestLocationPermission();
+    loadCurrentWalking();
+    return () => {
+      if (locationSubscription.current) {
+        locationSubscription.current.remove();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (showGuide) {
+      startArrowAnimation();
+    }
+  }, [showGuide]);
+
+  const startArrowAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(arrowAnimation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(arrowAnimation, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  };
+
+  const loadCurrentWalking = async () => {
+    try {
+      // 실제로는 API에서 현재 워킹 정보를 가져옴
+      // 샘플 데이터
+      const sampleWalking = {
+        id: '1',
+        walker: {
+          id: '1',
+          name: '김산책',
+          profileImage: 'https://via.placeholder.com/100',
+          rating: 4.8,
+          reviewCount: 127,
+        },
+        user: {
+          id: '1',
+          name: '홍길동',
+          profileImage: 'https://via.placeholder.com/100',
+        },
+        startTime: new Date().toISOString(),
+        duration: 120, // 분
+        location: '서울시 강남구 테헤란로 123',
+        status: 'in_progress',
+        distance: 2.5,
+        currentLocation: {
+          latitude: 37.5665,
+          longitude: 126.9780,
+        },
+      };
+      
+      setCurrentWalking(sampleWalking);
+      setHasActiveService(true);
+      setShowTopModal(true);
+    } catch (error) {
+      console.error('현재 워킹 정보 로드 실패:', error);
+    }
+  };
+
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('위치 권한이 필요합니다', '산책 추적을 위해 위치 권한을 허용해주세요.');
+        return;
+      }
+      
+      // 현재 위치 가져오기
+      const location = await Location.getCurrentPositionAsync({});
+      const newLocation: LocationData = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        timestamp: Date.now(),
+      };
+      setCurrentLocation(newLocation);
+      
+      // 백엔드에 위치 업데이트
+      await updateUserLocation(location.coords.latitude, location.coords.longitude);
+    } catch (error) {
+      console.error('위치 권한 요청 실패:', error);
+    }
+  };
+
+  const startLocationTracking = async () => {
+    try {
+      setIsTracking(true);
+      startTime.current = Date.now();
+      
+      locationSubscription.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 1000, // 1초마다 업데이트
+          distanceInterval: 1, // 1미터마다 업데이트
+        },
+        async (location) => {
+          const newLocation: LocationData = {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            timestamp: Date.now(),
+          };
+          
+          setCurrentLocation(newLocation);
+          setLocationHistory(prev => [...prev, newLocation]);
+          
+          // 거리 계산
+          if (locationHistory.length > 0) {
+            const lastLocation = locationHistory[locationHistory.length - 1];
+            const distance = calculateDistance(
+              lastLocation.latitude,
+              lastLocation.longitude,
+              newLocation.latitude,
+              newLocation.longitude
+            );
+            setWalkingDistance(prev => prev + distance);
+          }
+          
+          // 시간 계산
+          if (startTime.current) {
+            setWalkingTime(Math.floor((Date.now() - startTime.current) / 1000));
+          }
+          
+          // 백엔드에 위치 업데이트 (5초마다)
+          if (Date.now() % 5000 < 1000) {
+            await updateUserLocation(location.coords.latitude, location.coords.longitude);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('위치 추적 시작 실패:', error);
+      Alert.alert('오류', '위치 추적을 시작할 수 없습니다.');
+    }
+  };
+
+  const stopLocationTracking = () => {
+    if (locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+    }
+    setIsTracking(false);
+    startTime.current = null;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371e3; // 지구 반지름 (미터)
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // 미터 단위
+  };
+
+  // 모달 드래그 핸들러
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderGrant: () => {
+        console.log('드래그 시작');
+        setIsDragging(true);
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const newY = Math.max(60, Math.min(height - 200, modalPosition.y + gestureState.dy));
+        setModalPosition({ x: 0, y: newY });
+      },
+      onPanResponderRelease: () => {
+        console.log('드래그 종료');
+        setIsDragging(false);
+      },
+    })
+  ).current;
+
+  // 모달 최소화/확장 토글
+  const toggleModalMinimize = () => {
+    setIsModalMinimized(!isModalMinimized);
+  };
+
+  // 모달 위치 리셋
+  const resetModalPosition = () => {
+    setModalPosition({ x: 0, y: 100 });
+    setIsModalMinimized(false);
+  };
+
+  // 지도 설정 로드
+  const loadMapConfig = async () => {
+    try {
+      const config = await mapService.getMapConfig();
+      setMapConfig(config);
+    } catch (error) {
+      console.error('지도 설정 로드 실패:', error);
+    }
+  };
+
+  // 사용자 위치 업데이트
+  const updateUserLocation = async (latitude: number, longitude: number) => {
+    try {
+      const userId = await mapService.getCurrentUserId();
+      const locationRequest = {
+        latitude,
+        longitude,
+        timestamp: Date.now(),
+        userId
+      };
+      
+      const response = await mapService.updateUserLocation(locationRequest);
+      setUserLocation(response);
+    } catch (error) {
+      console.error('위치 업데이트 실패:', error);
+    }
+  };
+
+  const generateKakaoMapHTML = () => {
+    const currentLat = currentLocation?.latitude || parseFloat(mapConfig?.mapCenterLat || '37.5665');
+    const currentLon = currentLocation?.longitude || parseFloat(mapConfig?.mapCenterLon || '126.9780');
+    const apiKey = mapConfig?.kakaoMapApiKey || 'dummy-key-for-development';
+    const zoomLevel = mapConfig?.mapZoomLevel || 15;
+    
+    // 경로 데이터를 JSON 문자열로 변환
+    const pathData = locationHistory.map(loc => ({
+      lat: loc.latitude,
+      lng: loc.longitude
+    }));
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>카카오맵</title>
+        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}"></script>
+        <style>
+          body { margin: 0; padding: 0; }
+          #map { width: 100%; height: 100vh; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          var container = document.getElementById('map');
+          var options = {
+            center: new kakao.maps.LatLng(${currentLat}, ${currentLon}),
+            level: ${zoomLevel}
+          };
+          
+          var map = new kakao.maps.Map(container, options);
+          
+          // 현재 위치 마커
+          var currentMarker = new kakao.maps.Marker({
+            position: new kakao.maps.LatLng(${currentLat}, ${currentLon}),
+            map: map
+          });
+          
+          // 현재 위치 마커에 커스텀 이미지 적용 (반려동물 프로필 포함)
+          var petProfileImage = '${userLocation?.petProfileImage || 'https://via.placeholder.com/50'}';
+          var petName = '${userLocation?.petName || '멍멍이'}';
+          var imageSrc = 'data:image/svg+xml;base64,' + btoa(\`
+            <svg width="60" height="80" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">
+              <!-- 말풍선 배경 -->
+              <path d="M30 5 L50 25 L50 55 L30 75 L10 55 L10 25 Z" fill="#FFFFFF" stroke="#FF6B6B" stroke-width="2"/>
+              <!-- 반려동물 프로필 이미지 -->
+              <circle cx="30" cy="35" r="15" fill="#F0F0F0" stroke="#FF6B6B" stroke-width="2"/>
+              <image x="15" y="20" width="30" height="30" href="\${petProfileImage}" clip-path="circle(15px at 30px 35px)"/>
+              <!-- 위치 표시 원 -->
+              <circle cx="30" cy="65" r="8" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="2"/>
+              <circle cx="30" cy="65" r="4" fill="#FFFFFF"/>
+            </svg>
+          \`);
+          var imageSize = new kakao.maps.Size(60, 80);
+          var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
+          currentMarker.setImage(markerImage);
+          
+          // 마커 클릭 시 반려동물 정보 표시
+          var infoWindow = new kakao.maps.InfoWindow({
+            content: '<div style="padding: 10px; text-align: center;">' +
+                     '<img src="\${petProfileImage}" style="width: 40px; height: 40px; border-radius: 50%; margin-bottom: 5px;">' +
+                     '<div style="font-weight: bold; color: #333;">\${petName}</div>' +
+                     '<div style="font-size: 12px; color: #666;">현재 위치</div>' +
+                     '</div>'
+          });
+          
+          kakao.maps.event.addListener(currentMarker, 'click', function() {
+            infoWindow.open(map, currentMarker);
+          });
+          
+          // 경로 그리기
+          var pathData = ${JSON.stringify(pathData)};
+          if (pathData.length > 1) {
+            var polyline = new kakao.maps.Polyline({
+              path: pathData.map(point => new kakao.maps.LatLng(point.lat, point.lng)),
+              strokeWeight: 5,
+              strokeColor: '#FF6B6B',
+              strokeOpacity: 0.8,
+              strokeStyle: 'solid'
+            });
+            polyline.setMap(map);
+          }
+          
+          // 위치 업데이트 함수
+          function updateLocation(lat, lng) {
+            var newPosition = new kakao.maps.LatLng(lat, lng);
+            currentMarker.setPosition(newPosition);
+            map.setCenter(newPosition);
+          }
+          
+          // 경로 업데이트 함수
+          function updatePath(newPathData) {
+            if (newPathData.length > 1) {
+              var polyline = new kakao.maps.Polyline({
+                path: newPathData.map(point => new kakao.maps.LatLng(point.lat, point.lng)),
+                strokeWeight: 5,
+                strokeColor: '#FF6B6B',
+                strokeOpacity: 0.8,
+                strokeStyle: 'solid'
+              });
+              polyline.setMap(map);
+            }
+          }
+          
+          // React Native에서 호출할 수 있도록 전역 함수로 등록
+          window.updateLocation = updateLocation;
+          window.updatePath = updatePath;
+        </script>
+      </body>
+      </html>
+    `;
+  };
 
   const timeSlots = [
     '오전 6:00-8:00',
@@ -43,12 +424,19 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     '오후 20:00-22:00',
   ];
 
-  const handleStartWalking = () => {
+  const handleStartWalking = async () => {
     setIsWalking(true);
+    await startLocationTracking();
+  };
+
+  const handleStopWalking = () => {
+    setIsWalking(false);
+    stopLocationTracking();
   };
 
   const handleRequestWalker = () => {
-    setShowBookingModal(true);
+    navigation.navigate('WalkingRequest');
+    setShowGuide(false);
   };
 
   const handleTimeSlotSelect = (time: string) => {
@@ -100,36 +488,198 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#4A90E2" />
+    <SafeAreaView style={[styles.container, { backgroundColor: '#C59172' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <View style={[styles.content, { backgroundColor: '#f8f9fa' }]}>
       
       {/* 지도 영역 */}
       <View style={styles.mapContainer}>
-        <MapView
-          provider={PROVIDER_GOOGLE}
+        <WebView
+          source={{ html: generateKakaoMapHTML() }}
           style={styles.map}
-          initialRegion={{
-            latitude: 37.5665,
-            longitude: 126.9780,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-        >
-          {isWalking && (
-            <Marker
-              coordinate={{
-                latitude: 37.5665,
-                longitude: 126.9780,
-              }}
-              title="현재 위치"
-              description="산책 중"
-            />
-          )}
-        </MapView>
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={true}
+          scalesPageToFit={true}
+        />
+        
+        {/* 상단 산책 정보 모달 */}
+        {showTopModal && currentWalking && (
+          <View 
+            style={[
+              styles.topModal, 
+              { 
+                top: modalPosition.y,
+                left: modalPosition.x + 20,
+                right: 20 - modalPosition.x,
+              }
+            ]}
+          >
+            <View style={styles.topModalContent}>
+              {/* 드래그 핸들 */}
+              <View
+                style={[
+                  styles.dragHandle,
+                  {
+                    backgroundColor: isDragging ? '#f8f9fa' : 'transparent',
+                    borderColor: isDragging ? '#4A90E2' : 'transparent',
+                    borderWidth: isDragging ? 1 : 0,
+                    borderRadius: isDragging ? 8 : 0,
+                  }
+                ]}
+                {...panResponder.panHandlers}
+              >
+                <View 
+                  style={[
+                    styles.dragIndicator,
+                    {
+                      backgroundColor: isDragging ? '#4A90E2' : '#ccc',
+                      transform: isDragging ? [{ scale: 1.2 }] : [{ scale: 1 }],
+                    }
+                  ]} 
+                />
+              </View>
+
+              <View style={styles.topModalHeader}>
+                <View style={styles.topModalTitleContainer}>
+                  <Text style={styles.topModalTitle}>🚶‍♂️ 현재 산책 중</Text>
+                  {__DEV__ && (
+                    <Text style={{ fontSize: 10, color: '#999' }}>
+                      드래그 상태: {isDragging ? '활성' : '비활성'}
+                    </Text>
+                  )}
+                  {!isModalMinimized && (
+                    <Text style={styles.topModalSubtitle}>
+                      {currentWalking.walker.name} • {currentWalking.distance}km
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.topModalButtons}>
+                  <TouchableOpacity
+                    onPress={toggleModalMinimize}
+                    style={styles.topModalMinimizeButton}
+                  >
+                    <Ionicons 
+                      name={isModalMinimized ? "chevron-up" : "chevron-down"} 
+                      size={16} 
+                      color="#666" 
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setShowTopModal(false)}
+                    style={styles.topModalCloseButton}
+                  >
+                    <Ionicons name="close" size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              {!isModalMinimized && (
+                <View style={styles.topModalInfo}>
+                  <View style={styles.topModalInfoRow}>
+                    <Ionicons name="time" size={14} color="#4A90E2" />
+                    <Text style={styles.topModalInfoText}>
+                      {new Date(currentWalking.startTime).toLocaleTimeString('ko-KR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })} - {new Date(new Date(currentWalking.startTime).getTime() + currentWalking.duration * 60000).toLocaleTimeString('ko-KR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </Text>
+                  </View>
+                  <View style={styles.topModalInfoRow}>
+                    <Ionicons name="location" size={14} color="#4A90E2" />
+                    <Text style={styles.topModalInfoText} numberOfLines={1}>
+                      {currentWalking.location}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+        
+        {/* 산책 정보 오버레이 */}
+        {isWalking && (
+          <View style={styles.walkingInfoOverlay}>
+            <View style={styles.walkingStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>거리</Text>
+                <Text style={styles.statValue}>{(walkingDistance / 1000).toFixed(2)} km</Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>시간</Text>
+                <Text style={styles.statValue}>
+                  {Math.floor(walkingTime / 60)}:{(walkingTime % 60).toString().padStart(2, '0')}
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>속도</Text>
+                <Text style={styles.statValue}>
+                  {walkingTime > 0 ? ((walkingDistance / 1000) / (walkingTime / 3600)).toFixed(1) : '0.0'} km/h
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
 
         {/* Dark overlay when not walking */}
         {!isWalking && (
-          <View style={styles.darkOverlay} />
+          <View style={styles.darkOverlay}>
+            {!hasActiveService && (
+              <View style={styles.noServiceMessage}>
+                <Text style={styles.noServiceTitle}>이용 중인 서비스가 없습니다!</Text>
+                <Text style={styles.noServiceSubtitle}>
+                  산책 요청을 통해 워커와 매칭해보세요
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* 가이드 모드 */}
+        {showGuide && !hasActiveService && (
+          <View style={styles.guideOverlay}>
+            <View style={styles.guideContent}>
+              <View style={styles.guideMessage}>
+                <Text style={styles.guideTitle}>🚶‍♂️ 산책 요청하기</Text>
+                <Text style={styles.guideDescription}>
+                  아래 버튼을 눌러 워커와 매칭해보세요!
+                </Text>
+              </View>
+              
+              {/* 움직이는 화살표 */}
+              <View style={styles.arrowContainer}>
+                <Animated.View 
+                  style={[
+                    styles.arrow,
+                    {
+                      transform: [
+                        {
+                          translateY: arrowAnimation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 10],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Ionicons name="arrow-down" size={30} color="#FF6B6B" />
+                </Animated.View>
+              </View>
+              
+              {/* 가이드 닫기 버튼 */}
+              <TouchableOpacity
+                style={styles.guideCloseButton}
+                onPress={() => setShowGuide(false)}
+              >
+                <Ionicons name="close" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
 
         {/* 상단 헤더 */}
@@ -162,10 +712,10 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         ) : (
           <View style={styles.walkingControls}>
             <TouchableOpacity
-              style={styles.stopButton}
+              style={[styles.submitButton, { backgroundColor: '#dc3545' }]}
               onPress={() => setIsWalking(false)}
             >
-              <Text style={styles.stopButtonText}>산책 종료</Text>
+              <Text style={[styles.submitButtonText, { color: 'white' }]}>산책 종료</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -309,6 +859,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+      </View>
     </SafeAreaView>
   );
 };
@@ -317,6 +868,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  content: {
+    flex: 1,
   },
   mapContainer: {
     flex: 1,
@@ -332,6 +886,97 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noServiceMessage: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 30,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  noServiceTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  noServiceSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  guideOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  guideContent: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 25,
+    padding: 30,
+    alignItems: 'center',
+    marginHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    position: 'relative',
+  },
+  guideMessage: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  guideTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  guideDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  arrowContainer: {
+    position: 'absolute',
+    bottom: -50,
+    alignItems: 'center',
+  },
+  arrow: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  guideCloseButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    padding: 8,
   },
   header: {
     position: 'absolute',
@@ -379,18 +1024,6 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 20,
     right: 20,
-  },
-  stopButton: {
-    backgroundColor: '#ff4444',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    alignItems: 'center',
-  },
-  stopButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
@@ -527,6 +1160,111 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  // 산책 정보 오버레이 스타일
+  walkingInfoOverlay: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  walkingStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 5,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  // 상단 모달 스타일
+  topModal: {
+    position: 'absolute',
+    zIndex: 1001,
+  },
+  topModalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  // 드래그 핸들 스타일
+  dragHandle: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  dragIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#ccc',
+    borderRadius: 2,
+  },
+  topModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  topModalTitleContainer: {
+    flex: 1,
+  },
+  topModalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 2,
+  },
+  topModalSubtitle: {
+    fontSize: 12,
+    color: '#666',
+  },
+  topModalButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  topModalMinimizeButton: {
+    padding: 4,
+    marginRight: 8,
+  },
+  topModalCloseButton: {
+    padding: 4,
+  },
+  topModalInfo: {
+    gap: 8,
+  },
+  topModalInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  topModalInfoText: {
+    fontSize: 12,
+    color: '#333',
+    marginLeft: 6,
+    flex: 1,
   },
 });
 

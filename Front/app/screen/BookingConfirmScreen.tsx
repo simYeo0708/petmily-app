@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   ScrollView,
   Image,
   TextInput,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -28,6 +28,9 @@ interface Walker {
   hourlyRate: number;
   isAvailable: boolean;
   location: string;
+  isPreviousWalker?: boolean;
+  walkCount?: number;
+  lastWalkDate?: string;
 }
 
 interface BookingConfirmScreenProps {
@@ -48,10 +51,36 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 샘플 데이터로 기본값 설정
+  const defaultWalker: Walker = {
+    id: '1',
+    name: '김산책',
+    rating: 4.8,
+    reviewCount: 127,
+    profileImage: 'https://via.placeholder.com/100',
+    bio: '반려동물과 함께하는 산책을 사랑하는 워커입니다.',
+    experience: '3년',
+    hourlyRate: 15000,
+    isAvailable: true,
+    location: '서울시 강남구',
+    isPreviousWalker: false,
+    walkCount: 0,
+    lastWalkDate: '',
+  };
+
+  const defaultBookingData = {
+    timeSlot: '오후 3:00-5:00',
+    address: '서울시 강남구 테헤란로 123',
+  };
+
+  // 안전한 데이터 사용
+  const safeWalker = walker || defaultWalker;
+  const safeBookingData = bookingData || defaultBookingData;
+
   const calculateTotalPrice = () => {
     // 시간대에서 시간 추출하여 계산 (간단한 예시)
     const duration = 2; // 기본 2시간
-    return walker.hourlyRate * duration;
+    return safeWalker.hourlyRate * duration;
   };
 
   const handleSubmitBooking = async () => {
@@ -62,9 +91,9 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
     try {
       // 실제 API 호출
       const bookingRequest = {
-        walkerId: walker.id,
-        timeSlot: bookingData.timeSlot,
-        address: bookingData.address,
+        walkerId: safeWalker.id,
+        timeSlot: safeBookingData.timeSlot,
+        address: safeBookingData.address,
         notes: notes.trim(),
         totalPrice: calculateTotalPrice(),
       };
@@ -124,7 +153,7 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
       
       {/* 헤더 */}
       <View style={styles.header}>
@@ -142,21 +171,35 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
         {/* 워커 정보 카드 */}
         <View style={styles.walkerCard}>
           <View style={styles.walkerInfo}>
+            <View style={styles.walkerImageContainer}>
             <Image
-              source={{ uri: walker.profileImage }}
+              source={{ uri: safeWalker.profileImage }}
               style={styles.walkerImage}
               defaultSource={require('../../assets/images/dog-paw.png')}
             />
-            <View style={styles.walkerDetails}>
-              <Text style={styles.walkerName}>{walker.name}</Text>
-              <View style={styles.ratingContainer}>
-                <View style={styles.starsContainer}>
-                  {renderStars(walker.rating)}
-                </View>
-                <Text style={styles.ratingText}>{walker.rating}</Text>
-                <Text style={styles.reviewCount}>({walker.reviewCount})</Text>
+            {safeWalker.isPreviousWalker && (
+              <View style={styles.previousWalkerBadge}>
+                <Text style={styles.previousWalkerBadgeText}>재신청</Text>
               </View>
-              <Text style={styles.walkerLocation}>{walker.location}</Text>
+            )}
+          </View>
+          <View style={styles.walkerDetails}>
+            <Text style={styles.walkerName}>{safeWalker.name}</Text>
+            <View style={styles.ratingContainer}>
+              <View style={styles.starsContainer}>
+                {renderStars(safeWalker.rating)}
+              </View>
+              <Text style={styles.ratingText}>{safeWalker.rating}</Text>
+              <Text style={styles.reviewCount}>({safeWalker.reviewCount})</Text>
+            </View>
+            <Text style={styles.walkerLocation}>{safeWalker.location}</Text>
+            {safeWalker.isPreviousWalker && safeWalker.walkCount && safeWalker.lastWalkDate && (
+              <View style={styles.previousWalkerInfo}>
+                <Text style={styles.previousWalkerInfoText}>
+                  {safeWalker.walkCount}회 산책 • 마지막 산책: {safeWalker.lastWalkDate}
+                </Text>
+              </View>
+            )}
             </View>
           </View>
         </View>
@@ -168,19 +211,19 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
           <View style={styles.infoRow}>
             <Ionicons name="time" size={20} color="#4A90E2" />
             <Text style={styles.infoLabel}>시간</Text>
-            <Text style={styles.infoValue}>{bookingData.timeSlot}</Text>
+            <Text style={styles.infoValue}>{safeBookingData.timeSlot}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Ionicons name="location" size={20} color="#4A90E2" />
             <Text style={styles.infoLabel}>장소</Text>
-            <Text style={styles.infoValue}>{bookingData.address}</Text>
+            <Text style={styles.infoValue}>{safeBookingData.address}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Ionicons name="cash" size={20} color="#4A90E2" />
             <Text style={styles.infoLabel}>시간당 요금</Text>
-            <Text style={styles.infoValue}>{walker.hourlyRate.toLocaleString()}원</Text>
+            <Text style={styles.infoValue}>{safeWalker.hourlyRate.toLocaleString()}원</Text>
           </View>
         </View>
 
@@ -205,7 +248,7 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
           
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>시간당 요금</Text>
-            <Text style={styles.priceValue}>{walker.hourlyRate.toLocaleString()}원</Text>
+            <Text style={styles.priceValue}>{safeWalker.hourlyRate.toLocaleString()}원</Text>
           </View>
           
           <View style={styles.priceRow}>
@@ -513,6 +556,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  // 이전 워커 관련 스타일
+  walkerImageContainer: {
+    position: 'relative',
+  },
+  previousWalkerBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#28a745',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 1,
+  },
+  previousWalkerBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  previousWalkerInfo: {
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#28a745',
+  },
+  previousWalkerInfoText: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });
 

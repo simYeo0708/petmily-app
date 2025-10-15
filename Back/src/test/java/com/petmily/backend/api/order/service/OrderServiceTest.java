@@ -4,12 +4,9 @@ import com.petmily.backend.api.order.dto.OrderCreateRequest;
 import com.petmily.backend.api.order.dto.OrderDetailResponse;
 import com.petmily.backend.api.order.dto.OrderListResponse;
 import com.petmily.backend.domain.order.entity.Order;
-import com.petmily.backend.domain.order.entity.OrderItem;
 import com.petmily.backend.domain.order.entity.OrderStatus;
 import com.petmily.backend.domain.order.repository.OrderRepository;
-import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
-import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +20,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -47,33 +43,33 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    private User mockUser;
-    private Product mockProduct;
+    // private User mockUser;
+    // private Product mockProduct;
     private Order mockOrder;
-    private OrderItem mockOrderItem;
+    // private OrderItem mockOrderItem;
 
     @BeforeEach
     void setUp() {
-        mockUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .email("test@example.com")
-                .build();
+        // mockUser = User.builder()
+        //         .id(1L)
+        //         .username("testuser")
+        //         .email("test@example.com")
+        //         .build();
 
-        mockProduct = Product.builder()
-                .id(1L)
-                .name("테스트 상품")
-                .price(10000.0)
-                .stock(100)
-                .isActive(true)
-                .build();
+        // mockProduct = Product.builder()
+        //         .id(1L)
+        //         .name("테스트 상품")
+        //         .price(10000.0)
+        //         .stock(100)
+        //         .isActive(true)
+        //         .build();
 
-        mockOrderItem = OrderItem.builder()
-                .id(1L)
-                .productId(1L)
-                .quantity(2)
-                .price(BigDecimal.valueOf(10000))
-                .build();
+        // mockOrderItem = OrderItem.builder()
+        //         .id(1L)
+        //         .productId(1L)
+        //         .quantity(2)
+        //         .price(BigDecimal.valueOf(10000))
+        //         .build();
 
         mockOrder = Order.builder()
                 .id(1L)

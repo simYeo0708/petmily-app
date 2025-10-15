@@ -61,7 +61,7 @@ class DashboardControllerTest {
                         .name("코코")
                         .species("개")
                         .breed("골든 리트리버")
-                        .age(3)
+                        .age("3")
                         .imageUrl("https://example.com/coco.jpg")
                         .size(Pet.Size.MEDIUM)
                         .build(),
@@ -70,7 +70,7 @@ class DashboardControllerTest {
                         .name("냥이")
                         .species("고양이")
                         .breed("페르시안")
-                        .age(2)
+                        .age("2")
                         .imageUrl("https://example.com/cat.jpg")
                         .size(Pet.Size.SMALL)
                         .build()

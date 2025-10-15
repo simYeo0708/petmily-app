@@ -3,12 +3,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
   FlatList,
-  SafeAreaView,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { getProductsByCategory, Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
@@ -197,6 +198,7 @@ const ShopScreen = () => {
   return (
     <SafeAreaView
       style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
+      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
       <View
         style={[
           headerStyles.header,

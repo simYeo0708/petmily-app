@@ -3,7 +3,6 @@ package com.petmily.backend.domain.order.entity;
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.*;
 
 import java.time.LocalDate;

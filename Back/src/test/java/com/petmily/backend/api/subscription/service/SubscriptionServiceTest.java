@@ -6,7 +6,6 @@ import com.petmily.backend.domain.order.entity.SubscriptionType;
 import com.petmily.backend.domain.order.repository.SubscriptionOrderRepository;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
-import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,17 +42,17 @@ class SubscriptionServiceTest {
     @InjectMocks
     private SubscriptionService subscriptionService;
 
-    private User mockUser;
+    // private User mockUser;
     private Product mockProduct;
     private SubscriptionOrder mockSubscription;
 
     @BeforeEach
     void setUp() {
-        mockUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .email("test@example.com")
-                .build();
+        // mockUser = User.builder()
+        //         .id(1L)
+        //         .username("testuser")
+        //         .email("test@example.com")
+        //         .build();
 
         mockProduct = Product.builder()
                 .id(1L)

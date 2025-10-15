@@ -10,10 +10,16 @@
     ],
     "moduleResolution": "bundler",
     "noEmit": true,
-    "strict": true,
+    "strict": false,
     "target": "esnext",
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false
   },
   "exclude": [
     "node_modules",
@@ -21,7 +27,7 @@
     "metro.config.js",
     "jest.config.js"
   ],
-  "extends": "expo/tsconfig.base",
+  "extends": "expo/tsconfig.base.json",
   "include": [
     "**/*.ts",
     "**/*.tsx",

@@ -17,7 +17,7 @@ public class PetSummaryResponse {
     private String name;
     private String species;
     private String breed;
-    private Integer age;
+    private String age;
     private String imageUrl;
     private Pet.Size size;
     
@@ -28,7 +28,7 @@ public class PetSummaryResponse {
                 .species(pet.getSpecies())
                 .breed(pet.getBreed())
                 .age(pet.getAge())
-                .imageUrl(pet.getImageUrl())
+                .imageUrl(pet.getPhotoUri())
                 .size(pet.getSize())
                 .build();
     }

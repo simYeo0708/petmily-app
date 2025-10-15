@@ -112,7 +112,7 @@ public class WalkingService {
     }
 
     public WalkingPathResponse getWalkingPath(Long bookingId, String username) {
-        WalkingValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, username);
+        validationService.validateUserBooking(bookingId, username);
 
         List<WalkingTrack> tracks = walkingTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
         List<WalkingTrackResponse> trackResponses = tracks.stream()
@@ -129,7 +129,7 @@ public class WalkingService {
     }
 
     public List<WalkingTrackResponse> getRealtimeLocation(Long bookingId, LocalDateTime afterTime, String username) {
-        WalkingValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, username);
+        validationService.validateUserBooking(bookingId, username);
 
         List<WalkingTrack> tracks = walkingTrackRepository.findByBookingIdAndTimestampAfter(bookingId, afterTime);
         return tracks.stream()

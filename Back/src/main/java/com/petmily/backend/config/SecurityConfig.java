@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -22,7 +24,6 @@ import org.springframework.security.oauth2.client.registration.ClientRegistratio
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -68,6 +69,11 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+    
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -91,7 +97,11 @@ public class SecurityConfig {
                         request.requestMatchers(
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/api/auth/**"),
-                                new AntPathRequestMatcher("/api/users/**")
+                                new AntPathRequestMatcher("/api/users/**"),
+                                new AntPathRequestMatcher("/api/pets/**"),  // 디버그용: 모든 펫 API 허용
+                                new AntPathRequestMatcher("/api/map/**"),
+                                new AntPathRequestMatcher("/api/notifications/**"),
+                                new AntPathRequestMatcher("/api/auth/test/**")
                         ).permitAll().anyRequest().authenticated()
                 )
 

@@ -6,13 +6,19 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   ScrollView,
   Image,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { RootStackParamList } from '../index';
+
+type WalkerDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WalkerDetail'>;
+type WalkerDetailScreenRouteProp = RouteProp<RootStackParamList, 'WalkerDetail'>;
 
 const { width, height } = Dimensions.get('window');
 
@@ -100,7 +106,7 @@ const WalkerDetailScreen: React.FC<WalkerDetailScreenProps> = ({ navigation, rou
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 배경 이미지 영역 */}

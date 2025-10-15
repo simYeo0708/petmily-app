@@ -14,7 +14,6 @@ import com.petmily.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -25,14 +24,26 @@ import java.time.Instant;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManagerBuilder authenticationManagerBuilder;
+    private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthRefreshTokenRepository refreshTokenRepository;
+    
+    public AuthService(UserRepository userRepository, 
+                      PasswordEncoder passwordEncoder,
+                      org.springframework.security.authentication.AuthenticationManager authenticationManager,
+                      JwtTokenProvider jwtTokenProvider,
+                      AuthRefreshTokenRepository refreshTokenRepository) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshTokenRepository = refreshTokenRepository;
+        log.info("✅ AuthService initialized with AuthenticationManager: {}", authenticationManager != null);
+    }
 
     @Transactional
     public User signup(SignupRequest request) {
@@ -56,36 +67,80 @@ public class AuthService {
 
     @Transactional
     public TokenResponse login(LoginRequest request) {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
-
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(authenticationToken);
-
-        String accessToken = jwtTokenProvider.generateAccessToken(authentication);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
-
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        Long userId = user.getId();
-        refreshTokenRepository.findByUserId(userId)
-                .ifPresentOrElse(
-                        token -> {
-                            token.updateToken(refreshToken, Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()));
-                            refreshTokenRepository.save(token);
-                        },
-                        () -> {
-                            AuthRefreshToken newRefreshToken = AuthRefreshToken.builder()
-                                    .token(refreshToken)
-                                    .userId(userId)
-                                    .expirationDate(Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()))
-                                    .build();
-                            refreshTokenRepository.save(newRefreshToken);
-                        }
+        log.info("로그인 시도: username={}", request.getUsername());
+        
+        try {
+            // 사용자 조회
+            User user = userRepository.findByUsername(request.getUsername())
+                    .orElseThrow(() -> {
+                        log.error("❌ 사용자를 찾을 수 없음: {}", request.getUsername());
+                        return new UsernameNotFoundException("User not found");
+                    });
+            
+            log.info("✅ 사용자 조회 성공: userId={}, username={}", user.getId(), user.getUsername());
+            
+            // 비밀번호 확인
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                log.error("❌ 비밀번호 불일치: username={}", request.getUsername());
+                throw new org.springframework.security.authentication.BadCredentialsException("Invalid password");
+            }
+            
+            log.info("✅ 비밀번호 일치");
+            
+            // Authentication 객체 생성
+            org.springframework.security.core.authority.SimpleGrantedAuthority authority = 
+                new org.springframework.security.core.authority.SimpleGrantedAuthority(user.getRole().getKey());
+            org.springframework.security.core.userdetails.User userDetails = 
+                new org.springframework.security.core.userdetails.User(
+                    user.getUsername(),
+                    user.getPassword(),
+                    java.util.Collections.singletonList(authority)
                 );
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                java.util.Collections.singletonList(authority)
+            );
 
-        return TokenResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
+            log.info("✅ 인증 객체 생성 성공: {}", authentication.getName());
+
+            String accessToken = jwtTokenProvider.generateAccessToken(authentication);
+            String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+            
+            log.info("✅ 토큰 생성 성공");
+
+            Long userId = user.getId();
+            refreshTokenRepository.findByUserId(userId)
+                    .ifPresentOrElse(
+                            token -> {
+                                token.updateToken(refreshToken, Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()));
+                                refreshTokenRepository.save(token);
+                                log.info("✅ Refresh token 업데이트 완료");
+                            },
+                            () -> {
+                                AuthRefreshToken newRefreshToken = AuthRefreshToken.builder()
+                                        .token(refreshToken)
+                                        .userId(userId)
+                                        .expirationDate(Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()))
+                                        .build();
+                                refreshTokenRepository.save(newRefreshToken);
+                                log.info("✅ 새 Refresh token 생성 완료");
+                            }
+                    );
+
+            log.info("✅ 로그인 완료");
+            
+            return TokenResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .userId(user.getId())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .build();
+        } catch (Exception e) {
+            log.error("❌ 로그인 실패: username={}, error={}", request.getUsername(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Transactional
@@ -127,5 +182,21 @@ public class AuthService {
                 .ifPresent(refreshTokenRepository::delete);
 
         userRepository.delete(user);
+    }
+    
+    // 🔧 개발용: 모든 사용자 조회
+    public java.util.List<java.util.Map<String, Object>> getAllUsersForDebug() {
+        return userRepository.findAll().stream()
+                .map(user -> {
+                    java.util.Map<String, Object> userMap = new java.util.HashMap<>();
+                    userMap.put("id", user.getId());
+                    userMap.put("username", user.getUsername() != null ? user.getUsername() : "null");
+                    userMap.put("email", user.getEmail() != null ? user.getEmail() : "null");
+                    userMap.put("name", user.getName() != null ? user.getName() : "null");
+                    userMap.put("role", user.getRole() != null ? user.getRole().toString() : "null");
+                    userMap.put("hasPassword", user.getPassword() != null && !user.getPassword().isEmpty());
+                    return userMap;
+                })
+                .collect(java.util.stream.Collectors.toList());
     }
 }

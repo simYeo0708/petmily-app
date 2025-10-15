@@ -1,27 +1,39 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Alert,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
   Switch,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import { usePet } from "../contexts/PetContext";
 
 type SettingsScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
 
 const SettingsScreen = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
+  const { refreshPetInfo } = usePet();  // PetContext 사용
   const [pushNotifications, setPushNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
+  
+  // 화면 포커스될 때만 펫 정보 갱신 (필요시에만)
+  // SettingsScreen에서는 펫 정보를 직접 수정하지 않으므로 자동 갱신 비활성화
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     console.log('🔄 SettingsScreen focused - refreshing pet info');
+  //     refreshPetInfo();
+  //   }, [refreshPetInfo])
+  // );
 
   const settingSections = [
     {
@@ -126,6 +138,11 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView
       style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
+      <StatusBar 
+        backgroundColor="#C59172" 
+        barStyle="light-content" 
+        translucent={false}
+      />
       <View
         style={[
           headerStyles.header,

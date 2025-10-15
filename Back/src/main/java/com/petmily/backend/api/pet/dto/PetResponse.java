@@ -1,86 +1,51 @@
 package com.petmily.backend.api.pet.dto;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.petmily.backend.domain.pet.entity.Pet;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonDeserialize(builder = PetResponse.PetResponseBuilder.class)
 public class PetResponse {
-    
-    @JsonPOJOBuilder(withPrefix = "")
-    public static class PetResponseBuilder {
-    }
     private Long id;
     private String name;
-    private String species; // 개, 고양이 등
-    private String breed; // 품종
-    private Integer age;
-    private String gender; // 수컷, 암컷
-    private String personality; // 성격
-    private String imageUrl;
-    private Long userId;
-    
-    // Weight and size information
-    private Double weight; // kg
-    private Pet.Size size; // SMALL, MEDIUM, LARGE
-    
-    // Health and medical information
-    private Boolean isVaccinated;
-    private String medicalConditions; // 알러지, 질병 등
-    private String specialNotes; // 특별 주의사항
-    
-    // Activity level and preferences
-    private Pet.ActivityLevel activityLevel; // LOW, MODERATE, HIGH
-    private String favoriteActivities; // 좋아하는 활동들
-    
-    // Social behavior
-    private Boolean goodWithChildren;
-    private Boolean goodWithOtherPets;
+    private String species;
+    private String breed;
+    private String age;
+    private String weight;
+    private String gender;
     private Boolean isNeutered;
+    private String description;
+    private String photoUri;
+    private Boolean hasPhoto;
+    private String[] temperaments;
     
-    // Timestamps
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    
-    // Owner information
-    private String ownerUsername;
-    private String ownerName;
-    
-    public static PetResponse from(Pet pet) {
-        return PetResponse.builder()
-                .id(pet.getId())
-                .name(pet.getName())
-                .species(pet.getSpecies())
-                .breed(pet.getBreed())
-                .age(pet.getAge())
-                .gender(pet.getGender())
-                .personality(pet.getPersonality())
-                .imageUrl(pet.getImageUrl())
-                .userId(pet.getUserId())
-                .weight(pet.getWeight())
-                .size(pet.getSize())
-                .isVaccinated(pet.getIsVaccinated())
-                .medicalConditions(pet.getMedicalConditions())
-                .specialNotes(pet.getSpecialNotes())
-                .activityLevel(pet.getActivityLevel())
-                .favoriteActivities(pet.getFavoriteActivities())
-                .goodWithChildren(pet.getGoodWithChildren())
-                .goodWithOtherPets(pet.getGoodWithOtherPets())
-                .isNeutered(pet.getIsNeutered())
-                .createdAt(pet.getCreateTime())
-                .updatedAt(pet.getUpdateTime())
-                .ownerUsername(pet.getUser() != null ? pet.getUser().getUsername() : null)
-                .ownerName(pet.getUser() != null ? pet.getUser().getName() : null)
-                .build();
+    // 건강 및 알레르기 정보
+    private Boolean isVaccinated;
+    private String[] allergies;        // 알레르기 목록
+    private String[] medications;      // 복용 중인 약물
+    private String medicalConditions;  // 기존 질병/건강 상태
+    private String specialNotes;       // 특별 주의사항
+
+    public static PetResponse from(com.petmily.backend.domain.pet.entity.Pet pet) {
+        PetResponse response = new PetResponse();
+        response.setId(pet.getId());
+        response.setName(pet.getName());
+        response.setSpecies(pet.getSpecies());
+        response.setBreed(pet.getBreed());
+        response.setAge(pet.getAge());
+        response.setWeight(pet.getWeight());
+        response.setGender(pet.getGender());
+        response.setIsNeutered(pet.getIsNeutered());
+        response.setDescription(pet.getDescription());
+        response.setPhotoUri(pet.getPhotoUri());
+        response.setHasPhoto(pet.getHasPhoto());
+        response.setTemperaments(pet.getTemperaments());
+        
+        // 건강 및 알레르기 정보
+        response.setIsVaccinated(pet.getIsVaccinated());
+        response.setAllergies(pet.getAllergies());
+        response.setMedications(pet.getMedications());
+        response.setMedicalConditions(pet.getMedicalConditions());
+        response.setSpecialNotes(pet.getSpecialNotes());
+        
+        return response;
     }
 }

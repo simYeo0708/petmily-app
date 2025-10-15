@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PetRepository extends JpaRepository<Pet, Long> {
@@ -29,6 +30,8 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     
     @Query("SELECT p FROM Pet p WHERE p.age BETWEEN :minAge AND :maxAge")
     List<Pet> findByAgeBetween(@Param("minAge") Integer minAge, @Param("maxAge") Integer maxAge);
+    
+    Optional<Pet> findByIdAndUserId(Long id, Long userId);
     
 }
 

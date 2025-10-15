@@ -2,13 +2,11 @@ package com.petmily.backend.api.subscription.service;
 
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.api.order.service.OrderService;
 import com.petmily.backend.api.subscription.dto.*;
 import com.petmily.backend.domain.order.entity.*;
 import com.petmily.backend.domain.order.repository.*;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
-import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,7 +31,6 @@ public class SubscriptionService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final OrderService orderService;
 
     public SubscriptionListResponse getSubscriptions(Long userId, Pageable pageable) {
         Page<SubscriptionOrder> subscriptions = subscriptionOrderRepository.findByUserIdWithOrder(userId, pageable);
@@ -66,7 +63,7 @@ public class SubscriptionService {
     @Transactional
     public SubscriptionDetailResponse createSubscription(Long userId, SubscriptionCreateRequest request) {
         // 1. 사용자 검증
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         // 2. 요청 데이터 검증

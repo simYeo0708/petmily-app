@@ -68,7 +68,7 @@ class DashboardServiceTest {
         mockPet1.setName("코코");
         mockPet1.setSpecies("개");
         mockPet1.setBreed("골든 리트리버");
-        mockPet1.setAge(3);
+        mockPet1.setAge("3");
         mockPet1.setSize(Pet.Size.MEDIUM);
         mockPet1.setUserId(1L);
 
@@ -77,7 +77,7 @@ class DashboardServiceTest {
         mockPet2.setName("냥이");
         mockPet2.setSpecies("고양이");
         mockPet2.setBreed("페르시안");
-        mockPet2.setAge(2);
+        mockPet2.setAge("2");
         mockPet2.setSize(Pet.Size.SMALL);
         mockPet2.setUserId(1L);
 

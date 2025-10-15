@@ -5,12 +5,13 @@ import {
   Alert,
   Modal,
   Pressable,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../index";
 import {
   headerStyles,
@@ -121,6 +122,7 @@ const MatchingScreen = () => {
 
   return (
     <SafeAreaView style={homeScreenStyles.root}>
+      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
       {/* Header */}
       <View
         style={[

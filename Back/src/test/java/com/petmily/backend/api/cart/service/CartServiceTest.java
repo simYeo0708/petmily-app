@@ -7,7 +7,6 @@ import com.petmily.backend.domain.cart.entity.CartItem;
 import com.petmily.backend.domain.cart.repository.CartItemRepository;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
-import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,12 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -40,17 +37,17 @@ class CartServiceTest {
     @InjectMocks
     private CartService cartService;
 
-    private User mockUser;
+    // private User mockUser;
     private Product mockProduct;
     private CartItem mockCartItem;
 
     @BeforeEach
     void setUp() {
-        mockUser = User.builder()
-                .id(1L)
-                .username("testuser")
-                .email("test@example.com")
-                .build();
+        // mockUser = User.builder()
+        //         .id(1L)
+        //         .username("testuser")
+        //         .email("test@example.com")
+        //         .build();
 
         mockProduct = Product.builder()
                 .id(1L)

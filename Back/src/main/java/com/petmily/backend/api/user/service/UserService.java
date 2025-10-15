@@ -86,6 +86,12 @@ public class UserService {
                 user.setAddress(new Address(request.getRoadAddress(), request.getAddressDetail(), request.getZipCode()));
                 break;
 
+            case WALKER:
+                user.setEmail(request.getEmail());
+                user.setProfile(request.getProfile());
+                user.setAddress(new Address(request.getRoadAddress(), request.getAddressDetail(), request.getZipCode()));
+                break;
+
         }
 
     }

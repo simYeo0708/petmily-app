@@ -233,7 +233,7 @@ public class ProductService {
 
     public ReviewListResponse getProductReviews(Long productId, Long currentUserId, Pageable pageable) {
         // 상품 존재 확인
-        Product product = productRepository.findById(productId)
+        productRepository.findById(productId)
             .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
         
         Page<Review> reviewPage = reviewRepository.findByProductIdOrderByCreateTimeDesc(productId, pageable);

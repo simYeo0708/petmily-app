@@ -60,7 +60,6 @@ public class WalkerBookingResponse {
     
     // User info
     private String username;
-    private String userName;
     
     public static WalkerBookingResponse from(WalkerBooking booking) {
         return WalkerBookingResponse.builder()
@@ -95,7 +94,6 @@ public class WalkerBookingResponse {
                 .walkerName(booking.getWalker() != null && booking.getWalker().getUser() != null ? 
                     booking.getWalker().getUser().getName() : null)
                 .username(booking.getUser() != null ? booking.getUser().getUsername() : null)
-                .userName(booking.getUser() != null ? booking.getUser().getName() : null)
                 .build();
     }
 }

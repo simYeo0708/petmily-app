@@ -69,7 +69,7 @@ public class OrderService {
     @Transactional
     public OrderDetailResponse createOrder(Long userId, OrderCreateRequest request) {
         // 1. 사용자 검증
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         // 2. 장바구니 아이템 조회 및 검증
@@ -315,7 +315,7 @@ public class OrderService {
     @Transactional
     public ReturnDetailResponse createReturn(Long orderId, Long userId, ReturnCreateRequest request) {
         // 1. 사용자 검증
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         // 2. 주문 검증
@@ -600,7 +600,7 @@ public class OrderService {
     @Transactional
     public ReviewDetailResponse createReview(Long orderId, Long userId, ReviewCreateRequest request) {
         // 1. 사용자 검증
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
             .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
         
         // 2. 주문 검증

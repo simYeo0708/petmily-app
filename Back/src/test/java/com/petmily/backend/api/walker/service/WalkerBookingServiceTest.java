@@ -231,7 +231,7 @@ class WalkerBookingServiceTest {
     @Test
     void cancelBooking_NotBookingOwner() {
         // Given
-        User otherUser = User.builder().id(3L).username("otheruser").build();
+        // User otherUser = User.builder().id(3L).username("otheruser").build();
         WalkerBooking otherUserBooking = new WalkerBooking();
         otherUserBooking.setId(1L);
         otherUserBooking.setUserId(3L); // 다른 사용자의 예약

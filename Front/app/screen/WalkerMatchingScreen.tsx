@@ -6,14 +6,20 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
-  SafeAreaView,
   FlatList,
   RefreshControl,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import WalkerCard from '../components/WalkerCard';
+import { RootStackParamList } from '../index';
+
+type WalkerMatchingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WalkerMatching'>;
+type WalkerMatchingScreenRouteProp = RouteProp<RootStackParamList, 'WalkerMatching'>;
 
 const { width } = Dimensions.get('window');
 
@@ -224,7 +230,7 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
       
       <FlatList
         data={walkers}
