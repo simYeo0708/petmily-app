@@ -1,7 +1,7 @@
 package com.petmily.backend.api.walker.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,8 +23,8 @@ public class WalkerSummaryResponse {
     private Integer walksCount;
     private Double pricePerHour;
     private WalkerStatus status;
-    
-    public static WalkerSummaryResponse from(WalkerProfile walker) {
+
+    public static WalkerSummaryResponse from(Walker walker) {
         return WalkerSummaryResponse.builder()
                 .id(walker.getId())
                 .username(walker.getUser() != null ? walker.getUser().getUsername() : null)

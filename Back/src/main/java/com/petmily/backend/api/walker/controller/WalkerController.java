@@ -1,11 +1,13 @@
 package com.petmily.backend.api.walker.controller;
 
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileCreateRequest;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileUpdateRequest;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
+import com.petmily.backend.api.common.util.SecurityUtils;
+import com.petmily.backend.api.walker.dto.walker.WalkerCreateRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerUpdateRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.api.walker.service.WalkerService;
 import com.petmily.backend.api.walker.service.WalkerSearchService;
+import com.petmily.backend.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -25,35 +27,42 @@ public class WalkerController {
     private final WalkerSearchService walkerSearchService;
 
     @PostMapping
-    public ResponseEntity<WalkerProfileResponse> registerWalker(@RequestBody WalkerProfileCreateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        WalkerProfileResponse response = walkerService.registerWalker(authentication.getName(), request);
+    public ResponseEntity<WalkerResponse> registerWalker(
+            @RequestBody WalkerCreateRequest request,
+            Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerResponse response = walkerService.registerWalker(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WalkerProfileResponse> getWalkerProfile(@PathVariable long id) {
-        WalkerProfileResponse response = walkerService.getWalkerProfile(id);
+    public ResponseEntity<WalkerResponse> getWalkerProfile(@PathVariable long id) {
+        WalkerResponse response = walkerService.getWalkerProfile(id);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<WalkerProfileResponse>> getAllWalkers(@ModelAttribute WalkerSearchRequest request) {
-        List<WalkerProfileResponse> response = walkerService.getAllWalkers(request);
+    public ResponseEntity<List<WalkerResponse>> getAllWalkers(
+            @ModelAttribute WalkerSearchRequest request,
+            Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerResponse> response = walkerService.getAllWalkers(userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<WalkerProfileResponse> getCurrentWalkerProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        WalkerProfileResponse response = walkerService.getWalkerProfileByUsername(authentication.getName());
+    public ResponseEntity<WalkerResponse> getCurrentWalkerProfile(Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerResponse response = walkerService.getWalkerByUserId(userId);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/me")
-    public ResponseEntity<WalkerProfileResponse> updateCurrentWalkerProfile(@RequestBody WalkerProfileUpdateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        WalkerProfileResponse response = walkerService.updateWalkerProfile(authentication.getName(), request);
+    public ResponseEntity<WalkerResponse> updateCurrentWalkerProfile(
+            @RequestBody WalkerUpdateRequest request,
+            Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerResponse response = walkerService.updateCurrentWalkerProfile(userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -64,8 +73,8 @@ public class WalkerController {
     public ResponseEntity<Void> addFavoriteWalker(
             @PathVariable Long walkerId,
             Authentication authentication) {
-        String username = authentication.getName();
-        walkerService.addFavoriteWalker(walkerId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        walkerService.addFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -76,8 +85,8 @@ public class WalkerController {
     public ResponseEntity<Void> removeFavoriteWalker(
             @PathVariable Long walkerId,
             Authentication authentication) {
-        String username = authentication.getName();
-        walkerService.removeFavoriteWalker(walkerId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        walkerService.removeFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -85,10 +94,10 @@ public class WalkerController {
      * 즐겨찾기 워커 목록 조회
      */
     @GetMapping("/favorites")
-    public ResponseEntity<List<WalkerProfileResponse>> getFavoriteWalkers(
+    public ResponseEntity<List<WalkerResponse>> getFavoriteWalkers(
             Authentication authentication) {
-        String username = authentication.getName();
-        List<WalkerProfileResponse> favorites = walkerService.getFavoriteWalkers(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerResponse> favorites = walkerService.getFavoriteWalkers(userId);
         return ResponseEntity.ok(favorites);
     }
 
@@ -99,8 +108,8 @@ public class WalkerController {
     public ResponseEntity<Boolean> isFavoriteWalker(
             @PathVariable Long walkerId,
             Authentication authentication) {
-        String username = authentication.getName();
-        boolean isFavorite = walkerService.isFavoriteWalker(walkerId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        boolean isFavorite = walkerService.isFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok(isFavorite);
     }
 
@@ -108,10 +117,11 @@ public class WalkerController {
      * 고급 워커 검색 (페이징 지원)
      */
     @GetMapping("/search")
-    public ResponseEntity<Page<WalkerProfileResponse>> searchWalkers(
+    public ResponseEntity<Page<WalkerResponse>> searchWalkers(
             @ModelAttribute WalkerSearchRequest request,
             Authentication authentication) {
-        Page<WalkerProfileResponse> response = walkerSearchService.searchWalkers(request, authentication);
+        Long userId = SecurityUtils.getUserId(authentication);
+        Page<WalkerResponse> response = walkerSearchService.searchWalkers(request, userId);
         return ResponseEntity.ok(response);
     }
 

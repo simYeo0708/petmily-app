@@ -3,7 +3,7 @@ package com.petmily.backend.domain.chat.entity;
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -52,7 +52,7 @@ public class ChatRoom extends BaseTimeEntity {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walker_id", insertable = false, updatable = false)
-    private WalkerProfile walker;
+    private Walker walker;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", insertable = false, updatable = false)

@@ -1,5 +1,6 @@
 package com.petmily.backend.api.walk.service.notification;
 
+import com.petmily.backend.api.common.service.LocationValidationService;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walk.entity.WalkTrack;
@@ -45,7 +46,7 @@ public class WalkProgressScheduler {
             log.info("현재 진행 중인 산책 수: {}", activeWalks.size());
 
             for (WalkBooking booking : activeWalks) {
-                processWalkingBooking(booking);
+                processWalkBooking(booking);
             }
         } catch (Exception e) {
             log.error("산책 진행 상황 체크 중 오류 발생", e);
@@ -80,7 +81,7 @@ public class WalkProgressScheduler {
     /**
      * 개별 산책 예약 처리
      */
-    private void processWalkingBooking(WalkBooking booking) {
+    private void processWalkBooking(WalkBooking booking) {
         try {
             String petName = getPetName(booking);
             String ownerContact = getOwnerContact(booking);
@@ -140,13 +141,15 @@ public class WalkProgressScheduler {
         WalkTrack baseLocation = tracks.get(0);
         
         for (WalkTrack track : tracks) {
-            double distance = calculateDistance(
+            double distanceKm = LocationValidationService.calculateDistance(
                     baseLocation.getLatitude(), baseLocation.getLongitude(),
                     track.getLatitude(), track.getLongitude()
             );
-            
+
+            double distanceMeters = distanceKm * 1000; // km를 미터로 변환
+
             // 기준점에서 20미터 이상 떨어진 위치가 있으면 정지 상태가 아님
-            if (distance > LOCATION_THRESHOLD_METERS) {
+            if (distanceMeters > LOCATION_THRESHOLD_METERS) {
                 return false;
             }
         }
@@ -167,22 +170,6 @@ public class WalkProgressScheduler {
         }
     }
 
-    /**
-     * 두 위치 간의 거리 계산 (미터 단위)
-     */
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final double R = 6371000; // Earth's radius in meters
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-    }
 
     /**
      * 펫 이름 조회 (실제 구현에서는 Pet 엔티티 연동 필요)
@@ -209,7 +196,7 @@ public class WalkProgressScheduler {
             
             return Map.of(
                 "activeWalks", activeWalks.size(),
-                "walkingBookingIds", activeWalks.stream()
+                "walkBookingIds", activeWalks.stream()
                         .map(WalkBooking::getId)
                         .collect(Collectors.toList()),
                 "lastCheckTime", LocalDateTime.now().toString(),

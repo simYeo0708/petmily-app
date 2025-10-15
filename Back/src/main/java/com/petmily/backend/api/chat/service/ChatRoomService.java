@@ -10,8 +10,8 @@ import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -33,7 +33,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
     private final RedisSubscriber redisSubscriber;
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
@@ -75,7 +75,7 @@ public class ChatRoomService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        WalkerProfile walker = walkerProfileRepository.findById(request.getWalkerId())
+        Walker walker = walkerRepository.findById(request.getWalkerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "워커를 찾을 수 없습니다"));
 
         // 워커는 자기 자신과 채팅할 수 없음
@@ -134,9 +134,9 @@ public class ChatRoomService {
         if (chatRoom.getUserId().equals(user.getId())) {
             return true;
         }
-        
+
         // 워커인지 확인
-        WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId()).orElse(null);
+        Walker walker = walkerRepository.findByUserId(user.getId()).orElse(null);
         return walker != null && chatRoom.getWalkerId().equals(walker.getId());
     }
 

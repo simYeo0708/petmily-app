@@ -8,9 +8,9 @@ import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +35,7 @@ class WalkerBookingServiceTest {
     private WalkerBookingRepository walkerBookingRepository;
 
     @Mock
-    private WalkerProfileRepository walkerProfileRepository;
+    private WalkerRepository walkerRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -45,7 +45,7 @@ class WalkerBookingServiceTest {
 
     private User mockUser;
     private User mockWalkerUser;
-    private WalkerProfile mockWalkerProfile;
+    private Walker mockWalker;
     private WalkerBooking mockBooking;
     private WalkerBookingRequest mockBookingRequest;
 
@@ -67,7 +67,7 @@ class WalkerBookingServiceTest {
                 .role(Role.USER)
                 .build();
 
-        mockWalkerProfile = WalkerProfile.builder()
+        mockWalker = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .location("강남구")
@@ -101,7 +101,7 @@ class WalkerBookingServiceTest {
     void createBooking_Success() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(walkerProfileRepository.findById(1L)).thenReturn(Optional.of(mockWalkerProfile));
+        when(walkerRepository.findById(1L)).thenReturn(Optional.of(mockWalker));
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
         // When
@@ -128,7 +128,7 @@ class WalkerBookingServiceTest {
     void createBooking_WalkerNotFound() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(walkerProfileRepository.findById(1L)).thenReturn(Optional.empty());
+        when(walkerRepository.findById(1L)).thenReturn(Optional.empty());
 
         // When & Then
         assertThatThrownBy(() -> walkerBookingService.createBooking(1L, mockBookingRequest))
@@ -138,7 +138,7 @@ class WalkerBookingServiceTest {
     @Test
     void createBooking_WalkerNotAvailable() {
         // Given
-        WalkerProfile unavailableWalker = WalkerProfile.builder()
+        Walker unavailableWalker = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .isAvailable(false)  // 사용불가 상태
@@ -147,7 +147,7 @@ class WalkerBookingServiceTest {
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(walkerProfileRepository.findById(1L)).thenReturn(Optional.of(unavailableWalker));
+        when(walkerRepository.findById(1L)).thenReturn(Optional.of(unavailableWalker));
 
         // When & Then
         assertThatThrownBy(() -> walkerBookingService.createBooking(1L, mockBookingRequest))
@@ -173,7 +173,7 @@ class WalkerBookingServiceTest {
     void getWalkerBookings_Success() {
         // Given
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(walkerProfileRepository.findByUserId(1L)).thenReturn(Optional.of(mockWalkerProfile));
+        when(walkerRepository.findByUserId(1L)).thenReturn(Optional.of(mockWalker));
         when(walkerBookingRepository.findByWalkerIdOrderByDateDesc(1L))
                 .thenReturn(Arrays.asList(mockBooking));
 
@@ -189,7 +189,7 @@ class WalkerBookingServiceTest {
     void updateBookingStatus_ConfirmBooking_Success() {
         // Given
         when(userRepository.findById(2L)).thenReturn(Optional.of(mockWalkerUser));
-        when(walkerProfileRepository.findByUserId(2L)).thenReturn(Optional.of(mockWalkerProfile));
+        when(walkerRepository.findByUserId(2L)).thenReturn(Optional.of(mockWalker));
         when(walkerBookingRepository.findById(1L)).thenReturn(Optional.of(mockBooking));
         when(walkerBookingRepository.save(any(WalkerBooking.class))).thenReturn(mockBooking);
 
@@ -206,7 +206,7 @@ class WalkerBookingServiceTest {
         // Given
         User otherWalker = User.builder().id(3L).username("otherwalker").build();
         when(userRepository.findById(3L)).thenReturn(Optional.of(otherWalker));
-        when(walkerProfileRepository.findByUserId(3L)).thenReturn(Optional.empty());
+        when(walkerRepository.findByUserId(3L)).thenReturn(Optional.empty());
         when(walkerBookingRepository.findById(1L)).thenReturn(Optional.of(mockBooking));
 
         // When & Then

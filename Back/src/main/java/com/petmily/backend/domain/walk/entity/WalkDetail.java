@@ -36,6 +36,15 @@ public class WalkDetail extends BaseTimeEntity {
     @Column(name = "special_incidents", columnDefinition = "TEXT")
     private String specialIncidents; // 특이사항
 
+    @Column(name = "start_photo_url")
+    private String startPhotoUrl;
+
+    @Column(name = "middle_photo_url")
+    private String middlePhotoUrl;
+
+    @Column(name = "end_photo_url")
+    private String endPhotoUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "walk_status")
     @Builder.Default

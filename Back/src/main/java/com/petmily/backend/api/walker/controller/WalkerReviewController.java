@@ -1,5 +1,6 @@
 package com.petmily.backend.api.walker.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewRequest;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewResponse;
 import com.petmily.backend.api.walker.dto.walkerReview.WalkerReportRequest;
@@ -24,8 +25,8 @@ public class WalkerReviewController {
     public ResponseEntity<WalkerReviewResponse> createReview(
             @Valid @RequestBody WalkerReviewRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerReviewResponse response = walkerReviewService.createReview(username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerReviewResponse response = walkerReviewService.createReview(userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -46,8 +47,8 @@ public class WalkerReviewController {
     @GetMapping("/my")
     public ResponseEntity<List<WalkerReviewResponse>> getMyReviews(
             Authentication authentication) {
-        String username = authentication.getName();
-        List<WalkerReviewResponse> reviews = walkerReviewService.getUserReviews(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<WalkerReviewResponse> reviews = walkerReviewService.getUserReviews(userId);
         return ResponseEntity.ok(reviews);
     }
 
@@ -55,8 +56,8 @@ public class WalkerReviewController {
     public ResponseEntity<WalkerReviewResponse> getReview(
             @PathVariable Long reviewId,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerReviewResponse review = walkerReviewService.getReview(reviewId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerReviewResponse review = walkerReviewService.getReview(reviewId, userId);
         return ResponseEntity.ok(review);
     }
 
@@ -65,8 +66,8 @@ public class WalkerReviewController {
             @PathVariable Long reviewId,
             @Valid @RequestBody WalkerReviewRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        WalkerReviewResponse updatedReview = walkerReviewService.updateReview(reviewId, username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerReviewResponse updatedReview = walkerReviewService.updateReview(reviewId, userId, request);
         return ResponseEntity.ok(updatedReview);
     }
 
@@ -74,8 +75,8 @@ public class WalkerReviewController {
     public ResponseEntity<Void> deleteReview(
             @PathVariable Long reviewId,
             Authentication authentication) {
-        String username = authentication.getName();
-        walkerReviewService.deleteReview(reviewId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        walkerReviewService.deleteReview(reviewId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -85,8 +86,8 @@ public class WalkerReviewController {
     @GetMapping("/reviewable-bookings")
     public ResponseEntity<List<Map<String, Object>>> getReviewableBookings(
             Authentication authentication) {
-        String username = authentication.getName();
-        List<Map<String, Object>> reviewableBookings = walkerReviewService.getReviewableBookings(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<Map<String, Object>> reviewableBookings = walkerReviewService.getReviewableBookings(userId);
         return ResponseEntity.ok(reviewableBookings);
     }
 
@@ -97,8 +98,8 @@ public class WalkerReviewController {
     public ResponseEntity<String> reportWalker(
             @Valid @RequestBody WalkerReportRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        String result = walkerReviewService.reportWalker(username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        String result = walkerReviewService.reportWalker(userId, request);
         return ResponseEntity.ok(result);
     }
 
@@ -108,8 +109,8 @@ public class WalkerReviewController {
     @GetMapping("/my-reports")
     public ResponseEntity<List<Map<String, Object>>> getMyReports(
             Authentication authentication) {
-        String username = authentication.getName();
-        List<Map<String, Object>> reports = walkerReviewService.getUserReports(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<Map<String, Object>> reports = walkerReviewService.getUserReports(userId);
         return ResponseEntity.ok(reports);
     }
 

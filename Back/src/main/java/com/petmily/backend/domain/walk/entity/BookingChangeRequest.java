@@ -60,8 +60,8 @@ public class BookingChangeRequest extends BaseTimeEntity {
     @Builder.Default
     private ChangeRequestStatus status = ChangeRequestStatus.PENDING;
 
-    @Column(name = "walker_response", columnDefinition = "TEXT")
-    private String walkerResponse; // 수정필요******************
+    @Column(name = "change_response", columnDefinition = "TEXT")
+    private String changeResponse; // 수정필요******************
 
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;

@@ -1,6 +1,6 @@
 package com.petmily.backend.api.admin.controller;
 
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.api.walker.service.WalkerService;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +20,10 @@ public class WalkerAdminController {
      * 워커 상태 변경 (관리자 전용)
      */
     @PutMapping("/{id}/status")
-    public ResponseEntity<WalkerProfileResponse> updateWalkerStatus(
+    public ResponseEntity<WalkerResponse> updateWalkerStatus(
             @PathVariable long id,
             @RequestParam WalkerStatus status) {
-        WalkerProfileResponse response = walkerService.updateWalkerStatus(id, status);
+        WalkerResponse response = walkerService.updateWalkerStatus(id, status);
         return ResponseEntity.ok(response);
     }
 }

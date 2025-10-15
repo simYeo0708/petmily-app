@@ -12,7 +12,7 @@ import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class ChatMessageServiceTest {
 
     private User user;
     private User walkerUser;
-    private WalkerProfile walker;
+    private Walker walker;
     private ChatRoom chatRoom;
     private ChatMessage chatMessage;
     private ChatMessageRequest messageRequest;
@@ -78,7 +78,7 @@ class ChatMessageServiceTest {
                 .name("Walker User")
                 .build();
 
-        walker = WalkerProfile.builder()
+        walker = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .bio("Test Walker Bio")

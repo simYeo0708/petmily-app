@@ -21,6 +21,11 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
     public User getUserById(long id){
         return userRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -40,15 +45,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User getCurrentUser(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public User getCurrentUser(Long userId) {
+        return findUserById(userId);
     }
 
     @Transactional
-    public User updateCurrentUser(String username, UserUpdateRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public User updateCurrentUser(Long userId, UserUpdateRequest request) {
+        User user = findUserById(userId);
 
         update(user, request);
 
@@ -56,9 +59,8 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(String username, ChangePasswordRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = findUserById(userId);
 
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_PASSWORD); // Or a more specific error

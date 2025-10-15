@@ -1,7 +1,7 @@
 package com.petmily.backend.api.walker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petmily.backend.api.walker.dto.walkerProfile.*;
+import com.petmily.backend.api.walker.dto.walker.*;
 import com.petmily.backend.api.walker.service.WalkerService;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,33 +41,33 @@ class WalkerControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private WalkerProfileCreateRequest mockCreateRequest;
-    private WalkerProfileUpdateRequest mockUpdateRequest;
-    private WalkerProfileResponse mockProfileResponse;
+    private WalkerCreateRequest mockCreateRequest;
+    private WalkerUpdateRequest mockUpdateRequest;
+    private WalkerResponse mockProfileResponse;
     private WalkerSearchRequest mockSearchRequest;
-    private List<WalkerProfileResponse> mockProfileList;
+    private List<WalkerResponse> mockProfileList;
 
     private static final Long WALKER_ID = 1L;
     private static final String USERNAME = "testwalker";
 
     @BeforeEach
     void setUp() {
-        // Mock WalkerProfileCreateRequest
-        mockCreateRequest = new WalkerProfileCreateRequest();
+        // Mock WalkerCreateRequest
+        mockCreateRequest = new WalkerCreateRequest();
         mockCreateRequest.setBio("Experienced dog walker with 5 years of experience");
         mockCreateRequest.setExperience("5+ years with dogs of all sizes");
         mockCreateRequest.setAvailableTime("Mon-Fri 9-17, Weekends 10-16");
         mockCreateRequest.setServiceArea("Gangnam-gu, Seoul");
 
-        // Mock WalkerProfileUpdateRequest
-        mockUpdateRequest = new WalkerProfileUpdateRequest();
+        // Mock WalkerUpdateRequest
+        mockUpdateRequest = new WalkerUpdateRequest();
         mockUpdateRequest.setBio("Updated bio: Expert dog walker");
         mockUpdateRequest.setExperience("Updated: 6+ years experience");
         mockUpdateRequest.setAvailableTime("Updated: Mon-Sun 8-18");
         mockUpdateRequest.setServiceArea("Gangnam-gu, Seocho-gu");
 
-        // Mock WalkerProfileResponse
-        mockProfileResponse = WalkerProfileResponse.builder()
+        // Mock WalkerResponse
+        mockProfileResponse = WalkerResponse.builder()
                 .id(WALKER_ID)
                 .userId(1L)
                 .username(USERNAME)
@@ -97,7 +97,7 @@ class WalkerControllerTest {
     @WithMockUser(username = USERNAME)
     void registerWalker_Success() throws Exception {
         // Given
-        when(walkerService.registerWalker(eq(USERNAME), any(WalkerProfileCreateRequest.class)))
+        when(walkerService.registerWalker(eq(USERNAME), any(WalkerCreateRequest.class)))
                 .thenReturn(mockProfileResponse);
 
         Authentication mockAuth = mock(Authentication.class);
@@ -124,7 +124,7 @@ class WalkerControllerTest {
                     .andExpect(jsonPath("$.status").value("ACTIVE"));
         }
 
-        verify(walkerService).registerWalker(eq(USERNAME), any(WalkerProfileCreateRequest.class));
+        verify(walkerService).registerWalker(eq(USERNAME), any(WalkerCreateRequest.class));
     }
 
     @Test
@@ -261,7 +261,7 @@ class WalkerControllerTest {
     @WithMockUser(username = USERNAME)
     void updateCurrentWalkerProfile_Success() throws Exception {
         // Given
-        WalkerProfileResponse updatedResponse = WalkerProfileResponse.builder()
+        WalkerResponse updatedResponse = WalkerResponse.builder()
                 .id(WALKER_ID)
                 .username(USERNAME)
                 .bio("Updated bio: Expert dog walker")
@@ -269,7 +269,7 @@ class WalkerControllerTest {
                 .location("Gangnam-gu, Seocho-gu")
                 .build();
 
-        when(walkerService.updateWalkerProfile(eq(USERNAME), any(WalkerProfileUpdateRequest.class)))
+        when(walkerService.updateWalkerProfile(eq(USERNAME), any(WalkerUpdateRequest.class)))
                 .thenReturn(updatedResponse);
 
         Authentication mockAuth = mock(Authentication.class);
@@ -294,14 +294,14 @@ class WalkerControllerTest {
                     .andExpect(jsonPath("$.experience").value("Updated: 6+ years experience"));
         }
 
-        verify(walkerService).updateWalkerProfile(eq(USERNAME), any(WalkerProfileUpdateRequest.class));
+        verify(walkerService).updateWalkerProfile(eq(USERNAME), any(WalkerUpdateRequest.class));
     }
 
     @Test
     @WithMockUser(username = USERNAME)
     void updateCurrentWalkerProfile_ServiceError() throws Exception {
         // Given
-        when(walkerService.updateWalkerProfile(eq(USERNAME), any(WalkerProfileUpdateRequest.class)))
+        when(walkerService.updateWalkerProfile(eq(USERNAME), any(WalkerUpdateRequest.class)))
                 .thenThrow(new RuntimeException("Update failed"));
 
         Authentication mockAuth = mock(Authentication.class);
@@ -322,7 +322,7 @@ class WalkerControllerTest {
                     .andExpect(status().isInternalServerError());
         }
 
-        verify(walkerService).updateWalkerProfile(eq(USERNAME), any(WalkerProfileUpdateRequest.class));
+        verify(walkerService).updateWalkerProfile(eq(USERNAME), any(WalkerUpdateRequest.class));
     }
 
     @Test
@@ -352,7 +352,7 @@ class WalkerControllerTest {
     @WithMockUser(username = USERNAME)
     void registerWalker_AlreadyExists() throws Exception {
         // Given
-        when(walkerService.registerWalker(eq(USERNAME), any(WalkerProfileCreateRequest.class)))
+        when(walkerService.registerWalker(eq(USERNAME), any(WalkerCreateRequest.class)))
                 .thenThrow(new RuntimeException("Walker profile already exists"));
 
         Authentication mockAuth = mock(Authentication.class);
@@ -373,7 +373,7 @@ class WalkerControllerTest {
                     .andExpect(status().isInternalServerError());
         }
 
-        verify(walkerService).registerWalker(eq(USERNAME), any(WalkerProfileCreateRequest.class));
+        verify(walkerService).registerWalker(eq(USERNAME), any(WalkerCreateRequest.class));
     }
 
     @Test

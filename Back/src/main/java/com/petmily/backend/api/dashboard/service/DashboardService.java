@@ -4,7 +4,7 @@ import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.pet.dto.PetSummaryResponse;
-import com.petmily.backend.api.walk.dto.booking.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
@@ -12,10 +12,9 @@ import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,7 +28,7 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final PetRepository petRepository;
     private final WalkBookingRepository walkBookingRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
 
     public DashboardResponse getDashboard(String username) {
         User user = userRepository.findByUsername(username)
@@ -150,7 +149,7 @@ public class DashboardService {
 
     private List<WalkerSummaryResponse> getRecommendedWalkers(Long userId) {
         // 평점 높은 순으로 추천
-        return walkerProfileRepository
+        return walkerRepository
                 .findByStatusActiveOrderByRatingDesc(PageRequest.of(0, 5))
                 .stream()
                 .map(WalkerSummaryResponse::from)

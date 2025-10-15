@@ -1,5 +1,6 @@
 package com.petmily.backend.api.pet.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.pet.dto.PetCreateRequest;
 import com.petmily.backend.api.pet.dto.PetResponse;
 import com.petmily.backend.api.pet.dto.PetSearchRequest;
@@ -23,15 +24,15 @@ public class PetController {
     public ResponseEntity<PetResponse> createPet(
             @RequestBody PetCreateRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        PetResponse response = petService.createPet(username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        PetResponse response = petService.createPet(userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/my")
     public ResponseEntity<List<PetResponse>> getMyPets(Authentication authentication) {
-        String username = authentication.getName();
-        List<PetResponse> pets = petService.getUserPets(username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        List<PetResponse> pets = petService.getUserPets(userId);
         return ResponseEntity.ok(pets);
     }
 
@@ -39,8 +40,8 @@ public class PetController {
     public ResponseEntity<PetResponse> getPet(
             @PathVariable Long petId,
             Authentication authentication) {
-        String username = authentication.getName();
-        PetResponse pet = petService.getPet(petId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        PetResponse pet = petService.getPet(petId, userId);
         return ResponseEntity.ok(pet);
     }
 
@@ -49,8 +50,8 @@ public class PetController {
             @PathVariable Long petId,
             @RequestBody PetUpdateRequest request,
             Authentication authentication) {
-        String username = authentication.getName();
-        PetResponse response = petService.updatePet(petId, username, request);
+        Long userId = SecurityUtils.getUserId(authentication);
+        PetResponse response = petService.updatePet(petId, userId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -58,8 +59,8 @@ public class PetController {
     public ResponseEntity<Void> deletePet(
             @PathVariable Long petId,
             Authentication authentication) {
-        String username = authentication.getName();
-        petService.deletePet(petId, username);
+        Long userId = SecurityUtils.getUserId(authentication);
+        petService.deletePet(petId, userId);
         return ResponseEntity.ok().build();
     }
 

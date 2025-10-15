@@ -34,5 +34,5 @@ public class FavoriteWalker extends BaseTimeEntity {
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walker_id", insertable = false, updatable = false)
-    private WalkerProfile walker;
+    private Walker walker;
 }

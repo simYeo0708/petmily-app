@@ -1,14 +1,14 @@
 import { apiClient, API_ENDPOINTS } from './apiConfig';
 
 // Walker 관련 타입 정의
-export interface WalkerProfileCreateRequest {
+export interface WalkerCreateRequest {
   bio: string; // 자기소개
   experience: string; // 반려동물 경험 세부사항
   availableTime?: string; // 예: "Mon-Fri 9-5"
   serviceArea?: string; // 예: "강남구"
 }
 
-export interface WalkerProfileUpdateRequest {
+export interface WalkerUpdateRequest {
   isAvailable?: boolean;
   bio?: string;
   experience?: string;
@@ -16,7 +16,7 @@ export interface WalkerProfileUpdateRequest {
   serviceArea?: string;
 }
 
-export interface WalkerProfileResponse {
+export interface WalkerResponse {
   id: number;
   userId: number;
   username?: string;
@@ -43,7 +43,7 @@ export interface WalkerSearchRequest {
 
 class WalkerService {
   // 워커 등록
-  async registerWalker(request: WalkerProfileCreateRequest): Promise<WalkerProfileResponse> {
+  async registerWalker(request: WalkerCreateRequest): Promise<WalkerResponse> {
     try {
       const response = await apiClient.post(API_ENDPOINTS.WALKERS.REGISTER, request);
       return response.data;
@@ -54,7 +54,7 @@ class WalkerService {
   }
 
   // 워커 프로필 조회 (ID로)
-  async getWalkerProfile(walkerId: number): Promise<WalkerProfileResponse> {
+  async getWalkerProfile(walkerId: number): Promise<WalkerResponse> {
     try {
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.PROFILE(walkerId));
       return response.data;
@@ -65,7 +65,7 @@ class WalkerService {
   }
 
   // 모든 워커 조회 (검색 포함)
-  async getAllWalkers(searchRequest?: WalkerSearchRequest): Promise<WalkerProfileResponse[]> {
+  async getAllWalkers(searchRequest?: WalkerSearchRequest): Promise<WalkerResponse[]> {
     try {
       const params = searchRequest || {};
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.LIST, { params });
@@ -77,7 +77,7 @@ class WalkerService {
   }
 
   // 현재 사용자의 워커 프로필 조회
-  async getCurrentWalkerProfile(): Promise<WalkerProfileResponse> {
+  async getCurrentWalkerProfile(): Promise<WalkerResponse> {
     try {
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.MY_PROFILE);
       return response.data;
@@ -88,7 +88,7 @@ class WalkerService {
   }
 
   // 현재 사용자의 워커 프로필 수정
-  async updateCurrentWalkerProfile(request: WalkerProfileUpdateRequest): Promise<WalkerProfileResponse> {
+  async updateCurrentWalkerProfile(request: WalkerUpdateRequest): Promise<WalkerResponse> {
     try {
       const response = await apiClient.put(API_ENDPOINTS.WALKERS.UPDATE_PROFILE, request);
       return response.data;
@@ -99,7 +99,7 @@ class WalkerService {
   }
 
   // 즐겨찾기 워커 추가
-  async addFavoriteWalker(walkerId: number): Promise<WalkerProfileResponse> {
+  async addFavoriteWalker(walkerId: number): Promise<WalkerResponse> {
     try {
       const response = await apiClient.post(API_ENDPOINTS.WALKERS.ADD_FAVORITE(walkerId));
       return response.data;
@@ -120,7 +120,7 @@ class WalkerService {
   }
 
   // 즐겨찾기 워커 목록 조회
-  async getFavoriteWalkers(): Promise<WalkerProfileResponse[]> {
+  async getFavoriteWalkers(): Promise<WalkerResponse[]> {
     try {
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.FAVORITES);
       return response.data;
@@ -142,7 +142,7 @@ class WalkerService {
   }
 
   // 워커 검색 (지역, 평점 등으로 필터링)
-  async searchWalkers(searchRequest: WalkerSearchRequest): Promise<WalkerProfileResponse[]> {
+  async searchWalkers(searchRequest: WalkerSearchRequest): Promise<WalkerResponse[]> {
     try {
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.LIST, {
         params: searchRequest
@@ -155,7 +155,7 @@ class WalkerService {
   }
 
   // 즐겨찾기 워커만 조회
-  async getFavoriteWalkersOnly(): Promise<WalkerProfileResponse[]> {
+  async getFavoriteWalkersOnly(): Promise<WalkerResponse[]> {
     try {
       const searchRequest: WalkerSearchRequest = { favoritesOnly: true };
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.LIST, {
@@ -169,7 +169,7 @@ class WalkerService {
   }
 
   // 근처 워커 검색
-  async getNearbyWalkers(latitude: number, longitude: number, radius?: number): Promise<WalkerProfileResponse[]> {
+  async getNearbyWalkers(latitude: number, longitude: number, radius?: number): Promise<WalkerResponse[]> {
     try {
       const searchRequest: WalkerSearchRequest = {
         userLatitude: latitude,
@@ -186,7 +186,7 @@ class WalkerService {
   }
 
   // 평점으로 워커 필터링
-  async getWalkersByRating(minRating: number): Promise<WalkerProfileResponse[]> {
+  async getWalkersByRating(minRating: number): Promise<WalkerResponse[]> {
     try {
       const searchRequest: WalkerSearchRequest = { minRating };
       const response = await apiClient.get(API_ENDPOINTS.WALKERS.LIST, {

@@ -1,26 +1,25 @@
 package com.petmily.backend.api.walker.service;
 
-import com.petmily.backend.api.common.util.SecurityUtils;
+import com.petmily.backend.api.common.service.LocationValidationService;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.map.dto.Coord;
 import com.petmily.backend.api.map.service.KakaoMapService;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.FavoriteWalker;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.walker.repository.FavoriteWalkerRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
 public class WalkerSearchService {
 
     private final UserRepository userRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
     private final FavoriteWalkerRepository favoriteWalkerRepository;
     private final KakaoMapService kakaoMapService;
 
@@ -44,9 +43,10 @@ public class WalkerSearchService {
     /**
      * 고급 워커 검색
      */
-    public Page<WalkerProfileResponse> searchWalkers(WalkerSearchRequest request, Authentication authentication) {
+    public Page<WalkerResponse> searchWalkers(WalkerSearchRequest request, Long userId) {
         // 1. SecurityUtils로 현재 사용자 정보 가져오기
-        User currentUser = SecurityUtils.getUser(authentication);
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         // 최신 주소 정보가 필요한 경우만 DB에서 다시 조회
         if (request.getUserLatitude() == null && request.getUserLongitude() == null) {
@@ -57,13 +57,13 @@ public class WalkerSearchService {
         Coord userCoord = getUserCoordinates(currentUser, request);
 
         // 2. 기본 워커 리스트 가져오기
-        List<WalkerProfile> walkers = getBaseWalkerList(request, currentUser);
+        List<Walker> walkers = getBaseWalkerList(request, currentUser);
 
         // 3. 필터링 적용
-        List<WalkerProfile> filteredWalkers = applyFilters(walkers, request, userCoord);
+        List<Walker> filteredWalkers = applyFilters(walkers, request, userCoord);
 
         // 4. 정렬 적용
-        List<WalkerProfile> sortedWalkers = applySorting(filteredWalkers, request, userCoord);
+        List<Walker> sortedWalkers = applySorting(filteredWalkers, request, userCoord);
 
         // 5. 페이징 적용
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
@@ -92,7 +92,7 @@ public class WalkerSearchService {
     /**
      * 기본 워커 리스트 가져오기
      */
-    private List<WalkerProfile> getBaseWalkerList(WalkerSearchRequest request, User currentUser) {
+    private List<Walker> getBaseWalkerList(WalkerSearchRequest request, User currentUser) {
         if (request.isFavoritesOnly()) {
             // 즐겨찾기 워커만
             List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository
@@ -106,18 +106,18 @@ public class WalkerSearchService {
                     .map(FavoriteWalker::getWalkerId)
                     .collect(Collectors.toList());
 
-            return walkerProfileRepository.findByIdInAndStatus(
+            return walkerRepository.findByIdInAndStatus(
                     favoriteWalkerIds, WalkerStatus.ACTIVE);
         } else {
             // 모든 활성 워커
-            return walkerProfileRepository.findByStatus(WalkerStatus.ACTIVE);
+            return walkerRepository.findByStatus(WalkerStatus.ACTIVE);
         }
     }
 
     /**
      * 필터링 적용
      */
-    private List<WalkerProfile> applyFilters(List<WalkerProfile> walkers,
+    private List<Walker> applyFilters(List<Walker> walkers,
                                            WalkerSearchRequest request,
                                            Coord userCoord) {
         return walkers.stream()
@@ -134,7 +134,7 @@ public class WalkerSearchService {
     }
 
     // 개별 필터 메소드들
-    private boolean applyDistanceFilter(WalkerProfile walker, WalkerSearchRequest request, Coord userCoord) {
+    private boolean applyDistanceFilter(Walker walker, WalkerSearchRequest request, Coord userCoord) {
         if (walker.getCoordinates() == null) return false;
 
         try {
@@ -142,7 +142,7 @@ public class WalkerSearchService {
             double walkerLat = Double.parseDouble(coords[0]);
             double walkerLon = Double.parseDouble(coords[1]);
 
-            double distance = calculateDistance(userCoord.getLatitude(), userCoord.getLongitude(),
+            double distance = LocationValidationService.calculateDistance(userCoord.getLatitude(), userCoord.getLongitude(),
                                               walkerLat, walkerLon);
 
             double maxDistance = request.getMaxDistanceKm() != null ?
@@ -155,7 +155,7 @@ public class WalkerSearchService {
         }
     }
 
-    private boolean applyKeywordFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyKeywordFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getKeyword() == null || request.getKeyword().trim().isEmpty()) {
             return true;
         }
@@ -169,7 +169,7 @@ public class WalkerSearchService {
         return userName.contains(keyword) || introduction.contains(keyword);
     }
 
-    private boolean applyRatingFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyRatingFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getMinRating() != null &&
             (walker.getRating() == null || walker.getRating() < request.getMinRating())) {
             return false;
@@ -183,7 +183,7 @@ public class WalkerSearchService {
         return true;
     }
 
-    private boolean applyHourlyRateFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyHourlyRateFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getMinHourlyRate() != null &&
             (walker.getHourlyRate() == null || walker.getHourlyRate().compareTo(request.getMinHourlyRate()) < 0)) {
             return false;
@@ -197,7 +197,7 @@ public class WalkerSearchService {
         return true;
     }
 
-    private boolean applyServiceAreaFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyServiceAreaFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getServiceArea() == null || request.getServiceArea().trim().isEmpty()) {
             return true;
         }
@@ -206,7 +206,7 @@ public class WalkerSearchService {
                walker.getServiceArea().toLowerCase().contains(request.getServiceArea().toLowerCase());
     }
 
-    private boolean applyPetTypesFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyPetTypesFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getPetTypes() == null || request.getPetTypes().isEmpty()) {
             return true;
         }
@@ -221,7 +221,7 @@ public class WalkerSearchService {
                 .anyMatch(petType -> request.getPetTypes().contains(petType.trim()));
     }
 
-    private boolean applyCertificationsFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyCertificationsFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getCertifications() == null || request.getCertifications().isEmpty()) {
             return true;
         }
@@ -235,7 +235,7 @@ public class WalkerSearchService {
                 .anyMatch(cert -> request.getCertifications().contains(cert.trim()));
     }
 
-    private boolean applyInstantBookingFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyInstantBookingFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getInstantBooking() == null) {
             return true;
         }
@@ -243,7 +243,7 @@ public class WalkerSearchService {
         return Objects.equals(walker.getInstantBooking(), request.getInstantBooking());
     }
 
-    private boolean applyWeekendAvailableFilter(WalkerProfile walker, WalkerSearchRequest request) {
+    private boolean applyWeekendAvailableFilter(Walker walker, WalkerSearchRequest request) {
         if (request.getWeekendAvailable() == null) {
             return true;
         }
@@ -254,10 +254,10 @@ public class WalkerSearchService {
     /**
      * 정렬 적용
      */
-    private List<WalkerProfile> applySorting(List<WalkerProfile> walkers,
+    private List<Walker> applySorting(List<Walker> walkers,
                                            WalkerSearchRequest request,
                                            Coord userCoord) {
-        Comparator<WalkerProfile> comparator = getComparator(request, userCoord);
+        Comparator<Walker> comparator = getComparator(request, userCoord);
 
         if (request.getSortDirection() == WalkerSearchRequest.SortDirection.DESC) {
             comparator = comparator.reversed();
@@ -268,26 +268,26 @@ public class WalkerSearchService {
                 .collect(Collectors.toList());
     }
 
-    private Comparator<WalkerProfile> getComparator(WalkerSearchRequest request, Coord userCoord) {
+    private Comparator<Walker> getComparator(WalkerSearchRequest request, Coord userCoord) {
         switch (request.getSortBy()) {
             case DISTANCE:
                 return Comparator.comparingDouble(walker -> calculateWalkerDistance(walker, userCoord));
             case RATING:
-                return Comparator.comparing(WalkerProfile::getRating, Comparator.nullsLast(Double::compareTo));
+                return Comparator.comparing(Walker::getRating, Comparator.nullsLast(Double::compareTo));
             case HOURLY_RATE:
-                return Comparator.comparing(WalkerProfile::getHourlyRate, Comparator.nullsLast(BigDecimal::compareTo));
+                return Comparator.comparing(Walker::getHourlyRate, Comparator.nullsLast(BigDecimal::compareTo));
             case REVIEWS_COUNT:
-                return Comparator.comparing(WalkerProfile::getReviewsCount, Comparator.nullsLast(Integer::compareTo));
+                return Comparator.comparing(Walker::getReviewsCount, Comparator.nullsLast(Integer::compareTo));
             case EXPERIENCE:
-                return Comparator.comparing(WalkerProfile::getExperienceYears, Comparator.nullsLast(Integer::compareTo));
+                return Comparator.comparing(Walker::getExperienceYears, Comparator.nullsLast(Integer::compareTo));
             case CREATED_DATE:
-                return Comparator.comparing(WalkerProfile::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
+                return Comparator.comparing(Walker::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
             default:
                 return Comparator.comparingDouble(walker -> calculateWalkerDistance(walker, userCoord));
         }
     }
 
-    private double calculateWalkerDistance(WalkerProfile walker, Coord userCoord) {
+    private double calculateWalkerDistance(Walker walker, Coord userCoord) {
         if (walker.getCoordinates() == null) return Double.MAX_VALUE;
 
         try {
@@ -295,7 +295,7 @@ public class WalkerSearchService {
             double walkerLat = Double.parseDouble(coords[0]);
             double walkerLon = Double.parseDouble(coords[1]);
 
-            return calculateDistance(userCoord.getLatitude(), userCoord.getLongitude(),
+            return LocationValidationService.calculateDistance(userCoord.getLatitude(), userCoord.getLongitude(),
                                    walkerLat, walkerLon);
         } catch (Exception e) {
             return Double.MAX_VALUE;
@@ -305,7 +305,7 @@ public class WalkerSearchService {
     /**
      * 페이징 적용
      */
-    private Page<WalkerProfileResponse> applyPagination(List<WalkerProfile> walkers,
+    private Page<WalkerResponse> applyPagination(List<Walker> walkers,
                                                        Pageable pageable,
                                                        Long currentUserId) {
         int start = (int) pageable.getOffset();
@@ -315,9 +315,9 @@ public class WalkerSearchService {
             return new PageImpl<>(new ArrayList<>(), pageable, walkers.size());
         }
 
-        List<WalkerProfile> pageContent = walkers.subList(start, end);
-        List<WalkerProfileResponse> responses = pageContent.stream()
-                .map(walker -> WalkerProfileResponse.from(walker, isFavoriteWalker(walker.getId(), currentUserId)))
+        List<Walker> pageContent = walkers.subList(start, end);
+        List<WalkerResponse> responses = pageContent.stream()
+                .map(walker -> WalkerResponse.from(walker, isFavoriteWalker(walker.getId(), currentUserId)))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(responses, pageable, walkers.size());
@@ -325,21 +325,5 @@ public class WalkerSearchService {
 
     private boolean isFavoriteWalker(Long walkerId, Long userId) {
         return favoriteWalkerRepository.findByUserIdAndWalkerIdAndIsActiveTrue(userId, walkerId).isPresent();
-    }
-
-    /**
-     * 거리 계산 (Haversine 공식)
-     */
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return EARTH_RADIUS_KM * c;
     }
 }

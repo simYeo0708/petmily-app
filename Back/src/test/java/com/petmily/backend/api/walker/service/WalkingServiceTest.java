@@ -8,7 +8,7 @@ import com.petmily.backend.api.walk.service.notification.WalkNotificationService
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkingTrack;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkingTrackRepository;
@@ -52,7 +52,7 @@ class WalkingServiceTest {
 
     private User user;
     private User walkerUser;
-    private WalkerProfile walker;
+    private Walker walker;
     private Pet pet;
     private WalkerBooking confirmedBooking;
     private WalkerBooking inProgressBooking;
@@ -80,7 +80,7 @@ class WalkingServiceTest {
                 .name("Walker User")
                 .build();
 
-        walker = WalkerProfile.builder()
+        walker = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .bio("Test Walker Bio")

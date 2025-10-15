@@ -1,5 +1,6 @@
 package com.petmily.backend.api.user.controller;
 
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.user.dto.ChangePasswordRequest;
 import com.petmily.backend.api.user.dto.UserUpdateRequest;
 import com.petmily.backend.api.user.service.UserService;
@@ -38,23 +39,25 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userService.getCurrentUser(authentication.getName());
-        return ResponseEntity.ok(user);
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        return ResponseEntity.ok(userService.getCurrentUser(userId));
     }
 
     @PutMapping("/me")
-    public ResponseEntity<User> updateCurrentUser(@RequestBody UserUpdateRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User updatedUser = userService.updateCurrentUser(authentication.getName(), request);
-        return ResponseEntity.ok(updatedUser);
+    public ResponseEntity<User> updateCurrentUser(
+            @RequestBody UserUpdateRequest request,
+            Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        return ResponseEntity.ok(userService.updateCurrentUser(userId, request));
     }
 
     @PutMapping("/me/password")
-    public ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequest request) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        userService.changePassword(authentication.getName(), request);
+    public ResponseEntity<Void> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        userService.changePassword(userId, request);
         return ResponseEntity.ok().build();
     }
 }

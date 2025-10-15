@@ -8,10 +8,10 @@ import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkerReview;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReviewRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +39,7 @@ class WalkerReviewServiceTest {
     private WalkerReviewRepository walkerReviewRepository;
 
     @Mock
-    private WalkerProfileRepository walkerProfileRepository;
+    private WalkerRepository walkerRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -51,7 +51,7 @@ class WalkerReviewServiceTest {
     private WalkerReviewService walkerReviewService;
 
     private User testUser;
-    private WalkerProfile testWalker;
+    private Walker testWalker;
     private WalkerBooking testBooking;
     private WalkerReview testReview;
     private WalkerReviewRequest testRequest;
@@ -69,7 +69,7 @@ class WalkerReviewServiceTest {
                 .role(Role.USER)
                 .build();
 
-        testWalker = WalkerProfile.builder()
+        testWalker = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .bio("Experienced walker")
@@ -134,7 +134,7 @@ class WalkerReviewServiceTest {
         assertThat(response.getComment()).isEqualTo("Great walker!");
 
         verify(userRepository).findByUsername(testUsername);
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
         verify(walkerBookingRepository).findById(1L);
         verify(walkerReviewRepository).existsByBookingId(1L);
         verify(walkerReviewRepository).save(any(WalkerReview.class));
@@ -153,7 +153,7 @@ class WalkerReviewServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
 
         verify(userRepository).findByUsername(testUsername);
-        verify(walkerProfileRepository, never()).findById(any());
+        verify(walkerRepository, never()).findById(any());
     }
 
     @Test
@@ -162,7 +162,7 @@ class WalkerReviewServiceTest {
         // given
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.empty());
 
         // when & then
@@ -172,7 +172,7 @@ class WalkerReviewServiceTest {
                 .hasMessageContaining("워커 프로필을 찾을 수 없습니다.");
 
         verify(userRepository).findByUsername(testUsername);
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
     }
 
     @Test
@@ -181,7 +181,7 @@ class WalkerReviewServiceTest {
         // given
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerBookingRepository.findById(1L))
                 .willReturn(Optional.empty());
@@ -193,7 +193,7 @@ class WalkerReviewServiceTest {
                 .hasMessageContaining("예약을 찾을 수 없습니다.");
 
         verify(userRepository).findByUsername(testUsername);
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
         verify(walkerBookingRepository).findById(1L);
     }
 
@@ -205,7 +205,7 @@ class WalkerReviewServiceTest {
 
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
@@ -225,7 +225,7 @@ class WalkerReviewServiceTest {
 
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
@@ -245,7 +245,7 @@ class WalkerReviewServiceTest {
 
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
@@ -263,7 +263,7 @@ class WalkerReviewServiceTest {
         // given
         given(userRepository.findByUsername(testUsername))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
@@ -283,7 +283,7 @@ class WalkerReviewServiceTest {
         // given
         List<WalkerReview> reviews = Arrays.asList(testReview);
 
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerReviewRepository.findByWalkerIdOrderByCreatedAtDesc(1L))
                 .willReturn(reviews);
@@ -297,7 +297,7 @@ class WalkerReviewServiceTest {
         assertThat(responses.get(0).getRating()).isEqualTo(5);
         assertThat(responses.get(0).getComment()).isEqualTo("Great walker!");
 
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
         verify(walkerReviewRepository).findByWalkerIdOrderByCreatedAtDesc(1L);
     }
 
@@ -305,7 +305,7 @@ class WalkerReviewServiceTest {
     @DisplayName("워커 리뷰 목록 조회 - 워커를 찾을 수 없음")
     void getWalkerReviews_WalkerNotFound() {
         // given
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.empty());
 
         // when & then
@@ -314,7 +314,7 @@ class WalkerReviewServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("워커 프로필을 찾을 수 없습니다.");
 
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
         verify(walkerReviewRepository, never()).findByWalkerIdOrderByCreatedAtDesc(any());
     }
 
@@ -322,7 +322,7 @@ class WalkerReviewServiceTest {
     @DisplayName("워커 평균 평점 조회 - 성공")
     void getWalkerAverageRating_Success() {
         // given
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerReviewRepository.findAverageRatingByWalkerId(1L))
                 .willReturn(4.5);
@@ -338,7 +338,7 @@ class WalkerReviewServiceTest {
         assertThat(result.get("averageRating")).isEqualTo(4.5);
         assertThat(result.get("totalReviews")).isEqualTo(10L);
 
-        verify(walkerProfileRepository).findById(1L);
+        verify(walkerRepository).findById(1L);
         verify(walkerReviewRepository).findAverageRatingByWalkerId(1L);
         verify(walkerReviewRepository).countByWalkerId(1L);
     }
@@ -347,7 +347,7 @@ class WalkerReviewServiceTest {
     @DisplayName("워커 평균 평점 조회 - 리뷰가 없는 경우")
     void getWalkerAverageRating_NoReviews() {
         // given
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerReviewRepository.findAverageRatingByWalkerId(1L))
                 .willReturn(null);
@@ -546,7 +546,7 @@ class WalkerReviewServiceTest {
     @DisplayName("null 값으로 평균 평점 조회 시 반올림 처리")
     void getWalkerAverageRating_RoundingTest() {
         // given
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
         given(walkerReviewRepository.findAverageRatingByWalkerId(1L))
                 .willReturn(4.56789);

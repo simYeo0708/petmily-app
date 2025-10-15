@@ -12,7 +12,7 @@ import com.petmily.backend.domain.walk.entity.WalkDetail;
 import com.petmily.backend.domain.walker.entity.*;
 import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walk.repository.WalkDetailRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReviewRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReportRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,14 +29,14 @@ import java.util.stream.Collectors;
 public class WalkerReviewService {
 
     private final WalkerReviewRepository walkerReviewRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
     private final UserRepository userRepository;
     private final WalkBookingRepository walkBookingRepository;
     private final WalkDetailRepository walkDetailRepository;
     private final WalkerReportRepository walkerReportRepository;
 
-    private User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -45,8 +45,8 @@ public class WalkerReviewService {
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "리뷰를 찾을 수 없습니다."));
     }
 
-    private WalkerProfile findWalkerById(Long walkerId) {
-        return walkerProfileRepository.findById(walkerId)
+    private Walker findWalkerById(Long walkerId) {
+        return walkerRepository.findById(walkerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "워커 프로필을 찾을 수 없습니다."));
     }
 
@@ -89,9 +89,9 @@ public class WalkerReviewService {
     }
 
     @Transactional
-    public WalkerReviewResponse createReview(String username, WalkerReviewRequest request) {
-        User user = findUserByUsername(username);
-        WalkerProfile walker = findWalkerById(request.getWalkerId());
+    public WalkerReviewResponse createReview(Long userId, WalkerReviewRequest request) {
+        User user = findUserById(userId);
+        Walker walker = findWalkerById(request.getWalkerId());
 
         // 🔒 핵심 보안 검증만 실행 (중복 제거)
         validateReviewEligibility(user, request.getBookingId(), request.getWalkerId());
@@ -135,8 +135,8 @@ public class WalkerReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<WalkerReviewResponse> getUserReviews(String username) {
-        User user = findUserByUsername(username);
+    public List<WalkerReviewResponse> getUserReviews(Long userId) {
+        User user = findUserById(userId);
 
         List<WalkerReview> reviews = walkerReviewRepository.findByUserIdOrderByCreateTimeDesc(user.getId());
         return reviews.stream()
@@ -145,8 +145,8 @@ public class WalkerReviewService {
     }
 
     @Transactional(readOnly = true)
-    public WalkerReviewResponse getReview(Long reviewId, String username) {
-        User user = findUserByUsername(username);
+    public WalkerReviewResponse getReview(Long reviewId, Long userId) {
+        User user = findUserById(userId);
         WalkerReview review = findReviewById(reviewId);
         validateReviewOwnership(review, user);
 
@@ -154,8 +154,8 @@ public class WalkerReviewService {
     }
 
     @Transactional
-    public WalkerReviewResponse updateReview(Long reviewId, String username, WalkerReviewRequest request) {
-        User user = findUserByUsername(username);
+    public WalkerReviewResponse updateReview(Long reviewId, Long userId, WalkerReviewRequest request) {
+        User user = findUserById(userId);
         WalkerReview review = findReviewById(reviewId);
         validateReviewOwnership(review, user);
 
@@ -168,8 +168,8 @@ public class WalkerReviewService {
     }
 
     @Transactional
-    public void deleteReview(Long reviewId, String username) {
-        User user = findUserByUsername(username);
+    public void deleteReview(Long reviewId, Long userId) {
+        User user = findUserById(userId);
         WalkerReview review = findReviewById(reviewId);
         validateReviewOwnership(review, user);
 
@@ -181,8 +181,8 @@ public class WalkerReviewService {
      * 프론트엔드에서 UI 최적화에 활용
      */
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getReviewableBookings(String username) {
-        User user = findUserByUsername(username);
+    public List<Map<String, Object>> getReviewableBookings(Long userId) {
+        User user = findUserById(userId);
         
         // 완료된 예약 중 리뷰가 아직 작성되지 않은 것들만 조회
         List<WalkBooking> completedBookings = walkBookingRepository
@@ -213,9 +213,9 @@ public class WalkerReviewService {
     }
 
     @Transactional
-    public String reportWalker(String username, WalkerReportRequest request) {
-        User user = findUserByUsername(username);
-        WalkerProfile walker = findWalkerById(request.getWalkerId());
+    public String reportWalker(Long userId, WalkerReportRequest request) {
+        User user = findUserById(userId);
+        Walker walker = findWalkerById(request.getWalkerId());
 
         // 중복 신고 체크
         if (request.getBookingId() != null &&
@@ -249,8 +249,8 @@ public class WalkerReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getUserReports(String username) {
-        User user = findUserByUsername(username);
+    public List<Map<String, Object>> getUserReports(Long userId) {
+        User user = findUserById(userId);
 
         List<WalkerReport> reports = walkerReportRepository.findByReporterUserIdOrderByCreateTimeDesc(user.getId());
 

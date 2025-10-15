@@ -3,6 +3,8 @@ package com.petmily.backend.api.walk.service.notification;
 import com.petmily.backend.domain.walk.entity.WalkTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,6 +22,7 @@ public class WalkNotificationService {
     private final GeminiMessageGenerator messageGenerator;
     private final KakaoMessageSender messageSender;
     private final WalkTrackRepository walkTrackRepository;
+    private final WalkerRepository walkerRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String LAST_NOTIFICATION_KEY = "walk:notification:last:";
@@ -237,9 +240,22 @@ public class WalkNotificationService {
     }
 
     private String getWalkerContact(WalkBooking booking) {
-        // WalkerProfile에서 연락처 정보를 가져오는 로직
-        // 현재는 기본값 반환
-        return "워커 연락처";
+        if (booking.getWalkerId() == null) {
+            return "연락처 없음";
+        }
+
+        Walker walker = walkerRepository.findById(booking.getWalkerId()).orElse(null);
+        if (walker == null || walker.getUser() == null) {
+            return "연락처 없음";
+        }
+
+        if (walker.getUser().getPhone() != null && !walker.getUser().getPhone().trim().isEmpty()) {
+            return walker.getUser().getPhone();
+        } else if (walker.getUser().getEmail() != null && !walker.getUser().getEmail().trim().isEmpty()) {
+            return walker.getUser().getEmail();
+        }
+
+        return "연락처 없음";
     }
 
     /**

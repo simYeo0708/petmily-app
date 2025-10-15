@@ -30,10 +30,19 @@ public class PetService {
     private final PetRepository petRepository;
     private final UserRepository userRepository;
 
-    @Transactional
-    public PetResponse createPet(String username, PetCreateRequest request) {
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private Pet findPetById(Long petId){
+        return petRepository.findById(petId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public PetResponse createPet(Long userId, PetCreateRequest request) {
+        User user = findUserById(userId);
 
         Pet pet = new Pet();
         pet.setName(request.getName());
@@ -53,9 +62,8 @@ public class PetService {
         return PetResponse.from(savedPet);
     }
 
-    public List<PetResponse> getUserPets(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public List<PetResponse> getUserPets(Long userId) {
+        User user = findUserById(userId);
 
         List<Pet> pets = petRepository.findByUserIdOrderByCreateTimeDesc(user.getId());
         return pets.stream()
@@ -63,12 +71,9 @@ public class PetService {
                 .collect(Collectors.toList());
     }
 
-    public PetResponse getPet(Long petId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
+    public PetResponse getPet(Long petId, Long userId) {
+        User user = findUserById(userId);
+        Pet pet = findPetById(petId);
 
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물만 조회 가능합니다.");
@@ -78,12 +83,9 @@ public class PetService {
     }
 
     @Transactional
-    public PetResponse updatePet(Long petId, String username, PetUpdateRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
+    public PetResponse updatePet(Long petId, Long userId, PetUpdateRequest request) {
+        User user = findUserById(userId);
+        Pet pet = findPetById(petId);
 
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물의 정보만 수정 가능합니다.");
@@ -106,12 +108,9 @@ public class PetService {
     }
 
     @Transactional
-    public void deletePet(Long petId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        Pet pet = petRepository.findById(petId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
+    public void deletePet(Long petId, Long userId) {
+        User user = findUserById(userId);
+        Pet pet = findPetById(petId);
 
         if (!pet.getUserId().equals(user.getId())) {
             throw new CustomException(ErrorCode.NO_ACCESS, "당신의 애완동물만 지울 수 있습니다.");

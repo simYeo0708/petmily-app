@@ -4,8 +4,8 @@ import com.petmily.backend.api.product.dto.ProductListResponse;
 import com.petmily.backend.api.product.dto.ProductSearchRequest;
 import com.petmily.backend.api.product.dto.ProductSummary;
 import com.petmily.backend.api.product.service.ProductSearchService;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.api.walker.service.WalkerSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -38,7 +38,7 @@ public class SearchController {
         WalkerSearchRequest walkerRequest = new WalkerSearchRequest();
         walkerRequest.setKeyword(keyword);
         walkerRequest.setSize(walkerLimit);
-        Page<WalkerProfileResponse> walkerResults = walkerSearchService.searchWalkers(walkerRequest, authentication);
+        Page<WalkerResponse> walkerResults = walkerSearchService.searchWalkers(walkerRequest, authentication);
 
         // 상품 검색
         ProductSearchRequest productRequest = new ProductSearchRequest();
@@ -72,11 +72,11 @@ public class SearchController {
      * 고급 워커 검색
      */
     @GetMapping("/walkers")
-    public ResponseEntity<Page<WalkerProfileResponse>> searchWalkers(
+    public ResponseEntity<Page<WalkerResponse>> searchWalkers(
             @ModelAttribute WalkerSearchRequest request,
             Authentication authentication) {
 
-        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication);
+        Page<WalkerResponse> results = walkerSearchService.searchWalkers(request, authentication);
         return ResponseEntity.ok(results);
     }
 
@@ -104,7 +104,7 @@ public class SearchController {
         request.setKeyword(query);
         request.setSize(limit);
 
-        Page<WalkerProfileResponse> results = walkerSearchService.searchWalkers(request, authentication);
+        Page<WalkerResponse> results = walkerSearchService.searchWalkers(request, authentication);
 
         Map<String, Object> response = new HashMap<>();
         response.put("suggestions", results.getContent().stream()

@@ -1,23 +1,23 @@
 package com.petmily.backend.api.walker.service;
 
+import com.petmily.backend.api.common.service.LocationValidationService;
+
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.map.dto.Coord;
 import com.petmily.backend.api.map.service.KakaoMapService;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileCreateRequest;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileUpdateRequest;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
-import com.petmily.backend.domain.walker.entity.WalkerStatus;
+import com.petmily.backend.api.walker.dto.walker.WalkerCreateRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerUpdateRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import com.petmily.backend.domain.walker.entity.FavoriteWalker;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.walker.repository.FavoriteWalkerRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class WalkerService {
 
     private final UserRepository userRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
     private final FavoriteWalkerRepository favoriteWalkerRepository;
     private final KakaoMapService kakaoMapService;
 
@@ -38,16 +38,25 @@ public class WalkerService {
     private static final double EARTH_RADIUS_KM = 6371.0;
     private static final double MAX_DISTANCE_KM = 30.0; // 30km radius
 
-    @Transactional
-    public WalkerProfileResponse registerWalker(String username, WalkerProfileCreateRequest request) {
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
 
-        if (walkerProfileRepository.findByUserId(user.getId()).isPresent()) {
+    private Walker findWalkerById(Long walkerId){
+        return walkerRepository.findById(walkerId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker not found"));
+    }
+
+    @Transactional
+    public WalkerResponse registerWalker(Long userId, WalkerCreateRequest request) {
+        User user = findUserById(userId);
+
+        if (walkerRepository.findByUserId(user.getId()).isPresent()) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "User is already registered as a walker.");
         }
 
-        WalkerProfile walkerProfile = WalkerProfile.builder()
+        Walker walker = Walker.builder()
                 .userId(user.getId())
                 .detailDescription(request.getDetailDescription())
                 .status(WalkerStatus.PENDING)
@@ -55,22 +64,18 @@ public class WalkerService {
                 .user(user)
                 .build();
 
-        walkerProfileRepository.save(walkerProfile);
-        return WalkerProfileResponse.from(walkerProfile);
+        walkerRepository.save(walker);
+        return WalkerResponse.from(walker);
     }
 
-    public WalkerProfileResponse getWalkerProfile(long walkerId) {
-        WalkerProfile walkerProfile = walkerProfileRepository.findById(walkerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
-        return WalkerProfileResponse.from(walkerProfile);
+    public WalkerResponse getWalkerProfile(Long walkerId) {
+        Walker walker = findWalkerById(walkerId);
+        return WalkerResponse.from(walker);
     }
 
-    public List<WalkerProfileResponse> getAllWalkers(WalkerSearchRequest request) {
+    public List<WalkerResponse> getAllWalkers(Long userId, WalkerSearchRequest request) {
         // Get current authenticated user's address
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        User currentUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND, "Authenticated user not found."));
+        User currentUser = findUserById(userId);
 
         if (currentUser.getAddress() == null || currentUser.getAddress().getRoadAddress() == null || currentUser.getAddress().getRoadAddress().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "User address not found for location-based search.");
@@ -80,7 +85,7 @@ public class WalkerService {
         double userLat = userCoord.getLatitude();
         double userLon = userCoord.getLongitude();
 
-        List<WalkerProfile> allWalkers;
+        List<Walker> allWalkers;
 
         // 즐겨찾기 워커만 보기 필터
         if (request != null && request.isFavoritesOnly()) {
@@ -93,10 +98,10 @@ public class WalkerService {
                 return new ArrayList<>();
             }
 
-            allWalkers = walkerProfileRepository.findByIdInAndStatus(
+            allWalkers = walkerRepository.findByIdInAndStatus(
                     favoriteWalkerIds, WalkerStatus.ACTIVE);
         } else {
-            allWalkers = walkerProfileRepository.findAll();
+            allWalkers = walkerRepository.findAll();
         }
 
         return allWalkers.stream()
@@ -106,7 +111,7 @@ public class WalkerService {
                         String[] coords = walker.getCoordinates().split(",");
                         double walkerLat = Double.parseDouble(coords[0]);
                         double walkerLon = Double.parseDouble(coords[1]);
-                        return calculateDistance(userLat, userLon, walkerLat, walkerLon) <= MAX_DISTANCE_KM;
+                        return LocationValidationService.calculateDistance(userLat, userLon, walkerLat, walkerLon) <= MAX_DISTANCE_KM;
                     } catch (NumberFormatException | NullPointerException | ArrayIndexOutOfBoundsException e) {
                         // Handle cases where walker location string is malformed or null
                         return false;
@@ -118,7 +123,7 @@ public class WalkerService {
 
                     // Builder 패턴으로 즐겨찾기 여부 포함해서 생성
                     User user = walker.getUser();
-                    return WalkerProfileResponse.builder()
+                    return WalkerResponse.builder()
                             .id(walker.getId())
                             .userId(walker.getUserId())
                             .username(user != null ? user.getUsername() : null)
@@ -135,44 +140,37 @@ public class WalkerService {
                 .collect(Collectors.toList());
     }
 
-    public WalkerProfileResponse getWalkerProfileByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
-        return WalkerProfileResponse.from(walkerProfile);
+    public WalkerResponse getWalkerByUserId(Long userId) {
+        User user = findUserById(userId);
+        Walker walker = findWalkerById(user.getId());
+        return WalkerResponse.from(walker);
     }
 
     @Transactional
-    public WalkerProfileResponse updateWalkerProfile(String username, WalkerProfileUpdateRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-        WalkerProfile walkerProfile = walkerProfileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
+    public WalkerResponse updateCurrentWalkerProfile(Long userId, WalkerUpdateRequest request) {
+        User user = findUserById(userId);
+        Walker walker = findWalkerById(user.getId());
 
-        walkerProfile.setDetailDescription(request.getDetailDescription());
-        walkerProfile.setCoordinates(request.getServiceArea());
+        walker.setDetailDescription(request.getDetailDescription());
+        walker.setCoordinates(request.getServiceArea());
         // Update other fields as needed
 
-        walkerProfileRepository.save(walkerProfile);
-        return WalkerProfileResponse.from(walkerProfile);
+        walkerRepository.save(walker);
+        return WalkerResponse.from(walker);
     }
 
     @Transactional
-    public WalkerProfileResponse updateWalkerStatus(long walkerId, WalkerStatus status) {
-        WalkerProfile walkerProfile = walkerProfileRepository.findById(walkerId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));
+    public WalkerResponse updateWalkerStatus(Long walkerId, WalkerStatus status) {
+        Walker walker = findWalkerById(walkerId);
+        walker.setStatus(status);
 
-        walkerProfile.setStatus(status);
-
-        walkerProfileRepository.save(walkerProfile);
-        return WalkerProfileResponse.from(walkerProfile);
+        walkerRepository.save(walker);
+        return WalkerResponse.from(walker);
     }
 
     @Transactional
-    public void addFavoriteWalker(Long walkerId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void addFavoriteWalker(Long walkerId, Long userId) {
+        User user = findUserById(userId);
 
         if (favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId)) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "Walker already in favorites");
@@ -188,9 +186,8 @@ public class WalkerService {
     }
 
     @Transactional
-    public void removeFavoriteWalker(Long walkerId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void removeFavoriteWalker(Long walkerId, Long userId) {
+        User user = findUserById(userId);
 
         FavoriteWalker favorite = favoriteWalkerRepository.findByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Favorite walker not found"));
@@ -199,36 +196,24 @@ public class WalkerService {
         favoriteWalkerRepository.save(favorite);
     }
 
-    public List<WalkerProfileResponse> getFavoriteWalkers(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public List<WalkerResponse> getFavoriteWalkers(Long userId) {
+        User user = findUserById(userId);
 
         List<FavoriteWalker> favorites = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(user.getId());
 
         return favorites.stream()
                 .map(favorite -> {
-                    WalkerProfile walker = walkerProfileRepository.findById(favorite.getWalkerId()).orElse(null);
-                    return walker != null ? WalkerProfileResponse.from(walker) : null;
+                    Walker walker = walkerRepository.findById(favorite.getWalkerId()).orElse(null);
+                    return walker != null ? WalkerResponse.from(walker) : null;
                 })
                 .filter(response -> response != null)
                 .collect(Collectors.toList());
     }
 
-    public boolean isFavoriteWalker(Long walkerId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public boolean isFavoriteWalker(Long walkerId, Long userId) {
+        User user = findUserById(userId);
 
         return favoriteWalkerRepository.existsByUserIdAndWalkerIdAndIsActiveTrue(user.getId(), walkerId);
     }
 
-    // Haversine formula to calculate distance between two points on Earth
-    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return EARTH_RADIUS_KM * c; // distance in km
-    }
 }

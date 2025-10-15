@@ -1,5 +1,6 @@
 package com.petmily.backend.api.walk.service.notification;
 
+import com.petmily.backend.api.common.service.LocationValidationService;
 import com.petmily.backend.domain.walk.entity.WalkTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -129,7 +131,7 @@ public class GeminiMessageGenerator {
             
             if (prev.getLatitude() != null && prev.getLongitude() != null &&
                 current.getLatitude() != null && current.getLongitude() != null) {
-                double distance = calculateHaversineDistance(
+                double distance = LocationValidationService.calculateDistance(
                     prev.getLatitude(), prev.getLongitude(),
                     current.getLatitude(), current.getLongitude()
                 );
@@ -146,21 +148,7 @@ public class GeminiMessageGenerator {
         LocalDateTime startTime = tracks.get(0).getTimestamp();
         LocalDateTime endTime = tracks.get(tracks.size() - 1).getTimestamp();
         
-        return java.time.Duration.between(startTime, endTime).toMinutes();
-    }
-
-    private double calculateHaversineDistance(double lat1, double lon1, double lat2, double lon2) {
-        final double R = 6371; // Earth's radius in km
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+        return Duration.between(startTime, endTime).toMinutes();
     }
 
     private String getLocationDescription(WalkTrack track) {

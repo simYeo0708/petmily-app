@@ -49,7 +49,7 @@ public class WalkerReview extends BaseTimeEntity {
     // Relations
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walker_id", insertable = false, updatable = false)
-    private WalkerProfile walker;
+    private Walker walker;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id", insertable = false, updatable = false)
