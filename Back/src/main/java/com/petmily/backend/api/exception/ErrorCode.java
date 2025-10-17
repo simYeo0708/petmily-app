@@ -20,26 +20,12 @@ public enum ErrorCode {
     // member
     USER_NOT_FOUND(NOT_FOUND, "회원을 찾을 수 없습니다."),
 
-    // payment
-    PAYMENT_NOT_FOUND(NOT_FOUND, "결제 내역을 찾을 수 없습니다"),
-
-    // notification
-    NOTIFICATION_NOT_FOUND(NOT_FOUND, "알림을 찾을 수 없습니다."),
-
     // location
     LOCATION_REQUIRED(BAD_REQUEST, "위치 정보가 필요합니다."),
     INVALID_COORDINATES(BAD_REQUEST, "올바르지 않은 좌표입니다."),
     LOCATION_PERMISSION_REQUIRED(BAD_REQUEST, "위치 권한이 필요합니다."),
     UNREALISTIC_LOCATION_CHANGE(BAD_REQUEST, "비현실적인 위치 변화입니다."),
     LOCATION_SERVICE_UNAVAILABLE(SERVICE_UNAVAILABLE, "위치 서비스를 사용할 수 없습니다."),
-
-    // product
-    PRODUCT_NOT_FOUND(NOT_FOUND, "상품을 찾을 수 없습니다."),
-    PRODUCT_INACTIVE(BAD_REQUEST, "비활성화된 상품입니다."),
-    PRODUCT_NOT_AVAILABLE(BAD_REQUEST, "판매 중단된 상품입니다."),
-    INSUFFICIENT_STOCK(BAD_REQUEST, "재고가 부족합니다."),
-    PRODUCT_ALREADY_EXISTS(CONFLICT, "이미 존재하는 상품입니다."),
-    INVALID_PRODUCT_DATA(BAD_REQUEST, "올바르지 않은 상품 정보입니다."),
 
     // category
     CATEGORY_NOT_FOUND(NOT_FOUND, "카테고리를 찾을 수 없습니다."),
@@ -48,42 +34,9 @@ public enum ErrorCode {
     CATEGORY_HAS_PRODUCTS(BAD_REQUEST, "상품이 있는 카테고리는 삭제할 수 없습니다."),
     INVALID_CATEGORY_HIERARCHY(BAD_REQUEST, "올바르지 않은 카테고리 계층 구조입니다."),
 
-    // cart
-    CART_ITEM_NOT_FOUND(NOT_FOUND, "장바구니 아이템을 찾을 수 없습니다."),
-    CART_ITEM_ALREADY_EXISTS(CONFLICT, "이미 장바구니에 있는 상품입니다."),
-    INVALID_CART_QUANTITY(BAD_REQUEST, "올바르지 않은 수량입니다."),
-    CART_IS_EMPTY(BAD_REQUEST, "장바구니가 비어있습니다."),
-
-    // order
-    ORDER_NOT_FOUND(NOT_FOUND, "주문을 찾을 수 없습니다."),
-    ORDER_CANNOT_CANCEL(BAD_REQUEST, "취소할 수 없는 주문입니다."),
-    ORDER_ALREADY_CANCELLED(BAD_REQUEST, "이미 취소된 주문입니다."),
-    INVALID_ORDER_STATUS(BAD_REQUEST, "올바르지 않은 주문 상태입니다."),
-    ORDER_ITEMS_REQUIRED(BAD_REQUEST, "주문할 상품을 선택해주세요."),
-    PAYMENT_FAILED(BAD_REQUEST, "결제에 실패했습니다."),
-
-    // subscription
-    SUBSCRIPTION_NOT_FOUND(NOT_FOUND, "정기배송을 찾을 수 없습니다."),
-    SUBSCRIPTION_ALREADY_PAUSED(BAD_REQUEST, "이미 일시정지된 정기배송입니다."),
-    SUBSCRIPTION_ALREADY_CANCELLED(BAD_REQUEST, "이미 해지된 정기배송입니다."),
-    SUBSCRIPTION_ALREADY_ACTIVE(BAD_REQUEST, "이미 활성화된 정기배송입니다."),
-    INVALID_SUBSCRIPTION_TYPE(BAD_REQUEST, "올바르지 않은 정기배송 유형입니다."),
-    INVALID_DELIVERY_INTERVAL(BAD_REQUEST, "올바르지 않은 배송 주기입니다."),
-    SUBSCRIPTION_MODIFICATION_NOT_ALLOWED(BAD_REQUEST, "정기배송 변경이 불가능합니다."),
-    SUBSCRIPTION_CANNOT_PAUSE(BAD_REQUEST, "일시정지할 수 없는 정기배송입니다."),
-    SUBSCRIPTION_CANNOT_RESUME(BAD_REQUEST, "재개할 수 없는 정기배송입니다."),
-    SUBSCRIPTION_ITEMS_REQUIRED(BAD_REQUEST, "정기배송할 상품을 선택해주세요."),
-    INVALID_FIRST_DELIVERY_DATE(BAD_REQUEST, "첫 배송일이 올바르지 않습니다."),
-    SUBSCRIPTION_COMPLETED(BAD_REQUEST, "완료된 정기배송입니다."),
-
-    // return
-    RETURN_NOT_FOUND(NOT_FOUND, "반품 요청을 찾을 수 없습니다."),
-    RETURN_NOT_AVAILABLE(BAD_REQUEST, "반품할 수 없는 주문입니다."),
-    RETURN_ALREADY_EXISTS(CONFLICT, "이미 반품 요청이 진행 중입니다."),
-    RETURN_PERIOD_EXPIRED(BAD_REQUEST, "반품 가능 기간이 지났습니다."),
-    INVALID_RETURN_QUANTITY(BAD_REQUEST, "반품 수량이 올바르지 않습니다."),
-    RETURN_ALREADY_PROCESSED(BAD_REQUEST, "이미 처리된 반품 요청입니다."),
-    RETURN_CANNOT_CANCEL(BAD_REQUEST, "취소할 수 없는 반품 요청입니다."),
+    // wishlist
+    WISHLIST_NOT_FOUND(NOT_FOUND, "찜 목록을 찾을 수 없습니다"),
+    WISHLIST_ALREADY_EXISTS(BAD_REQUEST, "이미 찜한 상품입니다"),
 
     // review
     REVIEW_NOT_FOUND(NOT_FOUND, "리뷰를 찾을 수 없습니다."),

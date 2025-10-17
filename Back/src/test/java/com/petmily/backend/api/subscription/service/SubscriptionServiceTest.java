@@ -1,9 +1,6 @@
 package com.petmily.backend.api.subscription.service;
 
 import com.petmily.backend.api.subscription.dto.*;
-import com.petmily.backend.domain.order.entity.SubscriptionOrder;
-import com.petmily.backend.domain.order.entity.SubscriptionType;
-import com.petmily.backend.domain.order.repository.SubscriptionOrderRepository;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
 import com.petmily.backend.domain.user.entity.User;

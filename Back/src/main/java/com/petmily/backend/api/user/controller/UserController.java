@@ -8,7 +8,9 @@ import com.petmily.backend.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,24 +41,24 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<User> getCurrentUser(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         return ResponseEntity.ok(userService.getCurrentUser(userId));
     }
 
     @PutMapping("/me")
     public ResponseEntity<User> updateCurrentUser(
             @RequestBody UserUpdateRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         return ResponseEntity.ok(userService.updateCurrentUser(userId, request));
     }
 
     @PutMapping("/me/password")
     public ResponseEntity<Void> changePassword(
             @RequestBody ChangePasswordRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         userService.changePassword(userId, request);
         return ResponseEntity.ok().build();
     }

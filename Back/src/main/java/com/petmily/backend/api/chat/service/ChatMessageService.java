@@ -34,13 +34,20 @@ public class ChatMessageService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
-    // 채팅방의 메시지 목록 조회 (페이징)
-    public Page<ChatMessageResponse> getChatMessages(String roomId, String username, Pageable pageable) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
+    private ChatRoom findChatRoomById(String roomId){
+        return chatRoomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    }
 
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    // 채팅방의 메시지 목록 조회 (페이징)
+    public Page<ChatMessageResponse> getChatMessages(String roomId, Long userId, Pageable pageable) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         // 접근 권한 확인
         if (!hasAccessToChatRoom(chatRoom, user)) {
@@ -53,12 +60,9 @@ public class ChatMessageService {
 
     // 메시지 전송
     @Transactional
-    public ChatMessageResponse sendMessage(String roomId, String username, ChatMessageRequest request) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public ChatMessageResponse sendMessage(String roomId, Long userId, ChatMessageRequest request) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         // 접근 권한 확인
         if (!hasAccessToChatRoom(chatRoom, user)) {
@@ -114,12 +118,13 @@ public class ChatMessageService {
 
     // 입장 시스템 메시지 생성
     @Transactional
-    public ChatMessageResponse createJoinMessage(Long chatRoomId, String username) {
+    public ChatMessageResponse createJoinMessage(Long chatRoomId, Long userId) {
+        User user = findUserById(userId);
         ChatMessage joinMessage = ChatMessage.builder()
                 .chatRoomId(chatRoomId)
                 .senderId(0L) // 시스템 메시지
                 .messageType(ChatMessage.MessageType.SYSTEM)
-                .content(username + "님이 채팅방에 입장했습니다.")
+                .content(user.getUsername() + "님이 채팅방에 입장했습니다.")
                 .isSystemMessage(true)
                 .isRead(false)
                 .build();
@@ -130,12 +135,9 @@ public class ChatMessageService {
 
     // 메시지를 읽음 처리
     @Transactional
-    public void markMessagesAsRead(String roomId, String username) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void markMessagesAsRead(String roomId, Long userId) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         chatMessageRepository.markMessagesAsRead(chatRoom.getId(), user.getId());
     }

@@ -1,12 +1,15 @@
 package com.petmily.backend.api.dashboard.controller;
 
 import com.petmily.backend.api.common.dto.ApiResponse;
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.dashboard.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,20 +27,20 @@ public class DashboardController {
      */
     @GetMapping
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard(
-            Authentication authentication,
+            @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest request) {
-        String username = authentication.getName();
+        Long userId = SecurityUtils.getUserId(userDetails);
         String userAgent = request.getHeader("User-Agent");
         String clientIp = getClientIp(request);
 
-        log.info("Dashboard access - User: {}, IP: {}, UserAgent: {}", username, clientIp, userAgent);
+        log.info("Dashboard access - User: {}, IP: {}, UserAgent: {}", userId, clientIp, userAgent);
 
         try {
-            DashboardResponse dashboard = dashboardService.getDashboard(username);
-            log.debug("Dashboard data retrieved successfully for user: {}", username);
+            DashboardResponse dashboard = dashboardService.getDashboard(userId);
+            log.debug("Dashboard data retrieved successfully for user: {}", userId);
             return ResponseEntity.ok(ApiResponse.success(dashboard, "대시보드 데이터를 성공적으로 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve dashboard for user: {}", username, e);
+            log.error("Failed to retrieve dashboard for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("대시보드 데이터 조회에 실패했습니다."));
         }
@@ -48,14 +51,14 @@ public class DashboardController {
      */
     @GetMapping("/summary")
     public ResponseEntity<ApiResponse<DashboardResponse.OverallStats>> getDashboardSummary(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.OverallStats summary = dashboardService.getDashboardSummary(username);
+            DashboardResponse.OverallStats summary = dashboardService.getDashboardSummary(userId);
             return ResponseEntity.ok(ApiResponse.success(summary, "대시보드 요약 통계를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve dashboard summary for user: {}", username, e);
+            log.error("Failed to retrieve dashboard summary for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("대시보드 요약 통계 조회에 실패했습니다."));
         }
@@ -66,14 +69,14 @@ public class DashboardController {
      */
     @GetMapping("/user-info")
     public ResponseEntity<ApiResponse<DashboardResponse.UserInfo>> getUserInfo(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.UserInfo userInfo = dashboardService.getUserInfo(username);
+            DashboardResponse.UserInfo userInfo = dashboardService.getUserInfo(userId);
             return ResponseEntity.ok(ApiResponse.success(userInfo, "사용자 정보를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve user info for user: {}", username, e);
+            log.error("Failed to retrieve user info for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("사용자 정보 조회에 실패했습니다."));
         }
@@ -84,14 +87,14 @@ public class DashboardController {
      */
     @GetMapping("/pets")
     public ResponseEntity<ApiResponse<DashboardResponse.PetStats>> getPetStats(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.PetStats petStats = dashboardService.getPetStats(username);
+            DashboardResponse.PetStats petStats = dashboardService.getPetStats(userId);
             return ResponseEntity.ok(ApiResponse.success(petStats, "반려동물 통계를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve pet stats for user: {}", username, e);
+            log.error("Failed to retrieve pet stats for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("반려동물 통계 조회에 실패했습니다."));
         }
@@ -102,14 +105,14 @@ public class DashboardController {
      */
     @GetMapping("/walking")
     public ResponseEntity<ApiResponse<DashboardResponse.WalkingStats>> getWalkingStats(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.WalkingStats walkingStats = dashboardService.getWalkingStats(username);
+            DashboardResponse.WalkingStats walkingStats = dashboardService.getWalkingStats(userId);
             return ResponseEntity.ok(ApiResponse.success(walkingStats, "산책 통계를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve walking stats for user: {}", username, e);
+            log.error("Failed to retrieve walking stats for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("산책 통계 조회에 실패했습니다."));
         }
@@ -120,14 +123,14 @@ public class DashboardController {
      */
     @GetMapping("/shopping")
     public ResponseEntity<ApiResponse<DashboardResponse.ShoppingOverview>> getShoppingOverview(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.ShoppingOverview shoppingOverview = dashboardService.getShoppingOverview(username);
+            DashboardResponse.ShoppingOverview shoppingOverview = dashboardService.getShoppingOverview(userId);
             return ResponseEntity.ok(ApiResponse.success(shoppingOverview, "쇼핑 통계를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve shopping overview for user: {}", username, e);
+            log.error("Failed to retrieve shopping overview for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("쇼핑 통계 조회에 실패했습니다."));
         }
@@ -138,14 +141,14 @@ public class DashboardController {
      */
     @GetMapping("/chat")
     public ResponseEntity<ApiResponse<DashboardResponse.ChatOverview>> getChatOverview(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse.ChatOverview chatOverview = dashboardService.getChatOverview(username);
+            DashboardResponse.ChatOverview chatOverview = dashboardService.getChatOverview(userId);
             return ResponseEntity.ok(ApiResponse.success(chatOverview, "채팅 통계를 조회했습니다."));
         } catch (Exception e) {
-            log.error("Failed to retrieve chat overview for user: {}", username, e);
+            log.error("Failed to retrieve chat overview for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("채팅 통계 조회에 실패했습니다."));
         }
@@ -156,15 +159,15 @@ public class DashboardController {
      */
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<DashboardResponse>> refreshDashboard(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
 
         try {
-            DashboardResponse dashboard = dashboardService.refreshDashboard(username);
-            log.info("Dashboard refreshed for user: {}", username);
+            DashboardResponse dashboard = dashboardService.refreshDashboard(userId);
+            log.info("Dashboard refreshed for user: {}", userId);
             return ResponseEntity.ok(ApiResponse.success(dashboard, "대시보드를 새로고침했습니다."));
         } catch (Exception e) {
-            log.error("Failed to refresh dashboard for user: {}", username, e);
+            log.error("Failed to refresh dashboard for user: {}", userId, e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error("대시보드 새로고침에 실패했습니다."));
         }

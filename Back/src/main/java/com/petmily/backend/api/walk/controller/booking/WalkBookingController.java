@@ -8,6 +8,8 @@ import com.petmily.backend.api.walk.service.booking.WalkBookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,8 +28,8 @@ public class WalkBookingController {
     public ResponseEntity<BookingChangeResponse> requestBookingChange(
             @PathVariable Long bookingId,
             @RequestBody BookingChangeRequestDto request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         BookingChangeResponse response = walkBookingService.requestBookingChange(bookingId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -39,8 +41,8 @@ public class WalkBookingController {
     public ResponseEntity<BookingChangeResponse> respondToChangeRequest(
             @PathVariable Long requestId,
             @RequestBody ChangeRequestDecisionRequest decision,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         BookingChangeResponse response = walkBookingService.respondToChangeRequest(requestId, decision, userId);
         return ResponseEntity.ok(response);
     }
@@ -51,8 +53,8 @@ public class WalkBookingController {
     @GetMapping("/{bookingId}/change-requests")
     public ResponseEntity<List<BookingChangeResponse>> getBookingChangeRequests(
             @PathVariable Long bookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<BookingChangeResponse> requests = walkBookingService.getBookingChangeRequests(bookingId, userId);
         return ResponseEntity.ok(requests);
     }
@@ -64,8 +66,8 @@ public class WalkBookingController {
      */
     @GetMapping("/pending-change-requests")
     public ResponseEntity<List<BookingChangeResponse>> getPendingChangeRequests(
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<BookingChangeResponse> requests = walkBookingService.getPendingChangeRequests(userId);
         return ResponseEntity.ok(requests);
     }

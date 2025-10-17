@@ -39,10 +39,19 @@ public class ChatRoomService {
 
     private final Map<String, ChannelTopic> topics = new HashMap<>();
 
-    // 사용자의 모든 채팅방 조회
-    public List<ChatRoomResponse> getUserChatRooms(String username) {
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private ChatRoom findChatRoomById(String roomId){
+        return chatRoomRepository.findByRoomId(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    }
+
+    // 사용자의 모든 채팅방 조회
+    public List<ChatRoomResponse> getUserChatRooms(Long userId) {
+        User user = findUserById(userId);
 
         List<ChatRoom> chatRooms = chatRoomRepository.findByUserIdOrWalkerUserId(user.getId());
         
@@ -64,16 +73,14 @@ public class ChatRoomService {
 
     // 채팅방 ID로 조회
     public ChatRoomResponse findRoomById(String roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+        ChatRoom chatRoom = findChatRoomById(roomId);
         return ChatRoomResponse.from(chatRoom);
     }
 
     // 예약 전 문의용 채팅방 생성 (유저 -> 워커)
     @Transactional
-    public ChatRoomResponse createPreBookingChatRoom(String username, CreateChatRoomRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public ChatRoomResponse createPreBookingChatRoom(Long userId, CreateChatRoomRequest request) {
+        User user = findUserById(userId);
 
         Walker walker = walkerRepository.findById(request.getWalkerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "워커를 찾을 수 없습니다"));
@@ -123,12 +130,9 @@ public class ChatRoomService {
     }
 
     // 사용자가 채팅방에 접근 권한이 있는지 확인
-    public boolean hasAccessToChatRoom(String roomId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    public boolean hasAccessToChatRoom(String roomId, Long userId) {
+        User user = findUserById(userId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
 
         // 채팅방의 유저이거나, 워커인 경우
         if (chatRoom.getUserId().equals(user.getId())) {

@@ -8,6 +8,8 @@ import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,8 +27,8 @@ public class DirectBookingController {
     @PostMapping
     public ResponseEntity<WalkBookingResponse> createDirectBooking(
             @RequestBody WalkBookingRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse response = directBookingService.createWalkerSelectionBooking(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -35,8 +37,8 @@ public class DirectBookingController {
      * 사용자의 직접 예약 목록 조회
      */
     @GetMapping("/user")
-    public ResponseEntity<List<WalkBookingResponse>> getUserDirectBookings(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<List<WalkBookingResponse>> getUserDirectBookings(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkBookingResponse> bookings = directBookingService.getDirectBookingsByUser(userId);
         return ResponseEntity.ok(bookings);
     }
@@ -45,8 +47,8 @@ public class DirectBookingController {
      * 워커의 직접 예약 목록 조회
      */
     @GetMapping("/walker")
-    public ResponseEntity<List<WalkBookingResponse>> getWalkerDirectBookings(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<List<WalkBookingResponse>> getWalkerDirectBookings(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkBookingResponse> bookings = directBookingService.getDirectBookingsByWalker(userId);
         return ResponseEntity.ok(bookings);
     }
@@ -57,8 +59,8 @@ public class DirectBookingController {
     @GetMapping("/{bookingId}")
     public ResponseEntity<WalkBookingResponse> getDirectBooking(
             @PathVariable Long bookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse booking = directBookingService.getDirectBooking(bookingId, userId);
         return ResponseEntity.ok(booking);
     }
@@ -70,8 +72,8 @@ public class DirectBookingController {
     public ResponseEntity<WalkBookingResponse> updateBookingStatus(
             @PathVariable Long bookingId,
             @RequestParam WalkBooking.BookingStatus status,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse response = directBookingService.updateBookingStatus(bookingId, status, userId);
         return ResponseEntity.ok(response);
     }
@@ -82,8 +84,8 @@ public class DirectBookingController {
     @DeleteMapping("/{bookingId}")
     public ResponseEntity<Void> cancelBooking(
             @PathVariable Long bookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         directBookingService.cancelBooking(bookingId, userId);
         return ResponseEntity.ok().build();
     }

@@ -1,6 +1,7 @@
 package com.petmily.backend.api.notification.controller;
 
 import com.petmily.backend.api.common.dto.ApiResponse;
+import com.petmily.backend.api.common.util.SecurityUtils;
 import com.petmily.backend.api.notification.dto.NotificationSettingsRequest;
 import com.petmily.backend.api.notification.dto.NotificationSettingsResponse;
 import com.petmily.backend.api.notification.dto.PushNotificationRequest;
@@ -12,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,9 +32,9 @@ public class NotificationController {
      */
     @GetMapping("/settings")
     public ResponseEntity<ApiResponse<NotificationSettingsResponse>> getNotificationSettings(
-            Authentication authentication) {
-        String username = authentication.getName();
-        NotificationSettingsResponse settings = notificationService.getNotificationSettings(username);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        NotificationSettingsResponse settings = notificationService.getNotificationSettings(userId);
         return ResponseEntity.ok(ApiResponse.success(settings, "알림 설정을 조회했습니다."));
     }
 
@@ -41,9 +44,9 @@ public class NotificationController {
     @PutMapping("/settings")
     public ResponseEntity<ApiResponse<NotificationSettingsResponse>> updateNotificationSettings(
             @Valid @RequestBody NotificationSettingsRequest request,
-            Authentication authentication) {
-        String username = authentication.getName();
-        NotificationSettingsResponse settings = notificationService.updateNotificationSettings(username, request);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        NotificationSettingsResponse settings = notificationService.updateNotificationSettings(userId, request);
         return ResponseEntity.ok(ApiResponse.success(settings, "알림 설정을 업데이트했습니다."));
     }
 
@@ -53,9 +56,9 @@ public class NotificationController {
     @PostMapping("/push-token")
     public ResponseEntity<ApiResponse<Void>> registerPushToken(
             @Valid @RequestBody PushTokenRequest request,
-            Authentication authentication) {
-        String username = authentication.getName();
-        notificationService.registerPushToken(username, request);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        notificationService.registerPushToken(userId, request);
         return ResponseEntity.ok(ApiResponse.success(null, "푸시 토큰을 등록했습니다."));
     }
 
@@ -65,9 +68,9 @@ public class NotificationController {
     @DeleteMapping("/push-token")
     public ResponseEntity<ApiResponse<Void>> unregisterPushToken(
             @Valid @RequestBody PushTokenRequest request,
-            Authentication authentication) {
-        String username = authentication.getName();
-        notificationService.unregisterPushToken(username, request);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        notificationService.unregisterPushToken(userId, request);
         return ResponseEntity.ok(ApiResponse.success(null, "푸시 토큰을 해제했습니다."));
     }
 
@@ -87,8 +90,8 @@ public class NotificationController {
      */
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<List<Object>>> getNotificationHistory(
-            Authentication authentication) {
-        String username = authentication.getName();
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         // 사용자 ID 조회 로직 필요
         List<Object> history = notificationService.getNotificationHistory(1L); // TODO: 실제 사용자 ID
         return ResponseEntity.ok(ApiResponse.success(history, "알림 기록을 조회했습니다."));
@@ -160,9 +163,9 @@ public class NotificationController {
      */
     @PostMapping("/test")
     public ResponseEntity<ApiResponse<Void>> sendTestNotification(
-            Authentication authentication) {
-        String username = authentication.getName();
-        log.info("Test notification requested by: {}", username);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        log.info("Test notification requested by: {}", userId);
 
         // 간단한 테스트 알림
         PushNotificationRequest request = PushNotificationRequest.builder()
@@ -179,7 +182,7 @@ public class NotificationController {
      */
     @GetMapping("/sync")
     public ResponseEntity<ApiResponse<List<Object>>> syncNotifications(
-            Authentication authentication) {
+            @AuthenticationPrincipal UserDetails userDetails) {
         // 실제로는 서버에 저장된 미확인 알림들을 반환해야 함
         // 현재는 빈 리스트 반환
         return ResponseEntity.ok(ApiResponse.success(List.of(), "알림을 동기화했습니다."));

@@ -9,6 +9,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,8 +26,8 @@ public class WalkerReviewController {
     @PostMapping
     public ResponseEntity<WalkerReviewResponse> createReview(
             @Valid @RequestBody WalkerReviewRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerReviewResponse response = walkerReviewService.createReview(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -46,8 +48,8 @@ public class WalkerReviewController {
 
     @GetMapping("/my")
     public ResponseEntity<List<WalkerReviewResponse>> getMyReviews(
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkerReviewResponse> reviews = walkerReviewService.getUserReviews(userId);
         return ResponseEntity.ok(reviews);
     }
@@ -55,8 +57,8 @@ public class WalkerReviewController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<WalkerReviewResponse> getReview(
             @PathVariable Long reviewId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerReviewResponse review = walkerReviewService.getReview(reviewId, userId);
         return ResponseEntity.ok(review);
     }
@@ -65,8 +67,8 @@ public class WalkerReviewController {
     public ResponseEntity<WalkerReviewResponse> updateReview(
             @PathVariable Long reviewId,
             @Valid @RequestBody WalkerReviewRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerReviewResponse updatedReview = walkerReviewService.updateReview(reviewId, userId, request);
         return ResponseEntity.ok(updatedReview);
     }
@@ -74,8 +76,8 @@ public class WalkerReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> deleteReview(
             @PathVariable Long reviewId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         walkerReviewService.deleteReview(reviewId, userId);
         return ResponseEntity.ok().build();
     }
@@ -85,8 +87,8 @@ public class WalkerReviewController {
      */
     @GetMapping("/reviewable-bookings")
     public ResponseEntity<List<Map<String, Object>>> getReviewableBookings(
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<Map<String, Object>> reviewableBookings = walkerReviewService.getReviewableBookings(userId);
         return ResponseEntity.ok(reviewableBookings);
     }
@@ -97,8 +99,8 @@ public class WalkerReviewController {
     @PostMapping("/report")
     public ResponseEntity<String> reportWalker(
             @Valid @RequestBody WalkerReportRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         String result = walkerReviewService.reportWalker(userId, request);
         return ResponseEntity.ok(result);
     }
@@ -108,8 +110,8 @@ public class WalkerReviewController {
      */
     @GetMapping("/my-reports")
     public ResponseEntity<List<Map<String, Object>>> getMyReports(
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<Map<String, Object>> reports = walkerReviewService.getUserReports(userId);
         return ResponseEntity.ok(reports);
     }

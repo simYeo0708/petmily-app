@@ -9,6 +9,8 @@ import com.petmily.backend.api.pet.service.PetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,15 +25,15 @@ public class PetController {
     @PostMapping
     public ResponseEntity<PetResponse> createPet(
             @RequestBody PetCreateRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         PetResponse response = petService.createPet(userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<PetResponse>> getMyPets(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<List<PetResponse>> getMyPets(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<PetResponse> pets = petService.getUserPets(userId);
         return ResponseEntity.ok(pets);
     }
@@ -39,8 +41,8 @@ public class PetController {
     @GetMapping("/{petId}")
     public ResponseEntity<PetResponse> getPet(
             @PathVariable Long petId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         PetResponse pet = petService.getPet(petId, userId);
         return ResponseEntity.ok(pet);
     }
@@ -49,8 +51,8 @@ public class PetController {
     public ResponseEntity<PetResponse> updatePet(
             @PathVariable Long petId,
             @RequestBody PetUpdateRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         PetResponse response = petService.updatePet(petId, userId, request);
         return ResponseEntity.ok(response);
     }
@@ -58,8 +60,8 @@ public class PetController {
     @DeleteMapping("/{petId}")
     public ResponseEntity<Void> deletePet(
             @PathVariable Long petId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         petService.deletePet(petId, userId);
         return ResponseEntity.ok().build();
     }

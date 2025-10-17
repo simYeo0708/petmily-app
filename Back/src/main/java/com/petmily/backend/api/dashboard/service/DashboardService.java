@@ -30,9 +30,13 @@ public class DashboardService {
     private final WalkBookingRepository walkBookingRepository;
     private final WalkerRepository walkerRepository;
 
-    public DashboardResponse getDashboard(String username) {
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    public DashboardResponse getDashboard(Long userId) {
+        User user = findUserById(userId);
 
         return DashboardResponse.builder()
                 .userInfo(buildUserInfo(user))
@@ -197,45 +201,39 @@ public class DashboardService {
 
     // 개별 섹션 조회를 위한 추가 메서드들
 
-    public DashboardResponse.OverallStats getDashboardSummary(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.OverallStats getDashboardSummary(Long userId) {
+        User user = findUserById(userId);
         return buildOverallStats(user);
     }
 
-    public DashboardResponse.UserInfo getUserInfo(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.UserInfo getUserInfo(Long userId) {
+        User user = findUserById(userId);
         return buildUserInfo(user);
     }
 
-    public DashboardResponse.PetStats getPetStats(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.PetStats getPetStats(Long userId) {
+        User user = findUserById(userId);
         return buildPetStats(user.getId());
     }
 
-    public DashboardResponse.WalkingStats getWalkingStats(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.WalkingStats getWalkingStats(Long userId) {
+        User user = findUserById(userId);
         return buildWalkingStats(user.getId());
     }
 
-    public DashboardResponse.ShoppingOverview getShoppingOverview(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.ShoppingOverview getShoppingOverview(Long userId) {
+        User user = findUserById(userId);
         return buildShoppingOverview(user.getId());
     }
 
-    public DashboardResponse.ChatOverview getChatOverview(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public DashboardResponse.ChatOverview getChatOverview(Long userId) {
+        User user = findUserById(userId);
         return buildChatOverview(user.getId());
     }
 
-    public DashboardResponse refreshDashboard(String username) {
+    public DashboardResponse refreshDashboard(Long userId) {
         // 캐시가 있다면 여기서 무효화
         // 현재는 단순히 getDashboard를 호출
-        return getDashboard(username);
+        return getDashboard(userId);
     }
 }

@@ -1,12 +1,5 @@
 package com.petmily.backend.api.order.service;
 
-import com.petmily.backend.api.order.dto.OrderCreateRequest;
-import com.petmily.backend.api.order.dto.OrderDetailResponse;
-import com.petmily.backend.api.order.dto.OrderListResponse;
-import com.petmily.backend.domain.order.entity.Order;
-import com.petmily.backend.domain.order.entity.OrderItem;
-import com.petmily.backend.domain.order.entity.OrderStatus;
-import com.petmily.backend.domain.order.repository.OrderRepository;
 import com.petmily.backend.domain.product.entity.Product;
 import com.petmily.backend.domain.product.repository.ProductRepository;
 import com.petmily.backend.domain.user.entity.User;
@@ -23,7 +16,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Optional;
 

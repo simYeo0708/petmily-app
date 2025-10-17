@@ -80,6 +80,10 @@ kakao:
       admin-key: ${KAKAO_ADMIN_KEY:dummy-admin-key}           # 비즈니스 메시지용 (선택)
       base-url: "https://kapi.kakao.com"
 
+naver:
+  client-id: ${NAVER_CLIENT_ID:dummy-naver-client-id}
+  client-secret: ${NAVER_CLIENT_SECRET:dummy-naver-client-secret}
+
 server:
   port: 8080
 

@@ -1,16 +1,11 @@
 package com.petmily.backend.domain.user.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
-import com.petmily.backend.domain.order.entity.Order;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.walker.entity.Walker;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

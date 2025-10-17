@@ -1,6 +1,5 @@
 package com.petmily.backend.api.admin.controller;
 
-import com.petmily.backend.api.order.dto.AdminReplyRequest;
 import com.petmily.backend.api.order.dto.ReviewDetailResponse;
 import com.petmily.backend.api.order.service.OrderService;
 import jakarta.validation.Valid;

@@ -33,11 +33,16 @@ public class NotificationService {
     private static final String PUSH_TOKEN_KEY = "push_token:user:";
     private static final String NOTIFICATION_HISTORY_KEY = "notification_history:";
 
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
     /**
      * 알림 설정 조회
      */
-    public NotificationSettingsResponse getNotificationSettings(String username) {
-        User user = findUserByUsername(username);
+    public NotificationSettingsResponse getNotificationSettings(Long userId) {
+        User user = findUserById(userId);
 
         NotificationSetting setting = notificationSettingRepository
                 .findByUserId(user.getId())
@@ -50,9 +55,9 @@ public class NotificationService {
      * 알림 설정 업데이트
      */
     @Transactional
-    public NotificationSettingsResponse updateNotificationSettings(String username,
+    public NotificationSettingsResponse updateNotificationSettings(Long userId,
                                                                  NotificationSettingsRequest request) {
-        User user = findUserByUsername(username);
+        User user = findUserById(userId);
 
         NotificationSetting setting = notificationSettingRepository
                 .findByUserId(user.getId())
@@ -98,8 +103,8 @@ public class NotificationService {
      * 푸시 토큰 등록
      */
     @Transactional
-    public void registerPushToken(String username, PushTokenRequest request) {
-        User user = findUserByUsername(username);
+    public void registerPushToken(Long userId, PushTokenRequest request) {
+        User user = findUserById(userId);
         String key = PUSH_TOKEN_KEY + user.getId();
 
         // Redis에 토큰 저장 (30일 만료)
@@ -112,8 +117,8 @@ public class NotificationService {
      * 푸시 토큰 해제
      */
     @Transactional
-    public void unregisterPushToken(String username, PushTokenRequest request) {
-        User user = findUserByUsername(username);
+    public void unregisterPushToken(Long userId, PushTokenRequest request) {
+        User user = findUserById(userId);
         String key = PUSH_TOKEN_KEY + user.getId();
 
         String storedToken = (String) redisTemplate.opsForValue().get(key);
@@ -267,10 +272,6 @@ public class NotificationService {
         sendPushNotification(request);
     }
 
-    private User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    }
 
     private NotificationSetting createDefaultNotificationSettings(Long userId) {
         return NotificationSetting.builder()

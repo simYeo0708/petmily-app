@@ -13,7 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,8 +31,8 @@ public class WalkerController {
     @PostMapping
     public ResponseEntity<WalkerResponse> registerWalker(
             @RequestBody WalkerCreateRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerResponse response = walkerService.registerWalker(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -44,15 +46,15 @@ public class WalkerController {
     @GetMapping
     public ResponseEntity<List<WalkerResponse>> getAllWalkers(
             @ModelAttribute WalkerSearchRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkerResponse> response = walkerService.getAllWalkers(userId, request);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<WalkerResponse> getCurrentWalkerProfile(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<WalkerResponse> getCurrentWalkerProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerResponse response = walkerService.getWalkerByUserId(userId);
         return ResponseEntity.ok(response);
     }
@@ -60,8 +62,8 @@ public class WalkerController {
     @PutMapping("/me")
     public ResponseEntity<WalkerResponse> updateCurrentWalkerProfile(
             @RequestBody WalkerUpdateRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkerResponse response = walkerService.updateCurrentWalkerProfile(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -72,8 +74,8 @@ public class WalkerController {
     @PostMapping("/{walkerId}/favorite")
     public ResponseEntity<Void> addFavoriteWalker(
             @PathVariable Long walkerId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         walkerService.addFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok().build();
     }
@@ -84,8 +86,8 @@ public class WalkerController {
     @DeleteMapping("/{walkerId}/favorite")
     public ResponseEntity<Void> removeFavoriteWalker(
             @PathVariable Long walkerId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         walkerService.removeFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok().build();
     }
@@ -95,8 +97,8 @@ public class WalkerController {
      */
     @GetMapping("/favorites")
     public ResponseEntity<List<WalkerResponse>> getFavoriteWalkers(
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkerResponse> favorites = walkerService.getFavoriteWalkers(userId);
         return ResponseEntity.ok(favorites);
     }
@@ -107,8 +109,8 @@ public class WalkerController {
     @GetMapping("/{walkerId}/favorite/check")
     public ResponseEntity<Boolean> isFavoriteWalker(
             @PathVariable Long walkerId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         boolean isFavorite = walkerService.isFavoriteWalker(walkerId, userId);
         return ResponseEntity.ok(isFavorite);
     }
@@ -119,8 +121,8 @@ public class WalkerController {
     @GetMapping("/search")
     public ResponseEntity<Page<WalkerResponse>> searchWalkers(
             @ModelAttribute WalkerSearchRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         Page<WalkerResponse> response = walkerSearchService.searchWalkers(request, userId);
         return ResponseEntity.ok(response);
     }

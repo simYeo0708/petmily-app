@@ -10,6 +10,8 @@ import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,8 +29,8 @@ public class OpenBookingController {
     @PostMapping
     public ResponseEntity<WalkBookingResponse> createOpenBooking(
             @RequestBody WalkBookingRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse response = openBookingService.createOpenBooking(userId, request);
         return ResponseEntity.ok(response);
     }
@@ -48,8 +50,8 @@ public class OpenBookingController {
     @GetMapping("/{bookingId}")
     public ResponseEntity<WalkBookingResponse> getOpenBooking(
             @PathVariable Long bookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse booking = openBookingService.getOpenBooking(bookingId, userId);
         return ResponseEntity.ok(booking);
     }
@@ -58,8 +60,8 @@ public class OpenBookingController {
      * 사용자의 오픈 예약 목록 조회
      */
     @GetMapping("/user")
-    public ResponseEntity<List<WalkBookingResponse>> getOpenBookingsByUser(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<List<WalkBookingResponse>> getOpenBookingsByUser(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkBookingResponse> bookings = openBookingService.getOpenBookingsByUser(userId);
         return ResponseEntity.ok(bookings);
     }
@@ -70,8 +72,8 @@ public class OpenBookingController {
     @GetMapping("/{openBookingId}/applications")
     public ResponseEntity<List<WalkApplicationResponse>> getApplicationsByUser(
             @PathVariable Long openBookingId,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkApplicationResponse> applications = openBookingService.getApplicationsByUser(openBookingId, userId);
         return ResponseEntity.ok(applications);
     }
@@ -80,8 +82,8 @@ public class OpenBookingController {
      * 워커의 지원 내역 조회
      */
     @GetMapping("/walker")
-    public ResponseEntity<List<WalkBookingResponse>> getApplicationsByWalker(Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+    public ResponseEntity<List<WalkBookingResponse>> getApplicationsByWalker(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         List<WalkBookingResponse> applications = openBookingService.getApplicationsByWalker(userId);
         return ResponseEntity.ok(applications);
     }
@@ -93,8 +95,8 @@ public class OpenBookingController {
     public ResponseEntity<WalkBookingResponse> applyToOpenBooking(
             @PathVariable Long openBookingId,
             @RequestBody WalkApplicationRequest request,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse response = openBookingService.applyToOpenBooking(openBookingId, request, userId);
         return ResponseEntity.ok(response);
     }
@@ -108,8 +110,8 @@ public class OpenBookingController {
     public ResponseEntity<WalkBookingResponse> updateApplicationStatus(
             @PathVariable Long applicationId,
             @RequestParam WalkBooking.BookingStatus status,
-            Authentication authentication) {
-        Long userId = SecurityUtils.getUserId(authentication);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         WalkBookingResponse response = openBookingService.updateApplicationStatus(applicationId, status, userId);
         return ResponseEntity.ok(response);
     }
