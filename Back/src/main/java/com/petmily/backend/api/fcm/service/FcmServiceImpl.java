@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.petmily.backend.api.fcm.FcmService;
 import com.petmily.backend.api.fcm.dto.FcmMessageDto;
 import com.petmily.backend.api.fcm.dto.FcmResponseDto;
 import com.petmily.backend.api.fcm.dto.FcmSendDto;

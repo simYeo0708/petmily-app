@@ -3,12 +3,13 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React from "react";
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useHelperStatus } from "../hooks/useHelperStatus";
 import { RootStackParamList } from "../index";
 import {
@@ -41,6 +42,7 @@ const HelperDashboardScreen = () => {
 
   return (
     <SafeAreaView style={homeScreenStyles.root}>
+      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
       {/* Header */}
       <View
         style={[

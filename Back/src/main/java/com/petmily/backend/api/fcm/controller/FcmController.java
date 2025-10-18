@@ -1,7 +1,7 @@
 package com.petmily.backend.api.fcm.controller;
 
 import com.petmily.backend.api.common.dto.ApiResponse;
-import com.petmily.backend.api.fcm.FcmService;
+import com.petmily.backend.api.fcm.service.FcmService;
 import com.petmily.backend.api.fcm.dto.FcmResponseDto;
 import com.petmily.backend.api.fcm.dto.FcmSendDto;
 import jakarta.validation.Valid;

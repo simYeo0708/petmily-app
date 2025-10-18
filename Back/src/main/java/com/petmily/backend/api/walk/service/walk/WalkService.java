@@ -3,6 +3,8 @@ package com.petmily.backend.api.walk.service.walk;
 import com.petmily.backend.api.common.service.LocationValidationService;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
+import com.petmily.backend.api.map.dto.AddressInfo;
+import com.petmily.backend.api.map.service.KakaoMapService;
 import com.petmily.backend.api.walk.controller.walk.WalkWebSocketController;
 import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
 import com.petmily.backend.api.walk.dto.tracking.request.*;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +39,7 @@ public class WalkService {
     private final LocationValidationService locationValidationService;
     private final WalkNotificationService notificationService;
     private final WalkWebSocketController walkWebSocketController;
+    private final KakaoMapService kakaoMapService;
 
     @Transactional
     public WalkSessionResponse startWalk(Long bookingId, Long userId) {
@@ -316,6 +320,89 @@ public class WalkService {
                 bookingId, request.getPhotoType(), request.getPhotoUrl());
 
         return WalkDetailResponse.from(savedWalkDetail);
+    }
+
+    public AddressInfo getWalkerCurrentAddress(Long bookingId){
+        WalkTrack lastestTrack = walkTrackRepository
+                .findTopByBookingIdOrderByTimestampDesc(bookingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        AddressInfo addressInfo = kakaoMapService.reverseGeocode(
+                lastestTrack.getLatitude(),
+                lastestTrack.getLongitude()
+        );
+
+        return addressInfo;
+    }
+
+    public WalkStatusResponse getWalkStatus(Long bookingId, Long userId){
+        ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
+
+        WalkDetail walkDetail = walkDetailRepository.findByBookingId(bookingId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND,
+                        "산책 상세 정보를 찾을 수 없습니다."));
+
+        // 전체 경로
+        List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
+
+        if(tracks.isEmpty()){
+            throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "산책 경로 정보가 없습니다.");
+        }
+
+        // 현재 위치
+        WalkTrack lastestTrack = tracks.get(tracks.size() - 1);
+        WalkTrackResponse currentLocation = WalkTrackResponse.from(lastestTrack);
+
+        // 현재 주소
+        AddressInfo currentAddress = getWalkerCurrentAddress(bookingId);
+
+        // 경과 시간
+        LocalDateTime now = LocalDateTime.now();
+        long elapsedMinutes = walkDetail.getActualStartTime() != null
+                ? Duration.between(walkDetail.getActualStartTime(), now).toMinutes() : 0L;
+
+        // 예상 종료 시간
+        LocalDateTime estimatedEndTime = validation.booking.getWalkDetail().getActualEndTime().plusMinutes(validation.booking.getDuration());
+
+        // 남은 시간
+        long remainingMinutes = validation.booking.getDuration() - elapsedMinutes;
+        if (remainingMinutes < 0) remainingMinutes = 0;
+
+        // 거리 계산
+        double totalDistanceKm = calculateTotalDistance(tracks);
+
+        // 평균 속도 계산
+        double averageSpeed = elapsedMinutes > 0 ? (totalDistanceKm / (elapsedMinutes / 60.0)) : 0.0;
+
+        // 현재 속도
+        Double currentSpeed = lastestTrack.getSpeed();
+
+        // 전체 경로 변환
+        List<WalkTrackResponse> path = tracks.stream()
+                .map(WalkTrackResponse::from)
+                .collect(Collectors.toList());
+
+        String petName = getPetName(validation.booking);
+        String walkerName = validation.booking.getWalker() != null && validation.booking.getWalker().getUser() != null
+                ? validation.booking.getWalker().getUser().getName() : "워커";
+
+        return WalkStatusResponse.builder()
+                .bookingId(bookingId)
+                .petName(petName)
+                .walkerName(walkerName)
+                .currentLocation(currentLocation)
+                .currentAddress(currentAddress)
+                .currentSpeed(currentSpeed)
+                .startTime(walkDetail.getActualStartTime())
+                .estimatedEndTime(estimatedEndTime)
+                .elapsedMinutes(elapsedMinutes)
+                .remainingMinutes(remainingMinutes)
+                .totalDistanceKm(totalDistanceKm)
+                .averageSpeed(averageSpeed)
+                .walkStatus(walkDetail.getWalkStatus())
+                .path(path)
+                .totalPathPoints(path.size())
+                .build();
     }
 
 

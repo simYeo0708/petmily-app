@@ -7,14 +7,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { RootStackParamList } from "../index";
-import { authService } from "../../services/authService";
+import AuthService from "../services/AuthService";
+import DevTools from "../utils/DevTools";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 const LoginScreen = ({ navigation }: Props) => {
@@ -25,6 +28,7 @@ const LoginScreen = ({ navigation }: Props) => {
   const [isLogin, setIsLogin] = useState(true);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -55,43 +59,33 @@ const LoginScreen = ({ navigation }: Props) => {
   };
 
   const handleLogin = async () => {
+    setLoginError(""); // 에러 메시지 초기화
+    
     if (!username || !password) {
-      Alert.alert("오류", "모든 필드를 입력해주세요");
+      setLoginError("아이디와 비밀번호를 입력해주세요");
       return;
     }
 
     setIsLoading(true);
+    
     try {
-      await authService.login({ username, password });
-
-      const hasPetInfo = await checkPetInfo();
-
-      if (!hasPetInfo) {
-        Alert.alert(
-          "반려동물 정보 등록",
-          "반려동물 정보를 먼저 등록해주세요!\n더 나은 서비스를 제공할 수 있습니다.",
-          [
-            {
-              text: "등록하기",
-              onPress: () => {
-                navigation.navigate("Main", { initialTab: "MyPetTab" });
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-      } else {
-        navigation.navigate("Main");
-      }
+      // AuthService를 통해 로그인
+      const authResponse = await AuthService.login(username, password);
+      
+      console.log('로그인 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
+      
+      // 홈 화면으로 이동
+      navigation.navigate("Main");
     } catch (error: any) {
-      Alert.alert("로그인 실패", error.message);
+      console.error("로그인 에러:", error);
+      setLoginError("잘못된 아이디이거나 비밀번호입니다.");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSignup = async () => {
-    if (!username || !name || !email || !password || !confirmPassword) {
+    if (!username || !email || !password || !confirmPassword) {
       Alert.alert("오류", "모든 필드를 입력해주세요");
       return;
     }
@@ -101,12 +95,53 @@ const LoginScreen = ({ navigation }: Props) => {
     }
 
     setIsLoading(true);
+    
     try {
-      await authService.signup({ username, name, email, password });
-      Alert.alert("회원가입 성공", "계정이 생성되었습니다. 로그인해주세요.");
-      setIsLogin(true);
+      // AuthService를 통해 회원가입
+      const authResponse = await AuthService.signup({
+        username,
+        password,
+        email,
+        name: username, // name 필드 추가
+      });
+      
+      console.log('회원가입 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
+      
+      Alert.alert(
+        "회원가입 완료",
+        "환영합니다! 로그인되었습니다.",
+        [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Main"),
+          },
+        ]
+      );
     } catch (error: any) {
-      Alert.alert("회원가입 실패", error.message);
+      console.error("회원가입 에러:", error);
+      Alert.alert(
+        "회원가입 실패",
+        error.message || "회원가입 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 🔧 개발용: 빠른 로그인 (asdf 계정)
+  const handleDevLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await DevTools.loginAsAsdf();
+      if (result) {
+        console.log('✅ [DEV] 개발용 로그인 성공!');
+        navigation.navigate("Main");
+      } else {
+        Alert.alert("개발 로그인 실패", "백엔드가 실행 중인지 확인해주세요.");
+      }
+    } catch (error) {
+      console.error('[DEV] 개발 로그인 에러:', error);
+      Alert.alert("오류", "개발 로그인에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +149,7 @@ const LoginScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}>
@@ -143,23 +179,15 @@ const LoginScreen = ({ navigation }: Props) => {
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder={isLogin ? "Username" : "Username"}
+                placeholder={isLogin ? "아이디 (Username)" : "Username"}
                 placeholderTextColor="#999"
                 value={username}
-                onChangeText={setUsername}
+                onChangeText={(text) => {
+                  setUsername(text);
+                  setLoginError(""); // 입력 시 에러 메시지 제거
+                }}
                 autoCapitalize="none"
               />
-
-              {!isLogin && (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Name"
-                  placeholderTextColor="#999"
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
-              )}
 
               {!isLogin && (
                 <TextInput
@@ -175,12 +203,20 @@ const LoginScreen = ({ navigation }: Props) => {
 
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={isLogin ? "비밀번호 (Password)" : "Password"}
                 placeholderTextColor="#999"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setLoginError(""); // 입력 시 에러 메시지 제거
+                }}
                 secureTextEntry
               />
+
+              {/* 로그인 에러 메시지 */}
+              {isLogin && loginError && (
+                <Text style={styles.errorMessage}>{loginError}</Text>
+              )}
 
               {!isLogin && (
                 <TextInput
@@ -194,12 +230,16 @@ const LoginScreen = ({ navigation }: Props) => {
               )}
 
               <TouchableOpacity
-                style={[styles.mainButton, isLoading && { opacity: 0.7 }]}
+                style={[styles.mainButton, isLoading && styles.mainButtonDisabled]}
                 onPress={isLogin ? handleLogin : handleSignup}
                 disabled={isLoading}>
-                <Text style={styles.mainButtonText}>
-                  {isLoading ? "처리 중..." : (isLogin ? "Login" : "Sign Up")}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.mainButtonText}>
+                    {isLogin ? "로그인" : "회원가입"}
+                  </Text>
+                )}
               </TouchableOpacity>
 
               <View style={styles.dividerContainer}>
@@ -233,6 +273,18 @@ const LoginScreen = ({ navigation }: Props) => {
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* 🔧 개발용 빠른 로그인 버튼 */}
+              {isLogin && (
+                <TouchableOpacity
+                  style={styles.devButton}
+                  onPress={handleDevLogin}
+                  disabled={isLoading}>
+                  <Text style={styles.devButtonText}>
+                    🔧 개발용 빠른 로그인 (asdf)
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </Animated.View>
         </ScrollView>
@@ -311,10 +363,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+  mainButtonDisabled: {
+    backgroundColor: "#CCC",
+  },
   mainButtonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  errorMessage: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 8,
+    paddingLeft: 4,
+    fontWeight: "500",
   },
   dividerContainer: {
     flexDirection: "row",
@@ -355,6 +418,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 15,
   },
   switchText: {
     color: "#6B6B6B",
@@ -364,6 +428,22 @@ const styles = StyleSheet.create({
     color: "#C59172",
     fontSize: 14,
     fontWeight: "bold",
+  },
+  // 🔧 개발용 버튼 스타일
+  devButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+    borderWidth: 2,
+    borderColor: "#45a049",
+  },
+  devButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 

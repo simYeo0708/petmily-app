@@ -1,4 +1,4 @@
-package com.petmily.backend.api.fcm;
+package com.petmily.backend.api.fcm.service;
 
 import com.petmily.backend.api.fcm.dto.FcmResponseDto;
 import com.petmily.backend.api.fcm.dto.FcmSendDto;

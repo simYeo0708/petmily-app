@@ -47,6 +47,9 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "fcm_token", length = 500)
+    private String fcmToken;
+
     // Emergency contact information
     @Column(name = "emergency_contact_name", length = 50)
     private String emergencyContactName;
@@ -64,27 +67,11 @@ public class User extends BaseTimeEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private NotificationSetting notificationSetting;
 
-
-    public User update(String name, String profile) {
-        this.name = name;
-        this.profile = profile;
-        return this;
-    }
-
-    public String getProfileImageUrl() {
-        return this.profile;
-    }
-
-    // Relations
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Pet> pets = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<Order> orders = new ArrayList<>();
-
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Walker walkerProfile;
+    private Walker walker;
 
 }
