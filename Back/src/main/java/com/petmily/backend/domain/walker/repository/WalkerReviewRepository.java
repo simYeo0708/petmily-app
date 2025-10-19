@@ -12,30 +12,30 @@ import java.util.Optional;
 
 @Repository
 public interface WalkerReviewRepository extends JpaRepository<WalkerReview, Long> {
-    
+
     List<WalkerReview> findByWalkerId(Long walkerId);
-    
-    List<WalkerReview> findByWalkerIdOrderByCreateTimeDesc(Long walkerId);
-    
+
+    List<WalkerReview> findByWalkerIdOrderByCreatedAtDesc(Long walkerId);
+
     @Query("SELECT AVG(wr.rating) FROM WalkerReview wr WHERE wr.walkerId = :walkerId")
     Double findAverageRatingByWalkerId(@Param("walkerId") Long walkerId);
-    
+
     Long countByWalkerId(Long walkerId);
-    
+
     List<WalkerReview> findByUserId(Long userId);
-    
-    List<WalkerReview> findByUserIdOrderByCreateTimeDesc(Long userId);
-    
+
+    List<WalkerReview> findByUserIdOrderByCreatedAtDesc(Long userId);
+
     Optional<WalkerReview> findByWalkerIdAndUserId(Long walkerId, Long userId);
-    
+
     // Booking-based review validation methods
     Optional<WalkerReview> findByBookingId(Long bookingId);
-    
+
     boolean existsByBookingId(Long bookingId);
-    
+
     // Check if user has completed bookings with the walker
     @Query("SELECT COUNT(wb) FROM WalkBooking wb WHERE wb.userId = :userId AND wb.walkerId = :walkerId AND wb.status = 'COMPLETED'")
     Long countCompletedBookingsByUserAndWalker(@Param("userId") Long userId, @Param("walkerId") Long walkerId);
-    
+
 }
 

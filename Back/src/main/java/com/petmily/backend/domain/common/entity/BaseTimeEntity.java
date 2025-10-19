@@ -18,10 +18,11 @@ public abstract class BaseTimeEntity {
 
     @JsonIgnore
     @CreatedDate
-    private LocalDateTime createTime = LocalDateTime.now();
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 
     @JsonIgnore
     @LastModifiedDate
-    @Column(insertable = false)
-    private LocalDateTime updateTime;
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

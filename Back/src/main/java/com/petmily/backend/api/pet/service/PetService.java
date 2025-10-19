@@ -65,7 +65,7 @@ public class PetService {
     public List<PetResponse> getUserPets(Long userId) {
         User user = findUserById(userId);
 
-        List<Pet> pets = petRepository.findByUserIdOrderByCreateTimeDesc(user.getId());
+        List<Pet> pets = petRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         return pets.stream()
                 .map(PetResponse::from)
                 .collect(Collectors.toList());
@@ -120,10 +120,10 @@ public class PetService {
     }
 
     public List<PetResponse> searchPets(PetSearchRequest request, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createTime"));
-        
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
         Page<Pet> pets;
-        
+
         if (request.getSpecies() != null) {
             pets = petRepository.findBySpeciesContainingIgnoreCase(request.getSpecies(), pageable);
         } else {
@@ -158,9 +158,9 @@ public class PetService {
     }
 
     public List<PetResponse> getAllPets(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createTime"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Pet> pets = petRepository.findAll(pageable);
-        
+
         return pets.getContent().stream()
                 .map(PetResponse::from)
                 .collect(Collectors.toList());

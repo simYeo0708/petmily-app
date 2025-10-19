@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface WalkerReportRepository extends JpaRepository<WalkerReport, Long> {
 
-    List<WalkerReport> findByReporterUserIdOrderByCreateTimeDesc(Long reporterUserId);
+    List<WalkerReport> findByReporterUserIdOrderByCreatedAtDesc(Long reporterUserId);
 
     boolean existsByReporterUserIdAndBookingId(Long reporterUserId, Long bookingId);
 }

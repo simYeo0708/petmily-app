@@ -10,7 +10,7 @@ import java.util.Optional;
 @Repository
 public interface FavoriteWalkerRepository extends JpaRepository<FavoriteWalker, Long> {
 
-    List<FavoriteWalker> findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(Long userId);
+    List<FavoriteWalker> findByUserIdAndIsActiveTrueOrderByCreatedAtDesc(Long userId);
 
     Optional<FavoriteWalker> findByUserIdAndWalkerIdAndIsActiveTrue(Long userId, Long walkerId);
 

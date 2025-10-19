@@ -39,16 +39,7 @@ public enum ErrorCode {
     WISHLIST_ALREADY_EXISTS(BAD_REQUEST, "이미 찜한 상품입니다"),
 
     // review
-    REVIEW_NOT_FOUND(NOT_FOUND, "리뷰를 찾을 수 없습니다."),
-    REVIEW_NOT_AVAILABLE(BAD_REQUEST, "리뷰를 작성할 수 없는 상품입니다."),
-    REVIEW_ALREADY_EXISTS(CONFLICT, "이미 리뷰를 작성했습니다."),
-    REVIEW_PERIOD_EXPIRED(BAD_REQUEST, "리뷰 작성 가능 기간이 지났습니다."),
-    INVALID_RATING(BAD_REQUEST, "올바르지 않은 평점입니다."),
-    REVIEW_CONTENT_TOO_SHORT(BAD_REQUEST, "리뷰 내용이 너무 짧습니다."),
-    REVIEW_CONTENT_TOO_LONG(BAD_REQUEST, "리뷰 내용이 너무 깁니다."),
-    REVIEW_IMAGE_LIMIT_EXCEEDED(BAD_REQUEST, "리뷰 이미지는 최대 5개까지 등록 가능합니다."),
-    REVIEW_ALREADY_HELPFUL(CONFLICT, "이미 도움이 됨을 눌렀습니다."),
-    REVIEW_NOT_HELPFUL(BAD_REQUEST, "도움이 됨을 누르지 않았습니다."),
+    DUPLICATE_RESOURCE(CONFLICT, "이미 존재하는 리소스입니다."),
 
     // global
     RESOURCE_LOCKED(LOCKED, "자원이 잠겨있어 접근할 수 없습니다."),

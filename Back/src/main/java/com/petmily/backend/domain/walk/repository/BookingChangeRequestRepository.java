@@ -9,14 +9,14 @@ import java.util.List;
 @Repository
 public interface BookingChangeRequestRepository extends JpaRepository<BookingChangeRequest, Long> {
 
-    List<BookingChangeRequest> findByBookingIdOrderByCreateTimeDesc(Long bookingId);
+    List<BookingChangeRequest> findByBookingIdOrderByCreatedAtDesc(Long bookingId);
 
-    List<BookingChangeRequest> findByBooking_WalkerIdAndStatusOrderByCreateTimeDesc(
+    List<BookingChangeRequest> findByBooking_WalkerIdAndStatusOrderByCreatedAtDesc(
         Long walkerId, BookingChangeRequest.ChangeRequestStatus status);
 
-    List<BookingChangeRequest> findByRequestedByUserIdAndStatusOrderByCreateTimeDesc(
+    List<BookingChangeRequest> findByRequestedByUserIdAndStatusOrderByCreatedAtDesc(
         Long userId, BookingChangeRequest.ChangeRequestStatus status);
 
-    List<BookingChangeRequest> findByBooking_UserIdAndStatusOrderByCreateTimeDesc(
+    List<BookingChangeRequest> findByBooking_UserIdAndStatusOrderByCreatedAtDesc(
         Long userId, BookingChangeRequest.ChangeRequestStatus status);
 }

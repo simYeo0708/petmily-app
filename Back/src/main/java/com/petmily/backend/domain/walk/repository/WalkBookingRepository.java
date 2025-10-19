@@ -23,23 +23,23 @@ public interface WalkBookingRepository extends JpaRepository<WalkBooking, Long> 
     List<WalkBooking> findByUserIdAndStatusIn(Long userId, List<WalkBooking.BookingStatus> statuses);
 
     // 최근 예약 조회 (상태별, 생성시간 역순)
-    List<WalkBooking> findByUserIdAndStatusOrderByCreateTimeDesc(Long userId, WalkBooking.BookingStatus status);
+    List<WalkBooking> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, WalkBooking.BookingStatus status);
 
     // 예정된 예약 조회 (상태별, 날짜 순)
     List<WalkBooking> findByUserIdAndStatusInOrderByDateAsc(Long userId, List<WalkBooking.BookingStatus> statuses);
 
     // 특정 시간 이후 완료된 예약 조회
-    List<WalkBooking> findByUserIdAndStatusAndCreateTimeAfter(Long userId, WalkBooking.BookingStatus status, LocalDateTime time);
+    List<WalkBooking> findByUserIdAndStatusAndCreatedAtAfter(Long userId, WalkBooking.BookingStatus status, LocalDateTime time);
 
     // WalkerBookingService에서 필요한 추가 메서드들
     List<WalkBooking> findByUserIdOrderByDateDesc(Long userId);
     List<WalkBooking> findByWalkerIdOrderByDateDesc(Long walkerId);
 
     // 오픈 요청 관련 메서드들
-    List<WalkBooking> findByBookingMethodAndStatusOrderByCreateTimeDesc(
+    List<WalkBooking> findByBookingMethodAndStatusOrderByCreatedAtDesc(
             WalkBooking.BookingMethod bookingMethod, WalkBooking.BookingStatus status);
 
-    List<WalkBooking> findByUserIdAndBookingMethodAndStatusOrderByCreateTimeDesc(
+    List<WalkBooking> findByUserIdAndBookingMethodAndStatusOrderByCreatedAtDesc(
             Long userId, WalkBooking.BookingMethod bookingMethod, WalkBooking.BookingStatus status);
 
     List<WalkBooking> findByUserIdAndBookingMethodAndStatus(
@@ -49,7 +49,7 @@ public interface WalkBookingRepository extends JpaRepository<WalkBooking, Long> 
             Long userId, Long walkerId, WalkBooking.BookingStatus status);
 
     // DashboardService용 추가 메서드들
-    List<WalkBooking> findByPetIdAndStatusAndCreateTimeAfter(
+    List<WalkBooking> findByPetIdAndStatusAndCreatedAtAfter(
             Long petId, WalkBooking.BookingStatus status, LocalDateTime startTime);
 
     // Additional method for WalkProgressScheduler

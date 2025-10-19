@@ -22,12 +22,12 @@ public class ChatMessageResponse {
     private Boolean isSystemMessage;
     private String bookingButtonData;
     private Boolean isRead;
-    private LocalDateTime createTime;
-    
+    private LocalDateTime createdAt;
+
     // 발신자 정보
     private String senderName;
     private String senderProfileImageUrl;
-    
+
     public static ChatMessageResponse from(ChatMessage message) {
         return ChatMessageResponse.builder()
                 .id(message.getId())
@@ -38,7 +38,7 @@ public class ChatMessageResponse {
                 .isSystemMessage(message.getIsSystemMessage())
                 .bookingButtonData(message.getBookingButtonData())
                 .isRead(message.getIsRead())
-                .createTime(message.getCreateTime())
+                .createdAt(message.getCreatedAt())
                 .senderName(message.getSender() != null ? message.getSender().getName() : null)
                 .senderProfileImageUrl(null) // User 엔티티에 profileImageUrl이 없으므로 null로 설정
                 .build();

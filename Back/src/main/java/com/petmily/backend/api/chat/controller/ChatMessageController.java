@@ -28,7 +28,7 @@ public class ChatMessageController {
     @GetMapping("/{roomId}/messages")
     public ResponseEntity<Page<ChatMessageResponse>> getChatMessages(
             @PathVariable String roomId,
-            @PageableDefault(size = 50, sort = "createTime", direction = Sort.Direction.DESC) Pageable pageable,
+            @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
         String username = authentication.getName();
         Page<ChatMessageResponse> messages = chatMessageService.getChatMessages(roomId, username, pageable);
