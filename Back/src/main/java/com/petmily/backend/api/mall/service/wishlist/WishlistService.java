@@ -81,7 +81,7 @@ public class WishlistService {
      * 내 찜 목록 조회
      */
     public List<WishlistResponse> getMyWishlist(Long userId){
-        List<Wishlist> wishlists = wishlistRepository.findByUserIdOrderByCreateTimeDesc(userId);
+        List<Wishlist> wishlists = wishlistRepository.findByUserIdOrderByCreatedAtDesc(userId);
 
         return wishlists.stream()
                 .map(this::convertToResponse)
@@ -251,7 +251,7 @@ public class WishlistService {
                 .mallName(wishlist.getMallName())
                 .source(wishlist.getSource())
                 .lastChecked(wishlist.getLastChecked())
-                .createdAt(wishlist.getCreateTime())
+                .createdAt(wishlist.getCreatedAt())
                 .priceDropped(priceDropped)
                 .priceDifference(priceDifference)
                 .build();

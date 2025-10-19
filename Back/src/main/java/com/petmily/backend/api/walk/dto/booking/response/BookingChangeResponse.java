@@ -49,7 +49,7 @@ public class BookingChangeResponse {
                 .status(request.getStatus())
                 .walkerResponse(request.getWalkerResponse())
                 .respondedAt(request.getRespondedAt())
-                .requestedAt(request.getCreateTime())
+                .requestedAt(request.getCreatedAt())
                 .build();
     }
 }

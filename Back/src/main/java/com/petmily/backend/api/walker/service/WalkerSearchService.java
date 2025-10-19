@@ -96,7 +96,7 @@ public class WalkerSearchService {
         if (request.isFavoritesOnly()) {
             // 즐겨찾기 워커만
             List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository
-                    .findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(currentUser.getId());
+                    .findByUserIdAndIsActiveTrueOrderByCreatedAtDesc(currentUser.getId());
 
             if (favoriteWalkers.isEmpty()) {
                 return new ArrayList<>();
@@ -281,7 +281,7 @@ public class WalkerSearchService {
             case EXPERIENCE:
                 return Comparator.comparing(Walker::getExperienceYears, Comparator.nullsLast(Integer::compareTo));
             case CREATED_DATE:
-                return Comparator.comparing(Walker::getCreateTime, Comparator.nullsLast(LocalDateTime::compareTo));
+                return Comparator.comparing(Walker::getCreatedAt, Comparator.nullsLast(LocalDateTime::compareTo));
             default:
                 return Comparator.comparingDouble(walker -> calculateWalkerDistance(walker, userCoord));
         }

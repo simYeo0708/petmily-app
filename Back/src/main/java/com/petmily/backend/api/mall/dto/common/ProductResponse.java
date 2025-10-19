@@ -1,12 +1,10 @@
 package com.petmily.backend.api.mall.dto.common;
 
 import com.petmily.backend.api.mall.enums.ShoppingMall;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,6 +18,8 @@ public class ProductResponse {
     private String mallName;
     private String category;
     private ShoppingMall source;
+    private Long reviewCount;
+    private Double averageRating;
 
     // 쿠팡 전용 필드
     private Boolean isRocket;

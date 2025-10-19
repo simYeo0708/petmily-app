@@ -61,8 +61,8 @@ public class PetResponse {
                 .size(pet.getSize())
                 .medicalConditions(pet.getMedicalConditions())
                 .specialNotes(pet.getSpecialNotes())
-                .createdTime(pet.getCreateTime())
-                .updatedTime(pet.getUpdateTime())
+                .createdTime(pet.getCreatedAt())
+                .updatedTime(pet.getUpdatedAt())
                 .ownerUsername(pet.getUser() != null ? pet.getUser().getUsername() : null)
                 .ownerName(pet.getUser() != null ? pet.getUser().getName() : null)
                 .build();

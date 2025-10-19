@@ -63,7 +63,7 @@ public class DashboardService {
     }
 
     private List<PetSummaryResponse> getMyPets(Long userId) {
-        return petRepository.findByUserIdOrderByCreateTimeDesc(userId)
+        return petRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
                 .limit(3)
                 .map(PetSummaryResponse::from)
@@ -74,7 +74,7 @@ public class DashboardService {
         List<Pet> pets = petRepository.findByUserId(userId);
         String mostRecentPetName = pets.isEmpty() ? null :
             pets.stream()
-                .max((p1, p2) -> p1.getCreateTime().compareTo(p2.getCreateTime()))
+                .max((p1, p2) -> p1.getCreatedAt().compareTo(p2.getCreatedAt()))
                 .map(Pet::getName)
                 .orElse(null);
 
@@ -91,7 +91,7 @@ public class DashboardService {
         return (int) pets.stream()
                 .filter(pet -> {
                     List<WalkBooking> recentWalks = walkBookingRepository
-                            .findByPetIdAndStatusAndCreateTimeAfter(
+                            .findByPetIdAndStatusAndCreatedAtAfter(
                                     pet.getId(),
                                     WalkBooking.BookingStatus.COMPLETED,
                                     threeDaysAgo);
@@ -102,7 +102,7 @@ public class DashboardService {
 
     private List<WalkBookingResponse> getRecentBookings(Long userId) {
         return walkBookingRepository
-                .findByUserIdAndStatusOrderByCreateTimeDesc(userId, WalkBooking.BookingStatus.COMPLETED)
+                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, WalkBooking.BookingStatus.COMPLETED)
                 .stream()
                 .limit(3)
                 .map(WalkBookingResponse::from)
@@ -132,7 +132,7 @@ public class DashboardService {
         // 이번 달 산책 시간 계산
         LocalDateTime startOfMonth = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0);
         int walkingHoursThisMonth = walkBookingRepository
-                .findByUserIdAndStatusAndCreateTimeAfter(userId,
+                .findByUserIdAndStatusAndCreatedAtAfter(userId,
                         WalkBooking.BookingStatus.COMPLETED, startOfMonth)
                 .stream()
                 .mapToInt(WalkBooking::getDuration)
@@ -192,7 +192,7 @@ public class DashboardService {
                 .findByUserId(user.getId()).size();
 
         return DashboardResponse.OverallStats.builder()
-                .memberSince(user.getCreateTime())
+                .memberSince(user.getCreatedAt())
                 .totalActivities(totalActivities)
                 .preferredActivityType("산책") // 향후 분석 로직 추가
                 .satisfactionScore(4.2) // 향후 구현

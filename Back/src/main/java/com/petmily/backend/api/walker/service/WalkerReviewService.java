@@ -113,7 +113,7 @@ public class WalkerReviewService {
         // Verify walker exists
         findWalkerById(walkerId);
 
-        List<WalkerReview> reviews = walkerReviewRepository.findByWalkerIdOrderByCreateTimeDesc(walkerId);
+        List<WalkerReview> reviews = walkerReviewRepository.findByWalkerIdOrderByCreatedAtDesc(walkerId);
         return reviews.stream()
                 .map(WalkerReviewResponse::from)
                 .collect(Collectors.toList());
@@ -138,7 +138,7 @@ public class WalkerReviewService {
     public List<WalkerReviewResponse> getUserReviews(Long userId) {
         User user = findUserById(userId);
 
-        List<WalkerReview> reviews = walkerReviewRepository.findByUserIdOrderByCreateTimeDesc(user.getId());
+        List<WalkerReview> reviews = walkerReviewRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         return reviews.stream()
                 .map(WalkerReviewResponse::from)
                 .collect(Collectors.toList());
@@ -252,7 +252,7 @@ public class WalkerReviewService {
     public List<Map<String, Object>> getUserReports(Long userId) {
         User user = findUserById(userId);
 
-        List<WalkerReport> reports = walkerReportRepository.findByReporterUserIdOrderByCreateTimeDesc(user.getId());
+        List<WalkerReport> reports = walkerReportRepository.findByReporterUserIdOrderByCreatedAtDesc(user.getId());
 
         return reports.stream()
                 .map(report -> {
@@ -264,7 +264,7 @@ public class WalkerReviewService {
                     reportInfo.put("reason", report.getReason());
                     reportInfo.put("description", report.getDescription());
                     reportInfo.put("status", report.getStatus());
-                    reportInfo.put("reportedAt", report.getCreateTime());
+                    reportInfo.put("reportedAt", report.getCreatedAt());
                     return reportInfo;
                 })
                 .collect(Collectors.toList());

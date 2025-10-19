@@ -54,7 +54,7 @@ public class ChatMessageService {
             throw new CustomException(ErrorCode.NO_ACCESS, "채팅방에 접근할 권한이 없습니다");
         }
 
-        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomIdOrderByCreateTimeDesc(chatRoom.getId(), pageable);
+        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(chatRoom.getId(), pageable);
         return messages.map(ChatMessageResponse::from);
     }
 

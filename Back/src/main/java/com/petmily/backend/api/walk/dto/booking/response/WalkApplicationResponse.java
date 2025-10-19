@@ -30,7 +30,7 @@ public class WalkApplicationResponse {
                 .walkerExperience(experience)
                 .message(booking.getNotes()) // 워커의 메시지를 notes에 저장
                 .proposedPrice(booking.getTotalPrice())
-                .appliedAt(booking.getCreateTime())
+                .appliedAt(booking.getCreatedAt())
                 .status(booking.getStatus())
                 .build();
     }

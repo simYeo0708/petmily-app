@@ -64,7 +64,7 @@ public class ChatRoomService {
                     return ChatRoomResponse.fromWithLastMessage(
                             chatRoom,
                             lastMessage != null ? lastMessage.getContent() : null,
-                            lastMessage != null ? lastMessage.getCreateTime() : null,
+                            lastMessage != null ? lastMessage.getCreatedAt() : null,
                             unreadCount
                     );
                 })

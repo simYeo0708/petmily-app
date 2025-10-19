@@ -3,6 +3,7 @@ package com.petmily.backend.api.mall.service.shopping;
 import com.petmily.backend.api.mall.dto.common.ProductResponse;
 import com.petmily.backend.api.mall.dto.naver.NaverShoppingResponse;
 import com.petmily.backend.api.mall.service.adapter.NaverProductAdapter;
+import com.petmily.backend.domain.mall.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +33,7 @@ public class NaverShoppingService implements ShoppingService {
     private String clientSecret;
 
     private final NaverProductAdapter adapter;
+    private final ReviewRepository reviewRepository;
     private final RestTemplate restTemplate;
 
     @Override
@@ -52,7 +54,11 @@ public class NaverShoppingService implements ShoppingService {
             }
 
             return response.getBody().getItems().stream()
-                    .map(adapter::convert)
+                    .map(naverProduct -> {
+                        ProductResponse product = adapter.convert(naverProduct);
+                        addReviewStats(product);
+                        return product;
+                    })
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("네이버 쇼핑 API 호출 실패: {}", e.getMessage());
@@ -79,5 +85,26 @@ public class NaverShoppingService implements ShoppingService {
         headers.set("X-Naver-Client-Id", clientId);
         headers.set("X-Naver-Client-Secret", clientSecret);
         return new HttpEntity<>(headers);
+    }
+
+    private void addReviewStats(ProductResponse product){
+        try{
+            Long reviewCount = reviewRepository.countByExternalProductIdAndSource(
+                    product.getProductId(),
+                    product.getSource()
+            );
+
+            Double averageRating = reviewRepository.findAverageRatingByProduct(
+                    product.getProductId(),
+                    product.getSource()
+            );
+
+            product.setReviewCount(reviewCount);
+            product.setAverageRating(averageRating != null ? Math.round(averageRating * 10) / 10.0 : 0.0);
+        } catch (Exception e){
+            log.warn("리뷰 통계 조회 실패: productId={}", product.getProductId());
+            product.setReviewCount(0L);
+            product.setAverageRating(0.0);
+        }
     }
 }

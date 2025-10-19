@@ -66,7 +66,7 @@ public class OpenBookingService {
     }
 
     public List<WalkBookingResponse> getOpenBookings() {
-        List<WalkBooking> openBookings = walkBookingRepository.findByBookingMethodAndStatusOrderByCreateTimeDesc(
+        List<WalkBooking> openBookings = walkBookingRepository.findByBookingMethodAndStatusOrderByCreatedAtDesc(
                 WalkBooking.BookingMethod.OPEN_REQUEST,
                 WalkBooking.BookingStatus.PENDING
         );
@@ -104,7 +104,7 @@ public class OpenBookingService {
             throw new CustomException(ErrorCode.NO_ACCESS, "Only the booking owner can view applications");
         }
 
-        List<WalkBooking> applications = walkBookingRepository.findByUserIdAndBookingMethodAndStatusOrderByCreateTimeDesc(
+        List<WalkBooking> applications = walkBookingRepository.findByUserIdAndBookingMethodAndStatusOrderByCreatedAtDesc(
                 user.getId(), WalkBooking.BookingMethod.OPEN_REQUEST, WalkBooking.BookingStatus.WALKER_APPLIED);
 
         return applications.stream()

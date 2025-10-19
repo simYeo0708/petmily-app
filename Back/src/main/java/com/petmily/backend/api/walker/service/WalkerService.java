@@ -89,7 +89,7 @@ public class WalkerService {
 
         // 즐겨찾기 워커만 보기 필터
         if (request != null && request.isFavoritesOnly()) {
-            List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(currentUser.getId());
+            List<FavoriteWalker> favoriteWalkers = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreatedAtDesc(currentUser.getId());
             List<Long> favoriteWalkerIds = favoriteWalkers.stream()
                     .map(FavoriteWalker::getWalkerId)
                     .collect(Collectors.toList());
@@ -199,7 +199,7 @@ public class WalkerService {
     public List<WalkerResponse> getFavoriteWalkers(Long userId) {
         User user = findUserById(userId);
 
-        List<FavoriteWalker> favorites = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreateTimeDesc(user.getId());
+        List<FavoriteWalker> favorites = favoriteWalkerRepository.findByUserIdAndIsActiveTrueOrderByCreatedAtDesc(user.getId());
 
         return favorites.stream()
                 .map(favorite -> {

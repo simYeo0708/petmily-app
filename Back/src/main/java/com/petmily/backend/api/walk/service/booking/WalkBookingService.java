@@ -207,7 +207,7 @@ public class WalkBookingService {
             throw new CustomException(ErrorCode.NO_ACCESS, "No access to this booking's change requests");
         }
 
-        List<BookingChangeRequest> requests = bookingChangeRequestRepository.findByBookingIdOrderByCreateTimeDesc(bookingId);
+        List<BookingChangeRequest> requests = bookingChangeRequestRepository.findByBookingIdOrderByCreatedAtDesc(bookingId);
         return requests.stream()
                 .map(BookingChangeResponse::from)
                 .collect(Collectors.toList());
@@ -219,13 +219,13 @@ public class WalkBookingService {
 
         // 1. 내가 요청한 PENDING 변경 요청
         List<BookingChangeRequest> sentRequests = bookingChangeRequestRepository
-                .findByRequestedByUserIdAndStatusOrderByCreateTimeDesc(
+                .findByRequestedByUserIdAndStatusOrderByCreatedAtDesc(
                         user.getId(), BookingChangeRequest.ChangeRequestStatus.PENDING);
         requests.addAll(sentRequests);
 
         // 2. 내가 예약자(사용자)인 예약의 PENDING 변경 요청 (워커가 보낸 요청)
         List<BookingChangeRequest> receivedAsUser = bookingChangeRequestRepository
-                .findByBooking_UserIdAndStatusOrderByCreateTimeDesc(
+                .findByBooking_UserIdAndStatusOrderByCreatedAtDesc(
                         user.getId(), BookingChangeRequest.ChangeRequestStatus.PENDING);
         // 내가 보낸 요청은 제외 (중복 방지)
         receivedAsUser.removeIf(req -> req.getRequestedByUserId().equals(user.getId()));
@@ -234,7 +234,7 @@ public class WalkBookingService {
         // 3. 워커라면, 워커로서 받은 PENDING 변경 요청도 포함
         walkerRepository.findByUserId(user.getId()).ifPresent(walker -> {
             List<BookingChangeRequest> receivedAsWalker = bookingChangeRequestRepository
-                    .findByBooking_WalkerIdAndStatusOrderByCreateTimeDesc(
+                    .findByBooking_WalkerIdAndStatusOrderByCreatedAtDesc(
                             walker.getId(), BookingChangeRequest.ChangeRequestStatus.PENDING);
             // 내가 보낸 요청은 제외 (중복 방지)
             receivedAsWalker.removeIf(req -> req.getRequestedByUserId().equals(user.getId()));
