@@ -47,7 +47,7 @@ public class BookingChangeResponse {
                 .newInsuranceCovered(request.getNewInsuranceCovered())
                 .changeReason(request.getChangeReason())
                 .status(request.getStatus())
-                .walkerResponse(request.getWalkerResponse())
+                .walkerResponse(request.getChangeResponse())
                 .respondedAt(request.getRespondedAt())
                 .requestedAt(request.getCreatedAt())
                 .build();

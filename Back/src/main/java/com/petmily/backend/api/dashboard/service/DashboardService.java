@@ -57,7 +57,7 @@ public class DashboardService {
         return DashboardResponse.UserInfo.builder()
                 .name(user.getName())
                 .email(user.getEmail())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(user.getProfile())
                 .membershipLevel("일반") // 향후 확장 가능
                 .build();
     }

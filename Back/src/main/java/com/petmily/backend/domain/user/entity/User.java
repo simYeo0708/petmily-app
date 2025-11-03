@@ -74,4 +74,10 @@ public class User extends BaseTimeEntity {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Walker walker;
 
+    public User update(String name, String profile){
+        this.name = name;
+        this.profile = profile;
+        return this;
+    }
+
 }

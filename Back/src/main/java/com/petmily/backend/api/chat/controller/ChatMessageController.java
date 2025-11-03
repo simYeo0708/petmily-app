@@ -29,9 +29,9 @@ public class ChatMessageController {
     public ResponseEntity<Page<ChatMessageResponse>> getChatMessages(
             @PathVariable String roomId,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
-            Authentication authentication) {
-        String username = authentication.getName();
-        Page<ChatMessageResponse> messages = chatMessageService.getChatMessages(roomId, username, pageable);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        Page<ChatMessageResponse> messages = chatMessageService.getChatMessages(roomId, userId, pageable);
         return ResponseEntity.ok(messages);
     }
 

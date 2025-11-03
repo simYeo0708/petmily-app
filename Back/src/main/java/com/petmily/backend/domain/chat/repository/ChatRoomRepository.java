@@ -16,7 +16,7 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     
     // 특정 유저의 채팅방 목록 조회 (유저 또는 워커로서 참여한 방)
     @Query("SELECT c FROM ChatRoom c WHERE (c.userId = :userId OR " +
-           "(SELECT w.userId FROM WalkerProfile w WHERE w.id = c.walkerId) = :userId) " +
+           "(SELECT w.userId FROM Walker w WHERE w.id = c.walkerId) = :userId) " +
            "AND c.isActive = true ORDER BY c.updatedAt DESC")
     List<ChatRoom> findByUserIdOrWalkerUserId(@Param("userId") Long userId);
 
