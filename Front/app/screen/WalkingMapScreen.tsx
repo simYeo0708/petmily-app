@@ -15,11 +15,12 @@ import {
   PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import MapService, { MapConfigResponse, LocationResponse } from '../services/MapService';
+import KakaoMapView, { KakaoMapViewHandle } from '../components/KakaoMapView';
+import { KAKAO_MAP_API_KEY } from '../config/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -67,6 +68,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [mapConfig, setMapConfig] = useState<MapConfigResponse | null>(null);
   const [userLocation, setUserLocation] = useState<LocationResponse | null>(null);
   const [activeLocations, setActiveLocations] = useState<LocationResponse[]>([]);
+  
+  // 네이티브 지도 참조
+  const kakaoMapRef = useRef<KakaoMapViewHandle>(null);
 
   useEffect(() => {
     loadMapConfig();
@@ -297,120 +301,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     }
   };
 
-  const generateKakaoMapHTML = () => {
-    const currentLat = currentLocation?.latitude || parseFloat(mapConfig?.mapCenterLat || '37.5665');
-    const currentLon = currentLocation?.longitude || parseFloat(mapConfig?.mapCenterLon || '126.9780');
-    const apiKey = mapConfig?.kakaoMapApiKey || 'dummy-key-for-development';
-    const zoomLevel = mapConfig?.mapZoomLevel || 15;
-    
-    // 경로 데이터를 JSON 문자열로 변환
-    const pathData = locationHistory.map(loc => ({
-      lat: loc.latitude,
-      lng: loc.longitude
-    }));
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>카카오맵</title>
-        <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}"></script>
-        <style>
-          body { margin: 0; padding: 0; }
-          #map { width: 100%; height: 100vh; }
-        </style>
-      </head>
-      <body>
-        <div id="map"></div>
-        <script>
-          var container = document.getElementById('map');
-          var options = {
-            center: new kakao.maps.LatLng(${currentLat}, ${currentLon}),
-            level: ${zoomLevel}
-          };
-          
-          var map = new kakao.maps.Map(container, options);
-          
-          // 현재 위치 마커
-          var currentMarker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(${currentLat}, ${currentLon}),
-            map: map
-          });
-          
-          // 현재 위치 마커에 커스텀 이미지 적용 (반려동물 프로필 포함)
-          var petProfileImage = '${userLocation?.petProfileImage || 'https://via.placeholder.com/50'}';
-          var petName = '${userLocation?.petName || '멍멍이'}';
-          var imageSrc = 'data:image/svg+xml;base64,' + btoa(\`
-            <svg width="60" height="80" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">
-              <!-- 말풍선 배경 -->
-              <path d="M30 5 L50 25 L50 55 L30 75 L10 55 L10 25 Z" fill="#FFFFFF" stroke="#FF6B6B" stroke-width="2"/>
-              <!-- 반려동물 프로필 이미지 -->
-              <circle cx="30" cy="35" r="15" fill="#F0F0F0" stroke="#FF6B6B" stroke-width="2"/>
-              <image x="15" y="20" width="30" height="30" href="\${petProfileImage}" clip-path="circle(15px at 30px 35px)"/>
-              <!-- 위치 표시 원 -->
-              <circle cx="30" cy="65" r="8" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="2"/>
-              <circle cx="30" cy="65" r="4" fill="#FFFFFF"/>
-            </svg>
-          \`);
-          var imageSize = new kakao.maps.Size(60, 80);
-          var markerImage = new kakao.maps.MarkerImage(imageSrc, imageSize);
-          currentMarker.setImage(markerImage);
-          
-          // 마커 클릭 시 반려동물 정보 표시
-          var infoWindow = new kakao.maps.InfoWindow({
-            content: '<div style="padding: 10px; text-align: center;">' +
-                     '<img src="\${petProfileImage}" style="width: 40px; height: 40px; border-radius: 50%; margin-bottom: 5px;">' +
-                     '<div style="font-weight: bold; color: #333;">\${petName}</div>' +
-                     '<div style="font-size: 12px; color: #666;">현재 위치</div>' +
-                     '</div>'
-          });
-          
-          kakao.maps.event.addListener(currentMarker, 'click', function() {
-            infoWindow.open(map, currentMarker);
-          });
-          
-          // 경로 그리기
-          var pathData = ${JSON.stringify(pathData)};
-          if (pathData.length > 1) {
-            var polyline = new kakao.maps.Polyline({
-              path: pathData.map(point => new kakao.maps.LatLng(point.lat, point.lng)),
-              strokeWeight: 5,
-              strokeColor: '#FF6B6B',
-              strokeOpacity: 0.8,
-              strokeStyle: 'solid'
-            });
-            polyline.setMap(map);
-          }
-          
-          // 위치 업데이트 함수
-          function updateLocation(lat, lng) {
-            var newPosition = new kakao.maps.LatLng(lat, lng);
-            currentMarker.setPosition(newPosition);
-            map.setCenter(newPosition);
-          }
-          
-          // 경로 업데이트 함수
-          function updatePath(newPathData) {
-            if (newPathData.length > 1) {
-              var polyline = new kakao.maps.Polyline({
-                path: newPathData.map(point => new kakao.maps.LatLng(point.lat, point.lng)),
-                strokeWeight: 5,
-                strokeColor: '#FF6B6B',
-                strokeOpacity: 0.8,
-                strokeStyle: 'solid'
-              });
-              polyline.setMap(map);
-            }
-          }
-          
-          // React Native에서 호출할 수 있도록 전역 함수로 등록
-          window.updateLocation = updateLocation;
-          window.updatePath = updatePath;
-        </script>
-      </body>
-      </html>
-    `;
+  // 마커 추가 함수
+  const addMarkerToMap = (lat: number, lng: number, title: string) => {
+    kakaoMapRef.current?.addMarker(lat, lng, title);
   };
 
   const timeSlots = [
@@ -494,13 +387,13 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       
       {/* 지도 영역 */}
       <View style={styles.mapContainer}>
-        <WebView
-          source={{ html: generateKakaoMapHTML() }}
+        <KakaoMapView
+          ref={kakaoMapRef}
+          apiKey={KAKAO_MAP_API_KEY}
+          latitude={currentLocation?.latitude || parseFloat(mapConfig?.mapCenterLat || '37.5665')}
+          longitude={currentLocation?.longitude || parseFloat(mapConfig?.mapCenterLon || '126.9780')}
+          zoomLevel={mapConfig?.mapZoomLevel || 15}
           style={styles.map}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={true}
-          scalesPageToFit={true}
         />
         
         {/* 상단 산책 정보 모달 */}

@@ -6,7 +6,6 @@ import {
   Animated,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -517,77 +516,47 @@ const HomeScreen = () => {
 
   return (
     <>
-      {/* ==================== SafeAreaView (최상단 영역) ==================== */}
-      {/* 
-        - StatusBar 영역 (시계, 배터리 표시)
-        - 배경색: #C59172 (브랜드 갈색)
-        - edges={['top']}: 상단만 safe area 적용
-      */}
-        <SafeAreaView
-          style={[
-          homeScreenStyles.root,
-          { backgroundColor: '#FFFFFF' },
-        ]}
-        edges={['top']}>
-        
-        {/* StatusBar 설정 */}
-        <StatusBar 
-          backgroundColor="#C59172" 
-          barStyle="light-content"  // 흰색 텍스트
-          translucent={false}
-        />
+      {/* 메인 콘텐츠 영역 */}
+      <SafeAreaView
+        style={[homeScreenStyles.root]}
+        edges={['bottom', 'left', 'right']}>
         
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
-        
-          {/* ==================== 헤더 영역 (가이드 모드 시 숨김) ==================== */}
-          {/* 
-            가이드 모드가 아닐 때만 표시:
-            1. Petmily 로고 및 검색바 (최상단에 여백 없이 붙음)
-          */}
+          {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}
           {!showGuideOverlay && (
-            <>
-              {/* ========== Petmily 헤더 (로고 + 검색바) ========== */}
-              {/* 
-                - 최상단에 여백 없이 배치 (marginTop: 0, paddingTop: 0)
-                - 반투명 흰색 배경
-                - 로고: "🐾 Petmily"
-                - 검색바: 서비스 모드별 placeholder
-              */}
-              <View
-                style={[
-                  headerStyles.header,
-                  { 
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    marginTop: -20,    // 최상단 여백 제거
-                  },
-                ]}>
-                {/* 로고 */}
-                <Text style={headerStyles.logo}>🐾 Petmily</Text>
-                
-                {/* 검색바 영역 */}
-                <View style={headerStyles.headerRight}>
-                  <View style={headerStyles.searchBar}>
-                    <Text style={headerStyles.searchIcon}>🔍</Text>
-                    <TextInput
-                      style={headerStyles.searchInput}
-                      placeholder={
-                        serviceMode === "PW" ? "기능 검색 (산책, 지도, 워커...)" : "상품 검색 (사료, 장난감...)"
+            <View
+              style={[
+                headerStyles.header,
+                { 
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                },
+              ]}>
+              {/* 로고 */}
+              <Text style={headerStyles.logo}>🐾 Petmily</Text>
+              
+              {/* 검색바 영역 */}
+              <View style={headerStyles.headerRight}>
+                <View style={headerStyles.searchBar}>
+                  <Text style={headerStyles.searchIcon}>🔍</Text>
+                  <TextInput
+                    style={headerStyles.searchInput}
+                    placeholder={
+                      serviceMode === "PW" ? "기능 검색 (산책, 지도, 워커...)" : "상품 검색 (사료, 장난감...)"
+                    }
+                    placeholderTextColor="#888"
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    returnKeyType="search"
+                    onFocus={() => {
+                      if (searchQuery.trim().length > 0) {
+                        setShowSearchResults(true);
                       }
-                      placeholderTextColor="#888"
-                      value={searchQuery}
-                      onChangeText={handleSearch}
-                      returnKeyType="search"
-                      onFocus={() => {
-                        if (searchQuery.trim().length > 0) {
-                          setShowSearchResults(true);
-                        }
-                      }}
-                    />
-                  </View>
+                    }}
+                  />
                 </View>
               </View>
-            </>
+            </View>
           )}
 
       {/* 검색 결과 오버레이 */}

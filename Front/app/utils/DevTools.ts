@@ -1,11 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
 /**
  * 개발용 유틸리티 함수들
  * 실제 배포 시에는 제거해야 합니다
  */
-
-const API_BASE_URL = 'http://10.50.235.215:8080/api';
 
 /**
  * 테스트용 JWT 토큰을 받아서 AsyncStorage에 저장

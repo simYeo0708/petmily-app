@@ -17,24 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import WalkerCard from '../components/WalkerCard';
 import { RootStackParamList } from '../index';
+import { WALKER_MATCHING_DATA, type Walker } from '../data';
 
 type WalkerMatchingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WalkerMatching'>;
 type WalkerMatchingScreenRouteProp = RouteProp<RootStackParamList, 'WalkerMatching'>;
 
 const { width } = Dimensions.get('window');
-
-interface Walker {
-  id: string;
-  name: string;
-  rating: number;
-  reviewCount: number;
-  profileImage: string;
-  bio: string;
-  experience: string;
-  hourlyRate: number;
-  isAvailable: boolean;
-  location: string;
-}
 
 interface WalkerMatchingScreenProps {
   navigation: any;
@@ -71,80 +59,8 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
   ];
 
   // 더미 데이터 (실제로는 API에서 가져옴)
-  const dummyWalkers: Walker[] = [
-    {
-      id: '1',
-      name: '김산책',
-      rating: 4.8,
-      reviewCount: 127,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물과 함께하는 즐거운 산책을 도와드립니다!',
-      experience: '3년 경력',
-      hourlyRate: 15000,
-      isAvailable: true,
-      location: '강남구',
-    },
-    {
-      id: '2',
-      name: '박워커',
-      rating: 4.9,
-      reviewCount: 89,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '안전하고 신뢰할 수 있는 산책 서비스를 제공합니다.',
-      experience: '5년 경력',
-      hourlyRate: 18000,
-      isAvailable: true,
-      location: '서초구',
-    },
-    {
-      id: '3',
-      name: '이펫시터',
-      rating: 4.7,
-      reviewCount: 203,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물 행동 전문가와 함께하는 특별한 산책',
-      experience: '7년 경력',
-      hourlyRate: 20000,
-      isAvailable: true,
-      location: '송파구',
-    },
-    {
-      id: '4',
-      name: '최도우미',
-      rating: 4.6,
-      reviewCount: 156,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '사랑과 정성으로 반려동물을 돌봐드립니다.',
-      experience: '2년 경력',
-      hourlyRate: 12000,
-      isAvailable: true,
-      location: '마포구',
-    },
-    {
-      id: '5',
-      name: '정산책러',
-      rating: 4.9,
-      reviewCount: 98,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물의 건강한 생활을 위한 전문 산책 서비스',
-      experience: '4년 경력',
-      hourlyRate: 16000,
-      isAvailable: true,
-      location: '용산구',
-    },
-    {
-      id: '6',
-      name: '한펫케어',
-      rating: 4.8,
-      reviewCount: 234,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '24시간 언제든지 반려동물을 돌봐드립니다.',
-      experience: '6년 경력',
-      hourlyRate: 17000,
-      isAvailable: true,
-      location: '영등포구',
-    },
-  ];
+  // 중앙 관리 샘플 데이터 사용
+  const dummyWalkers: Walker[] = WALKER_MATCHING_DATA;
 
   useEffect(() => {
     loadWalkers();
@@ -157,9 +73,9 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
       // const response = await fetch('/api/walkers');
       // const data = await response.json();
       
-      // 더미 데이터 사용
+      // 중앙 관리 샘플 데이터 사용
       setTimeout(() => {
-        setWalkers(dummyWalkers);
+        setWalkers(dummyWalkers as Walker[]);
         setLoading(false);
       }, 1000);
     } catch (error) {
@@ -184,7 +100,7 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
 
     return (
       <WalkerCard
-        walker={item}
+        walker={item as any}
         cardColor={cardColor}
         onPress={() => handleWalkerSelect(item)}
         style={{ width: (width - 60) / columnsCount }}

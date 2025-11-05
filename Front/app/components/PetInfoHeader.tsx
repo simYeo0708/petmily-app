@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   petInfoCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 15,
+    borderRadius: 0,
     marginBottom: 0,
     borderWidth: 2.5,
     borderColor: '#C59172', // 브라운 색 테두리

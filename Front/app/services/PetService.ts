@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
 export interface PetInfo {
   id?: number;
@@ -23,8 +24,7 @@ export interface PetInfo {
 }
 
 class PetServiceClass {
-  // ⚠️ Expo에서는 localhost 대신 Mac의 IP 주소 사용
-  private baseUrl = 'http://10.50.235.215:8080/api/pets';  // TODO: 본인의 Mac IP로 변경
+  private baseUrl = `${API_BASE_URL}/pets`;
 
   async getAuthToken(): Promise<string | null> {
     try {

@@ -496,12 +496,6 @@ const MyPetScreen = () => {
 
   return (
     <SafeAreaView style={[myPetScreenStyles.root, { backgroundColor: '#FFFFFF' }]}>
-      <StatusBar 
-        backgroundColor="#C59172" 
-        barStyle="light-content" 
-        translucent={false}
-      />
-      <View style={[myPetScreenStyles.content, { backgroundColor: '#f8f9fa' }]}>
       <View style={myPetScreenStyles.header}>
         <Text style={myPetScreenStyles.logo}>🐾 My Pet</Text>
       </View>
@@ -1031,7 +1025,6 @@ const MyPetScreen = () => {
       
       {/* 품종 선택 모달 */}
       <BreedSelectionModal />
-      </View>
     </SafeAreaView>
   );
 };

@@ -1,4 +1,9 @@
-//mock data
+/**
+ * 상품 샘플 데이터
+ * 펫 쇼핑몰에서 사용되는 제품 데이터
+ * (기존 ProductData.ts에서 이동)
+ */
+
 export interface Product {
   id: string;
   name: string;
@@ -13,7 +18,7 @@ export interface Product {
   discount?: number;
 }
 
-export const PRODUCT_DATA: Product[] = [
+export const PRODUCTS: Product[] = [
   // 사료 카테고리
   {
     id: "1",
@@ -169,11 +174,16 @@ export const PRODUCT_DATA: Product[] = [
   },
 ];
 
+/**
+ * 카테고리별로 상품 필터링
+ */
 export const getProductsByCategory = (category: string): Product[] => {
   if (category === "전체") {
-    return PRODUCT_DATA;
+    return PRODUCTS;
   }
-  return PRODUCT_DATA.filter((product) => product.category === category);
+  return PRODUCTS.filter((product) => product.category === category);
 };
 
-export default PRODUCT_DATA;
+export default PRODUCTS;
+
+

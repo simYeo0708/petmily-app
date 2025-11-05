@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getProductsByCategory, Product } from "../constants/ProductData";
+import { getProductsByCategory, type Product } from "../data";
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 

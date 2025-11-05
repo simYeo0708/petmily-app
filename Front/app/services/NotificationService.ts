@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
 export interface Notification {
   id: number;
@@ -17,8 +18,7 @@ export interface DismissNotificationRequest {
 
 class NotificationService {
   private static instance: NotificationService;
-  // ⚠️ Expo에서는 localhost 대신 Mac의 IP 주소 사용
-  private baseUrl = 'http://10.50.235.215:8080/api/notifications';  // TODO: 본인의 Mac IP로 변경
+  private baseUrl = `${API_BASE_URL}/notifications`;
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {

@@ -13,50 +13,14 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { rf, wp, hp } from '../utils/responsive';
+import { ADVERTISEMENTS, type Advertisement } from '../data';
 
 const { width } = Dimensions.get('window');
 const BANNER_WIDTH = width; // 화면 전체 너비
 const CARD_WIDTH = width - 70; // 카드 실제 너비 (섹션 패딩 20 + 슬라이드 패딩 5 = 25씩)
 const AUTO_SCROLL_INTERVAL = 4000; // 4초마다 자동 넘김
 
-interface AdData {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  colors: [string, string];
-}
-
-const adData: AdData[] = [
-  {
-    id: '1',
-    title: '🎉 신규 회원 할인',
-    subtitle: '첫 구매 시 15% 할인 혜택!',
-    icon: 'gift',
-    colors: ['#FF6B9D', '#C44569'],
-  },
-  {
-    id: '2',
-    title: '🐾 펫 워커 서비스',
-    subtitle: '전문 워커와 안전한 산책',
-    icon: 'walk',
-    colors: ['#4FACFE', '#00F2FE'],
-  },
-  {
-    id: '3',
-    title: '🛍️ 프리미엄 사료 특가',
-    subtitle: '건강한 먹거리를 특별가에',
-    icon: 'nutrition',
-    colors: ['#43E97B', '#38F9D7'],
-  },
-  {
-    id: '4',
-    title: '💊 건강 검진 이벤트',
-    subtitle: '반려동물 건강 체크업 30% 할인',
-    icon: 'medical',
-    colors: ['#FA709A', '#FEE140'],
-  },
-];
+const adData: Advertisement[] = ADVERTISEMENTS;
 
 const AdBanner: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -169,7 +133,7 @@ const styles = StyleSheet.create({
   adCard: {
     width: CARD_WIDTH,
     height: hp(110),
-    borderRadius: 15,  // 광고 배너는 15로 통일
+    borderRadius: 0,
     padding: wp(18),
     flexDirection: 'row',
     alignItems: 'center',

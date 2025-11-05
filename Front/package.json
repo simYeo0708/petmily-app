@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "dev": "node scripts/start-dev.js",
+    "update-ip": "node scripts/auto-detect-ip.js",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "npm run update-ip && expo run:android",
+    "ios": "npm run update-ip && expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint"
   },

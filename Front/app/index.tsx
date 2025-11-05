@@ -1,5 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
+import { View, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import TabNavigator, { TabParamList } from "./navigation/TabNavigator";
 import HelperDashboardScreen from "./screen/HelperDashboardScreen";
 import LoginScreen from "./screen/LoginScreen";
@@ -68,36 +70,42 @@ export default function App() {
   }
 
   return (
-    <PortalProvider>
-      <GuideProvider>
-        <PetProvider>
-          <Stack.Navigator
-          id={undefined}
-          initialRouteName="Login" // 로그인 스크린부터 시작
-          screenOptions={{
-            headerShown: false,
-          }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Main">
-            {({ route }) => (
-              <TabNavigator
-                initialTab={route.params?.initialTab as keyof TabParamList}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Shop" component={ShopScreen} />
-          <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen} />
-          <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
-          <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
-          <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
-          <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
-          <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
-          <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
-          <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
-          <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
-          </Stack.Navigator>
-        </PetProvider>
-      </GuideProvider>
-    </PortalProvider>
+    <>
+    <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
+      {/* 앱 메인 콘텐츠 */}
+      <View style={{ flex: 1 }}>
+        <PortalProvider>
+          <GuideProvider>
+            <PetProvider>
+              <Stack.Navigator
+              id={undefined}
+              initialRouteName="Login" // 로그인 스크린부터 시작
+              screenOptions={{
+                headerShown: false,
+              }}>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Main">
+                {({ route }) => (
+                  <TabNavigator
+                    initialTab={route.params?.initialTab as keyof TabParamList}
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="Shop" component={ShopScreen}/>
+              <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
+              <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
+              <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
+              <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
+              <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
+              <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
+              <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
+              <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
+              <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
+              </Stack.Navigator>
+            </PetProvider>
+          </GuideProvider>
+        </PortalProvider>
+      </View>
+    </>
   );
 }

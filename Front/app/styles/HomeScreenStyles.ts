@@ -15,12 +15,10 @@ export const homeScreenStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 96,
   },
   section: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
+    borderRadius: 0,
     padding: 20,
     marginBottom: 18,
     shadowColor: "#000",
@@ -165,8 +163,9 @@ export const homeScreenStyles = StyleSheet.create({
 export const headerStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 24,
-    marginTop:-20,
+    paddingVertical: 25,        // 상단 여백 제거
+    paddingBottom: 16,
+    marginBottom: 20,         // 마진 제거
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -288,7 +287,7 @@ export const modeStyles = StyleSheet.create({
 export const modalStyles = StyleSheet.create({
   modalBox: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
+    borderRadius: 0,
     padding: 20,
     marginBottom: 18,
     shadowColor: "#000",

@@ -1,20 +1,44 @@
-# Welcome to your Expo app 👋
+# Petmily Frontend 🐾
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+반려동물 케어 서비스 프론트엔드 애플리케이션
 
-## Get started
+## 📱 시작하기
 
-1. Install dependencies
+### 1. 의존성 설치
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. Start the app
+### 3-1. IP 주소 자동 설정 및 앱 실행 (권장)
 
-   ```bash
-   npx expo start
-   ```
+```bash
+npm run dev
+```
+
+이 명령어는:
+- 자동으로 Mac의 IP 주소를 감지합니다
+- `.env.local` 파일을 생성/업데이트합니다
+- Expo 개발 서버를 시작합니다
+
+### 3-2. 또는 수동으로 IP 업데이트 후 실행
+
+```bash
+# IP 주소만 업데이트
+npm run update-ip
+
+# 일반 시작
+npm start
+```
+
+### 4. IP 주소가 변경되었을 때
+
+개발 장소를 옮긴 후:
+
+```bash
+npm run update-ip  # IP 자동 감지 및 업데이트
+npm start          # Expo 재시작
+```
 
 In the output, you'll find options to open the app in a
 
