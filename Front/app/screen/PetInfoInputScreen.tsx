@@ -426,7 +426,7 @@ const PetInfoInputScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

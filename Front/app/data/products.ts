@@ -187,3 +187,6 @@ export const getProductsByCategory = (category: string): Product[] => {
 export default PRODUCTS;
 
 
+
+
+

@@ -8,7 +8,8 @@
     "update-ip": "node scripts/auto-detect-ip.js",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "npm run update-ip && expo run:android",
-    "ios": "npm run update-ip && expo run:ios",
+    "ios": "npm run update-ip && expo run:ios --no-build-cache",
+    "ios:build": "npm run update-ip && expo run:ios --no-bundler",
     "web": "expo start --web",
     "lint": "expo lint"
   },

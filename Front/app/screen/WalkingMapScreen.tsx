@@ -27,6 +27,9 @@ const { width, height } = Dimensions.get('window');
 // MapService 인스턴스
 const mapService = MapService.getInstance();
 
+const isWithinKorea = (latitude: number, longitude: number) =>
+  latitude >= 33 && latitude <= 39 && longitude >= 124 && longitude <= 132;
+
 interface WalkingMapScreenProps {
   navigation: any;
 }
@@ -71,6 +74,18 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   
   // 네이티브 지도 참조
   const kakaoMapRef = useRef<KakaoMapViewHandle>(null);
+
+  const defaultLatitude = parseFloat(mapConfig?.mapCenterLat ?? '37.5665');
+  const defaultLongitude = parseFloat(mapConfig?.mapCenterLon ?? '126.9780');
+  const mapLatitude =
+    currentLocation && isWithinKorea(currentLocation.latitude, currentLocation.longitude)
+      ? currentLocation.latitude
+      : defaultLatitude;
+  const mapLongitude =
+    currentLocation && isWithinKorea(currentLocation.latitude, currentLocation.longitude)
+      ? currentLocation.longitude
+      : defaultLongitude;
+  const mapZoomLevel = mapConfig?.mapZoomLevel ?? 15;
 
   useEffect(() => {
     loadMapConfig();
@@ -381,18 +396,18 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#C59172' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
-      <View style={[styles.content, { backgroundColor: '#f8f9fa' }]}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
+      <View style={styles.content}>
       
       {/* 지도 영역 */}
       <View style={styles.mapContainer}>
         <KakaoMapView
           ref={kakaoMapRef}
           apiKey={KAKAO_MAP_API_KEY}
-          latitude={currentLocation?.latitude || parseFloat(mapConfig?.mapCenterLat || '37.5665')}
-          longitude={currentLocation?.longitude || parseFloat(mapConfig?.mapCenterLon || '126.9780')}
-          zoomLevel={mapConfig?.mapZoomLevel || 15}
+          latitude={mapLatitude}
+          longitude={mapLongitude}
+          zoomLevel={mapZoomLevel}
           style={styles.map}
         />
         
@@ -575,8 +590,8 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        {/* 상단 헤더 */}
-        <View style={styles.header}>
+        {/* 상단 헤더 (지도 위 오버레이) */}
+        <View style={styles.headerOverlay}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -753,14 +768,14 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         </SafeAreaView>
       </Modal>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'transparent',
   },
   content: {
     flex: 1,
@@ -871,23 +886,32 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 8,
   },
-  header: {
+  headerOverlay: {
     position: 'absolute',
-    top: 50,
+    top: 0,
     left: 0,
     right: 0,
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    zIndex: 1,
+    zIndex: 1000,
+    backgroundColor: 'transparent',
   },
   backButton: {
     marginRight: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#fff',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   bottomActionContainer: {
     position: 'absolute',

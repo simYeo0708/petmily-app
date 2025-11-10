@@ -122,7 +122,7 @@ const MatchingScreen = () => {
 
   return (
     <SafeAreaView style={homeScreenStyles.root}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       {/* Header */}
       <View
         style={[

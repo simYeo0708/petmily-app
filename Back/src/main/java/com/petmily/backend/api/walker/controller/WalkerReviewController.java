@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/walker/reviews")
+@RequestMapping("/walker/reviews")
 @RequiredArgsConstructor
 public class WalkerReviewController {
 

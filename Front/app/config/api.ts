@@ -1,5 +1,12 @@
 import Constants from 'expo-constants';
-
+console.log(
+  'KakaoMap API key (process.env)',
+  process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY
+);
+console.log(
+  'KakaoMap API key (extra)',
+  Constants.expoConfig?.extra?.kakaoMapApiKey
+);
 /**
  * API 설정 관리
  * .env.local 파일의 EXPO_PUBLIC_API_HOST를 사용하여 IP 주소를 동적으로 관리합니다.
@@ -16,7 +23,7 @@ const API_HOST = process.env.EXPO_PUBLIC_API_HOST ||
 
 const API_PORT = process.env.EXPO_PUBLIC_API_PORT || 
                  Constants.expoConfig?.extra?.apiPort || 
-                 '8080';  // 기본값
+                 '8083';  // 기본값
 
 /**
  * API Base URL
@@ -66,7 +73,7 @@ if (__DEV__) {
  * 2. 내 애플리케이션 > 애플리케이션 추가하기
  * 3. 앱 설정 > 플랫폼 설정에서 iOS 번들 ID 등록: com.petmily.app
  * 4. 제품 설정 > 지도 > 활성화 설정
- * 5. 앱 키 > JavaScript 키 복사하여 .env.local에 추가
+ * 5. 앱 키 > Native App Key 복사하여 .env.local에 추가
  */
 export const KAKAO_MAP_API_KEY = 
   process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY || 

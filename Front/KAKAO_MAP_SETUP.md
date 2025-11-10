@@ -19,11 +19,16 @@ https://developers.kakao.com/ 접속하여 카카오 계정으로 로그인
 3. 사업자명: 개인 또는 회사명 입력
 4. **저장**
 
-### 3. 플랫폼 설정 (iOS)
+### 3. 플랫폼 설정 (iOS) ⚠️ 중요
 1. **앱 설정** > **플랫폼** 메뉴
 2. **iOS 플랫폼 등록** 클릭
 3. 번들 ID 입력: `com.petmily.app`
 4. **저장**
+
+**⚠️ 참고:**
+- iOS 네이티브 앱은 **웹 플랫폼 도메인 설정이 필요 없습니다**
+- 웹 플랫폼(`https://localhost:8082` 등)은 웹 브라우저에서 사용하는 경우에만 필요합니다
+- iOS 네이티브 앱은 번들 ID만 등록하면 됩니다
 
 ### 4. 지도 서비스 활성화
 1. **제품 설정** > **지도** 메뉴
@@ -31,9 +36,14 @@ https://developers.kakao.com/ 접속하여 카카오 계정으로 로그인
 3. 저장
 
 ### 5. API 키 복사
-1. **앱 키** 탭
-2. **JavaScript 키** 복사 (네이티브 앱 키 아님!)
+1. **앱 키** 탭으로 이동
+2. **Native App Key** 복사 ⚠️ (JavaScript 키가 아님!)
    - 예: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
+   
+**중요:**
+- iOS 네이티브 앱은 **Native App Key**를 사용합니다
+- JavaScript 키는 웹 브라우저용입니다
+- Native App Key는 iOS/Android 네이티브 앱 전용입니다
 
 ---
 
@@ -51,7 +61,7 @@ EXPO_PUBLIC_KAKAO_MAP_API_KEY=발급받은-API-키를-여기에-붙여넣기
 **예시:**
 ```bash
 EXPO_PUBLIC_API_HOST=10.50.235.215
-EXPO_PUBLIC_API_PORT=8080
+EXPO_PUBLIC_API_PORT=8083
 
 # Kakao Maps API Key
 EXPO_PUBLIC_KAKAO_MAP_API_KEY=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
@@ -134,7 +144,7 @@ const MyComponent = () => {
 - [ ] 애플리케이션 등록
 - [ ] iOS 플랫폼 등록 (번들 ID: `com.petmily.app`)
 - [ ] 지도 서비스 활성화
-- [ ] JavaScript 키 발급
+- [ ] Native App Key 발급
 - [ ] `.env.local`에 API 키 추가
 
 설정 후 확인:
@@ -155,7 +165,7 @@ const MyComponent = () => {
 ### 문제: "Invalid API Key" 에러
 **해결**: 
 1. API 키가 올바른지 확인
-2. JavaScript 키를 사용하는지 확인 (네이티브 앱 키 X)
+2. Native App Key를 사용하는지 확인 (JavaScript 키 X)
 3. `.env.local` 파일 저장 후 앱 재시작
 
 ### 문제: 지도가 안 보임

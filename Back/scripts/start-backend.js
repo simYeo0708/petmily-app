@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { spawn } = require('child_process');
+const path = require('path');
 const { detectLocalIP, updateApplicationYml } = require('./auto-detect-ip');
 
 /**
@@ -14,11 +15,13 @@ function startBackend() {
   // 1. IP 자동 감지 및 설정 업데이트
   console.log('1️⃣ 네트워크 IP 자동 감지...');
   const detectedIP = detectLocalIP();
-  updateApplicationYml(detectedIP);
+  const port = process.env.SERVER_PORT || '8083';
+  // 환경 자동 업데이트는 비활성화합니다. 필요 시 수동으로 실행하세요.
+  // updateApplicationYml(detectedIP, port);
   
   console.log('\n2️⃣ 백엔드 서버 시작...');
-  console.log(`   서버 주소: http://${detectedIP}:8080/api`);
-  console.log('   H2 콘솔: http://localhost:8080/h2-console\n');
+  console.log(`   서버 주소: http://${detectedIP}:${port}/api`);
+  console.log(`   H2 콘솔: http://localhost:${port}/h2-console\n`);
   
   // 2. Gradle로 백엔드 시작
   const gradleProcess = spawn('./gradlew', ['bootRun'], {
@@ -48,4 +51,6 @@ function startBackend() {
 if (require.main === module) {
   startBackend();
 }
+
+
 

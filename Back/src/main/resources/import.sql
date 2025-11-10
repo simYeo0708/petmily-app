@@ -25,7 +25,7 @@ INSERT INTO notifications (title, content, type, status, is_active, priority, cr
 
 -- 서비스 공지사항 (SERVICE_ANNOUNCEMENT 사용)
 INSERT INTO notifications (title, content, type, status, is_active, priority, created_at, updated_at) VALUES
-('새로운 기능이 추가되었습니다! 🎉', 
+('새로운 기능이 추가되었습니다!', 
  '산책 경로 추적 기능과 실시간 위치 공유 기능이 추가되었습니다.', 
  'SERVICE_ANNOUNCEMENT', 
  'PUBLISHED', 

@@ -96,12 +96,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request ->
                         request.requestMatchers(
                                 new AntPathRequestMatcher("/"),
-                                new AntPathRequestMatcher("/api/auth/**"),
-                                new AntPathRequestMatcher("/api/users/**"),
-                                new AntPathRequestMatcher("/api/pets/**"),  // 디버그용: 모든 펫 API 허용
-                                new AntPathRequestMatcher("/api/map/**"),
-                                new AntPathRequestMatcher("/api/notifications/**"),
-                                new AntPathRequestMatcher("/api/auth/test/**")
+                                new AntPathRequestMatcher("/auth/**"),
+                                new AntPathRequestMatcher("/users/**"),
+                                new AntPathRequestMatcher("/pets/**"),  // 디버그용: 모든 펫 API 허용
+                                new AntPathRequestMatcher("/map/**"),
+                                new AntPathRequestMatcher("/notifications/**"),
+                                new AntPathRequestMatcher("/auth/test/**")
                         ).permitAll().anyRequest().authenticated()
                 )
 
@@ -157,7 +157,7 @@ public class SecurityConfig {
         return ClientRegistration.withRegistrationId("google")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8080/login/oauth2/code/google")
+                .redirectUri("http://localhost:8083/login/oauth2/code/google")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("email", "profile")
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
@@ -183,7 +183,7 @@ public class SecurityConfig {
         return ClientRegistration.withRegistrationId("kakao")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8080/login/oauth2/code/kakao")
+                .redirectUri("http://localhost:8083/login/oauth2/code/kakao")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("account_email", "profile_nickname", "profile_image")
                 .authorizationUri("https://kauth.kakao.com/oauth/authorize")
@@ -207,7 +207,7 @@ public class SecurityConfig {
         return ClientRegistration.withRegistrationId("naver")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8080/login/oauth2/code/naver")
+                .redirectUri("http://localhost:8083/login/oauth2/code/naver")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("name", "email", "profile_image")
                 .authorizationUri("https://nid.naver.com/oauth2.0/authorize")

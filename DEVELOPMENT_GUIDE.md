@@ -47,9 +47,9 @@ node scripts/auto-detect-ip.js
 ## 📱 접속 정보
 
 ### 백엔드
-- **API 서버**: `http://[자동감지IP]:8080/api`
-- **H2 콘솔**: `http://localhost:8080/h2-console`
-- **Swagger UI**: `http://[자동감지IP]:8080/swagger-ui.html`
+- **API 서버**: `http://[자동감지IP]:8083/api`
+- **H2 콘솔**: `http://localhost:8083/h2-console`
+- **Swagger UI**: `http://[자동감지IP]:8083/swagger-ui.html`
 
 ### 프론트엔드
 - **Expo 개발 서버**: QR 코드 스캔 또는 시뮬레이터
@@ -64,7 +64,7 @@ node scripts/auto-detect-ip.js
 # 수동으로 IP 설정
 cd Front
 echo "EXPO_PUBLIC_API_HOST=192.168.1.100" > .env.local
-echo "EXPO_PUBLIC_API_PORT=8080" >> .env.local
+node scripts/sync-dev-config.js
 ```
 
 ### 백엔드 CORS 에러
@@ -131,4 +131,6 @@ npm start -- --verbose
 ---
 
 이제 **매번 IP를 수정할 필요 없이** 개발을 시작할 수 있습니다! 🎉
+
+
 

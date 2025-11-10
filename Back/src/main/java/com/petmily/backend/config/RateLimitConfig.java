@@ -1,6 +1,7 @@
 package com.petmily.backend.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -17,14 +18,14 @@ public class RateLimitConfig implements WebMvcConfigurer {
     private static final int MAX_LOCATION_UPDATES_PER_MINUTE = 120; // 위치 업데이트는 더 자주
     
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
         // API별 다른 제한 적용
         registry.addInterceptor(new RateLimitInterceptor(MAX_REQUESTS_PER_MINUTE))
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/walker/*/location"); // 위치 업데이트 제외
+                .addPathPatterns("/**")
+                .excludePathPatterns("/walker/*/location"); // 위치 업데이트 제외
                 
         registry.addInterceptor(new RateLimitInterceptor(MAX_LOCATION_UPDATES_PER_MINUTE))
-                .addPathPatterns("/api/walker/*/location");
+                .addPathPatterns("/walker/*/location");
 
     }
 }

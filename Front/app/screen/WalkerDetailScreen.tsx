@@ -106,18 +106,23 @@ const WalkerDetailScreen: React.FC<WalkerDetailScreenProps> = ({ navigation, rou
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 배경 이미지 영역 */}
         <View style={styles.backgroundImageContainer}>
-          <Image
-            source={{ uri: 'https://via.placeholder.com/400x200/4A90E2/FFFFFF?text=Background' }}
-            style={styles.backgroundImage}
-            resizeMode="cover"
-          />
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)']}
+            colors={['#4A90E2', '#357ABD', '#C59172']}
+            style={styles.backgroundGradientFull}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.backgroundPattern}>
+              <Ionicons name="paw" size={100} color="rgba(255,255,255,0.05)" />
+            </View>
+          </LinearGradient>
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.4)']}
             style={styles.backgroundGradient}
           />
         </View>
@@ -128,23 +133,31 @@ const WalkerDetailScreen: React.FC<WalkerDetailScreenProps> = ({ navigation, rou
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+            <View style={styles.backButtonContainer}>
+              <Ionicons name="arrow-back" size={22} color="#333" />
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* 워커 정보 카드 */}
+          {/* 워커 정보 카드 */}
         <View style={styles.walkerInfoCard}>
           {/* 프로필 이미지 */}
           <View style={styles.profileImageContainer}>
-            <View style={styles.profileImageWrapper}>
-              <Image
-                source={{ uri: walker.profileImage }}
-                style={styles.profileImage}
-                defaultSource={require('../../assets/images/dog-paw.png')}
-              />
-            </View>
+            <LinearGradient
+              colors={['#4A90E2', '#357ABD']}
+              style={styles.profileImageWrapper}
+            >
+              <View style={styles.profileImageInner}>
+                <Image
+                  source={{ uri: walker.profileImage }}
+                  style={styles.profileImage}
+                  defaultSource={require('../../assets/images/dog-paw.png')}
+                />
+              </View>
+            </LinearGradient>
             {walker.isAvailable && (
               <View style={styles.availableBadge}>
+                <View style={styles.availableBadgeDot} />
                 <Text style={styles.availableText}>사용 가능</Text>
               </View>
             )}
@@ -236,12 +249,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backgroundImageContainer: {
-    height: height * 0.3,
+    height: height * 0.35,
     position: 'relative',
   },
-  backgroundImage: {
+  backgroundGradientFull: {
     width: '100%',
     height: '100%',
+    position: 'relative',
+  },
+  backgroundPattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.3,
   },
   backgroundGradient: {
     position: 'absolute',
@@ -263,6 +287,19 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 5,
   },
+  backButtonContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
   walkerInfoCard: {
     backgroundColor: '#fff',
     marginTop: -50,
@@ -280,35 +317,61 @@ const styles = StyleSheet.create({
   },
   profileImageContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     position: 'relative',
   },
   profileImageWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 4,
-    borderColor: '#4A90E2',
-    padding: 4,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    padding: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#4A90E2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  profileImageInner: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    overflow: 'hidden',
     backgroundColor: '#fff',
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   profileImage: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: '100%',
+    height: '100%',
   },
   availableBadge: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  availableBadgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#fff',
   },
   availableText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   basicInfo: {

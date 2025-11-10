@@ -60,6 +60,7 @@ const WalkingRequestScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity

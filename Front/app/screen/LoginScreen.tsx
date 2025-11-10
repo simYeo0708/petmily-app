@@ -4,7 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Animated,
+  ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -13,13 +15,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from "react-native";
 import { RootStackParamList } from "../index";
 import AuthService from "../services/AuthService";
 import DevTools from "../utils/DevTools";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
+type ErrorModalContent = {
+  title: string;
+  message: string;
+  detail?: string;
+  suggestions?: string[];
+};
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +36,11 @@ const LoginScreen = ({ navigation }: Props) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorModalContent, setErrorModalContent] = useState<ErrorModalContent>({
+    title: "",
+    message: "",
+  });
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -58,6 +70,53 @@ const LoginScreen = ({ navigation }: Props) => {
     }
   };
 
+  const showLoginErrorModal = () => {
+    setErrorModalContent({
+      title: "로그인에 실패했어요",
+      message: "입력하신 아이디 또는 비밀번호가 일치하지 않습니다.",
+      detail: "대소문자를 확인한 뒤 다시 시도하거나, 테스트 계정으로 빠르게 접속할 수 있어요.",
+      suggestions: [
+        "Caps Lock이 켜져 있는지 확인해 보세요.",
+        "비밀번호를 잊었다면 관리자에게 초기화를 요청해 주세요.",
+        "테스트 계정을 사용하면 바로 체험할 수 있습니다.",
+      ],
+    });
+    setErrorModalVisible(true);
+  };
+
+  const handleRetryLogin = () => {
+    setErrorModalVisible(false);
+  };
+
+  const handleUseTestAccount = async () => {
+    setErrorModalVisible(false);
+    setIsLoading(true);
+    try {
+      const result = await DevTools.setupTestAuth();
+      if (result) {
+        Alert.alert("테스트 계정 로그인", "테스트 계정으로 로그인했습니다.", [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Main"),
+          },
+        ]);
+      } else {
+        Alert.alert(
+          "로그인 실패",
+          "테스트 계정을 사용할 수 없습니다. 백엔드 상태를 확인해 주세요."
+        );
+      }
+    } catch (error) {
+      console.error("[DEV] 테스트 계정 로그인 실패:", error);
+      Alert.alert(
+        "로그인 실패",
+        "테스트 계정으로 로그인하는 중 오류가 발생했습니다."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogin = async () => {
     setLoginError(""); // 에러 메시지 초기화
     
@@ -79,6 +138,7 @@ const LoginScreen = ({ navigation }: Props) => {
     } catch (error: any) {
       console.error("로그인 에러:", error);
       setLoginError("잘못된 아이디이거나 비밀번호입니다.");
+      showLoginErrorModal();
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +209,7 @@ const LoginScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}>
@@ -289,6 +349,55 @@ const LoginScreen = ({ navigation }: Props) => {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={errorModalVisible}
+        onRequestClose={handleRetryLogin}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconCircle}>
+              <Text style={styles.modalIconText}>⚠️</Text>
+            </View>
+            <Text style={styles.modalTitle}>{errorModalContent.title}</Text>
+            <Text style={styles.modalMessage}>{errorModalContent.message}</Text>
+            {errorModalContent.detail ? (
+              <Text style={styles.modalDetail}>{errorModalContent.detail}</Text>
+            ) : null}
+            {errorModalContent.suggestions?.map((suggestion, index) => (
+              <View
+                key={`${suggestion}-${index}`}
+                style={styles.modalSuggestionRow}>
+                <View style={styles.modalSuggestionDot} />
+                <Text style={styles.modalSuggestionText}>{suggestion}</Text>
+              </View>
+            ))}
+
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalSecondaryButton}
+                onPress={handleRetryLogin}
+                disabled={isLoading}>
+                <Text style={styles.modalSecondaryButtonText}>다시 입력할게요</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalPrimaryButton,
+                  isLoading && styles.modalButtonDisabled,
+                ]}
+                onPress={handleUseTestAccount}
+                disabled={isLoading}>
+                {isLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalPrimaryButtonText}>테스트 계정 사용</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -444,6 +553,113 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  modalContainer: {
+    width: "100%",
+    maxWidth: 360,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  modalIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FCEDEC",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  modalIconText: {
+    fontSize: 36,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+    color: "#3B3B3B",
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#484848",
+    lineHeight: 22,
+  },
+  modalDetail: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#6B6B6B",
+    marginTop: 12,
+    lineHeight: 20,
+  },
+  modalSuggestionRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginTop: 10,
+  },
+  modalSuggestionDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#C59172",
+    marginTop: 6,
+    marginRight: 8,
+  },
+  modalSuggestionText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#585858",
+    lineHeight: 20,
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    marginTop: 24,
+  },
+  modalPrimaryButton: {
+    flex: 1,
+    backgroundColor: "#C59172",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  modalPrimaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalSecondaryButton: {
+    flex: 1,
+    backgroundColor: "#EFEFEF",
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  modalSecondaryButtonText: {
+    color: "#555555",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalButtonDisabled: {
+    opacity: 0.6,
   },
 });
 

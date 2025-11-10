@@ -117,36 +117,58 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>워커 선택</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>워커 선택</Text>
+          <Text style={styles.headerSubtitle}>{walkers.length}명의 워커</Text>
+        </View>
         <View style={styles.placeholder} />
       </View>
       
       <View style={styles.bookingInfo}>
-        <View style={styles.infoItem}>
-          <Ionicons name="time" size={16} color="#4A90E2" />
-          <Text style={styles.infoText}>{bookingData.timeSlot}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="location" size={16} color="#4A90E2" />
-          <Text style={styles.infoText}>{bookingData.address}</Text>
-        </View>
+        <LinearGradient
+          colors={['#E3F2FD', '#F5F5F5']}
+          style={styles.bookingInfoGradient}
+        >
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="time" size={18} color="#4A90E2" />
+            </View>
+            <Text style={styles.infoText}>{bookingData.timeSlot}</Text>
+          </View>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="location" size={18} color="#4A90E2" />
+            </View>
+            <Text style={styles.infoText} numberOfLines={1}>{bookingData.address}</Text>
+          </View>
+        </LinearGradient>
       </View>
     </View>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="paw" size={64} color="#ddd" />
+      <View style={styles.emptyStateIconContainer}>
+        <Ionicons name="paw" size={64} color="#C59172" />
+      </View>
       <Text style={styles.emptyStateTitle}>사용 가능한 워커가 없습니다</Text>
       <Text style={styles.emptyStateText}>
         다른 시간대나 지역을 선택해보세요
       </Text>
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={handleRefresh}
+      >
+        <Ionicons name="refresh" size={20} color="#4A90E2" />
+        <Text style={styles.refreshButtonText}>다시 검색</Text>
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
       
       <FlatList
         data={walkers}
@@ -182,56 +204,120 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#999',
   },
   placeholder: {
-    width: 34,
+    width: 40,
   },
   bookingInfo: {
-    gap: 8,
+    marginTop: 8,
+  },
+  bookingInfoGradient: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E3F2FD',
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 4,
+  },
+  infoIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 8,
+    marginLeft: 44,
   },
   infoText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
+    paddingHorizontal: 40,
+  },
+  emptyStateIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(197, 145, 114, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   emptyStateTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+  },
+  refreshButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4A90E2',
   },
 });
 
