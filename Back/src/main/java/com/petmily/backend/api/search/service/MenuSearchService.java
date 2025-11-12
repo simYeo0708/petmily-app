@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -185,25 +186,61 @@ public class MenuSearchService {
                 .description("반려동물 용품 쇼핑")
                 .category("쇼핑")
                 .route("/mall")
-                .keywords(List.of("쇼핑", "쇼핑몰", "용품", "구매", "mall", "shop"))
+                .keywords(List.of("쇼핑", "쇼핑몰", "용품", "구매", "상품", "mall", "shop", "product"))
                 .build());
 
         allMenuItems.add(MenuItem.builder()
-                .id("mall_wishlist")
-                .title("찜 목록")
-                .description("관심 상품 모아보기")
+                .id("mall_products")
+                .title("상품 목록")
+                .description("반려동물 상품 보기")
                 .category("쇼핑")
-                .route("/mall/wishlist")
-                .keywords(List.of("찜", "위시리스트", "관심", "상품", "wishlist"))
+                .route("/products")
+                .keywords(List.of("상품", "목록", "쇼핑", "제품", "product"))
                 .build());
 
         allMenuItems.add(MenuItem.builder()
-                .id("mall_reviews")
-                .title("내 상품 리뷰")
-                .description("내가 작성한 상품 리뷰 목록")
+                .id("mall_cart")
+                .title("장바구니")
+                .description("장바구니에 담은 상품")
                 .category("쇼핑")
-                .route("/mall/reviews/my")
-                .keywords(List.of("리뷰", "상품", "후기", "내", "작성", "review"))
+                .route("/cart")
+                .keywords(List.of("장바구니", "카트", "구매", "cart"))
+                .build());
+
+        allMenuItems.add(MenuItem.builder()
+                .id("mall_orders")
+                .title("주문 내역")
+                .description("내 주문 내역 확인")
+                .category("쇼핑")
+                .route("/orders")
+                .keywords(List.of("주문", "내역", "구매", "order"))
+                .build());
+
+        allMenuItems.add(MenuItem.builder()
+                .id("mall_liked")
+                .title("좋아요한 상품")
+                .description("좋아요한 상품 모아보기")
+                .category("쇼핑")
+                .route("/products/liked")
+                .keywords(List.of("좋아요", "상품", "관심", "찜", "like", "favorite"))
+                .build());
+
+        allMenuItems.add(MenuItem.builder()
+                .id("seller_products")
+                .title("내 상품 관리")
+                .description("판매자 상품 등록 및 관리")
+                .category("판매자")
+                .route("/product/my")
+                .keywords(List.of("판매자", "상품", "관리", "등록", "seller", "product"))
+                .build());
+
+        allMenuItems.add(MenuItem.builder()
+                .id("seller_orders")
+                .title("판매자 주문 관리")
+                .description("판매한 상품의 주문 관리")
+                .category("판매자")
+                .route("/orders/seller")
+                .keywords(List.of("판매", "주문", "관리", "seller", "order"))
                 .build());
 
         // ==== 반려동물 관리 ====
@@ -354,7 +391,7 @@ public class MenuSearchService {
                 .collect(Collectors.toList());
     }
 
-    public List<MenuItem> getMenusByCategory(String category){
+    public List<MenuItem> getMenusByCategory(String category) {
         return allMenuItems.stream()
                 .filter(menu -> menu.getCategory().equals(category))
                 .collect(Collectors.toList());
@@ -373,7 +410,7 @@ public class MenuSearchService {
                 .anyMatch(keyword -> keyword.toLowerCase().contains(query));
     }
 
-    private List<String> generateSuggestions(String query){
+    private List<String> generateSuggestions(String query) {
         return allMenuItems.stream()
                 .filter(menu -> matchesQuery(menu, query))
                 .flatMap(menu -> menu.getKeywords().stream())

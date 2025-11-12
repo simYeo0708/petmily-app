@@ -1,6 +1,6 @@
 package com.petmily.backend.domain.walk.entity;
 
-import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

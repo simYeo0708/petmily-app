@@ -4,8 +4,8 @@ import com.petmily.backend.api.auth.cookie.CookieUtils;
 import com.petmily.backend.api.auth.jwt.JwtTokenProvider;
 import com.petmily.backend.api.auth.oauth.CustomOAuth2User;
 
-import com.petmily.backend.domain.auth.token.AuthRefreshToken;
-import com.petmily.backend.domain.auth.token.AuthRefreshTokenRepository;
+import com.petmily.backend.domain.auth.entity.AuthRefreshToken;
+import com.petmily.backend.domain.auth.repository.AuthRefreshTokenRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

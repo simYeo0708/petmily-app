@@ -1,14 +1,13 @@
 package com.petmily.backend.api.pet.controller;
 
 import com.petmily.backend.api.common.util.SecurityUtils;
-import com.petmily.backend.api.pet.dto.PetCreateRequest;
-import com.petmily.backend.api.pet.dto.PetResponse;
-import com.petmily.backend.api.pet.dto.PetSearchRequest;
-import com.petmily.backend.api.pet.dto.PetUpdateRequest;
+import com.petmily.backend.api.pet.dto.request.PetCreateRequest;
+import com.petmily.backend.api.pet.dto.response.PetResponse;
+import com.petmily.backend.api.pet.dto.request.PetSearchRequest;
+import com.petmily.backend.api.pet.dto.request.PetUpdateRequest;
 import com.petmily.backend.api.pet.service.PetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;

@@ -1,7 +1,8 @@
 package com.petmily.backend.domain.mall.review.entity;
 
-import com.petmily.backend.api.mall.enums.ShoppingMall;
-import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.common.BaseTimeEntity;
+import com.petmily.backend.domain.mall.order.entity.Order;
+import com.petmily.backend.domain.mall.product.entity.Product;
 import com.petmily.backend.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,32 +11,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name ="mall_review")
+@Table(name = "product_reviews",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id", "order_id"}))
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
 public class Review extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "review_id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(nullable = false)
-    private String externalProductId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private String productName;
-
-    private String productImageUrl;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ShoppingMall source;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
 
     @Column(nullable = false)
     private Integer rating;
@@ -49,35 +49,44 @@ public class Review extends BaseTimeEntity {
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
 
-    @Column(nullable = false)
+    @Column(name = "helpful_count")
     @Builder.Default
     private Integer helpfulCount = 0;
 
-    @Column(nullable = false)
+    @Column(name = "unhelpful_count")
     @Builder.Default
-    private Integer notHelpfulCount = 0;
+    private Integer unhelpfulCount = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", insertable = false, updatable = false)
-    private User user;
+    @Column(name = "is_verified_purchase")
+    @Builder.Default
+    private Boolean isVerifiedPurchase = true;
 
-    public void incrementHelpfulCount(){
+    public void increaseHelpfulCount() {
         this.helpfulCount++;
     }
 
-    public void decrementHelpfulCount(){
-        if(this.helpfulCount > 0){
+    public void decreaseHelpfulCount() {
+        if (this.helpfulCount > 0) {
             this.helpfulCount--;
         }
     }
 
-    public void incrementNotHelpfulCount(){
-        this.notHelpfulCount++;
+    public void increaseUnhelpfulCount() {
+        this.unhelpfulCount++;
     }
 
-    public void decrementNotHelpfulCount(){
-        if(this.notHelpfulCount > 0) {
-            this.notHelpfulCount--;
+    public void decreaseUnhelpfulCount() {
+        if (this.unhelpfulCount > 0) {
+            this.unhelpfulCount--;
         }
     }
+
+    public double getHelpfulnessScore() {
+        int total = helpfulCount + unhelpfulCount;
+        if (total == 0) {
+            return 0.0;
+        }
+        return (double) helpfulCount / total * 100;
+    }
+
 }

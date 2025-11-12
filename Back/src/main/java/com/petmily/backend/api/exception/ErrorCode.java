@@ -27,6 +27,27 @@ public enum ErrorCode {
     UNREALISTIC_LOCATION_CHANGE(BAD_REQUEST, "비현실적인 위치 변화입니다."),
     LOCATION_SERVICE_UNAVAILABLE(SERVICE_UNAVAILABLE, "위치 서비스를 사용할 수 없습니다."),
 
+    // product
+    PRODUCT_NOT_FOUND(NOT_FOUND, "상품을 찾을 수 없습니다."),
+    INSUFFICIENT_STOCK(BAD_REQUEST, "재고가 부족합니다."),
+    PRODUCT_INACTIVE(BAD_REQUEST, "비활성화된 상품입니다."),
+
+    // cart
+    CART_NOT_FOUND(NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
+
+    // order
+    ORDER_NOT_FOUND(NOT_FOUND, "주문을 찾을 수 없습니다."),
+
+    // review
+    REVIEW_NOT_FOUND(NOT_FOUND, "리뷰를 찾을 수 없습니다."),
+
+    // subscription
+    SUBSCRIPTION_NOT_FOUND(NOT_FOUND, "정기배송을 찾을 수 없습니다."),
+    SUBSCRIPTION_NOT_AVAILABLE(BAD_REQUEST, "이 상품은 정기배송이 불가능합니다."),
+    SUBSCRIPTION_MULTIPLE_ITEMS_NOT_ALLOWED(BAD_REQUEST, "정기배송은 단일 상품만 가능합니다."),
+    SUBSCRIPTION_CYCLE_REQUIRED(BAD_REQUEST, "정기배송 주기를 선택해주세요."),
+    SUBSCRIPTION_CYCLE_NOT_AVAILABLE(BAD_REQUEST, "선택한 배송 주기는 지원하지 않습니다."),
+
     // category
     CATEGORY_NOT_FOUND(NOT_FOUND, "카테고리를 찾을 수 없습니다."),
     CATEGORY_INACTIVE(BAD_REQUEST, "비활성화된 카테고리입니다."),

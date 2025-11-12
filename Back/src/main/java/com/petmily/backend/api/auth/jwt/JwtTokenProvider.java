@@ -2,8 +2,7 @@ package com.petmily.backend.api.auth.jwt;
 
 import com.petmily.backend.api.auth.exception.TokenException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.domain.auth.token.AuthRefreshTokenRepository;
-import com.petmily.backend.domain.auth.token.AuthRefreshToken;
+import com.petmily.backend.domain.auth.repository.AuthRefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -15,13 +14,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.token.TokenService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
 

@@ -1,6 +1,6 @@
 package com.petmily.backend.domain.chat.entity;
 
-import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.common.BaseTimeEntity;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walker.entity.Walker;

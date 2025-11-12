@@ -6,6 +6,9 @@ import com.petmily.backend.api.notification.dto.NotificationSettingsRequest;
 import com.petmily.backend.api.notification.dto.NotificationSettingsResponse;
 import com.petmily.backend.api.notification.dto.PushNotificationRequest;
 import com.petmily.backend.api.notification.dto.PushTokenRequest;
+import com.petmily.backend.domain.mall.order.entity.Order;
+import com.petmily.backend.domain.mall.order.entity.OrderStatus;
+import com.petmily.backend.domain.mall.subscription.entity.Subscription;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.user.entity.NotificationSetting;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,7 +60,7 @@ public class NotificationService {
      */
     @Transactional
     public NotificationSettingsResponse updateNotificationSettings(Long userId,
-                                                                 NotificationSettingsRequest request) {
+                                                                   NotificationSettingsRequest request) {
         User user = findUserById(userId);
 
         NotificationSetting setting = notificationSettingRepository
@@ -272,6 +276,90 @@ public class NotificationService {
         sendPushNotification(request);
     }
 
+    public void sendOrderCreatedNotification(Order order) {
+        PushNotificationRequest request = PushNotificationRequest.builder()
+                .userId(order.getUser().getId())
+                .title("주문이 접수되었습니다")
+                .body("주문번호: " + order.getOrderNumber() + " | " + order.getOrderItems().size() + "개 상품")
+                .data(Map.of(
+                        "type", "ORDER",
+                        "orderId", order.getId().toString(),
+                        "orderNumber", order.getOrderNumber()
+                ))
+                .build();
+
+        sendPushNotification(request);
+    }
+
+    /**
+     * 주문 상태 변경 알림 전송
+     */
+    public void sendOrderStatusNotification(Order order, OrderStatus newStatus) {
+        String message = switch (newStatus) {
+            case PAID -> "주문이 결제되었습니다.";
+            case PREPARING -> "상품 준비 중입니다.";
+            case SHIPPED -> "상품이 배송 시작되었습니다. 운송장: " +
+                    (order.getDeliveryInfo().getTrackingNumber() != null ?
+                            order.getDeliveryInfo().getTrackingNumber() : "정보 없음");
+            case DELIVERED -> "상품이 배송 완료되었습니다.";
+            case CANCELED -> "주문이 취소되었습니다.";
+            case REFUNDED -> "환불이 완료되었습니다.";
+            default -> "주문 상태가 변경되었습니다.";
+        };
+
+        PushNotificationRequest request = PushNotificationRequest.builder()
+                .userId(order.getUser().getId())
+                .title("주문 " + order.getOrderNumber())
+                .body(message)
+                .data(Map.of(
+                        "type", "ORDER_STATUS",
+                        "orderId", order.getId().toString(),
+                        "status", newStatus.name()
+                ))
+                .build();
+
+        sendPushNotification(request);
+    }
+
+    public void sendSubscriptionPausedNotification(Subscription subscription, String reason) {
+        String productName = subscription.getProduct().getName();
+
+        PushNotificationRequest request = PushNotificationRequest.builder()
+                .userId(subscription.getUser().getId())
+                .title("정기배송이 일시정지되었습니다")
+                .body(productName + " - " + reason)
+                .data(Map.of(
+                        "type", "SUBSCRIPTION_PAUSED",
+                        "subscriptionId", subscription.getId().toString(),
+                        "productId", subscription.getProduct().getId().toString(),
+                        "reason", reason
+                ))
+                .priority("high")
+                .build();
+
+        sendPushNotification(request);
+    }
+
+    public void sendSubscriptionOrderCreatedNotification(Order order, Subscription subscription){
+        String productName = subscription.getProduct().getName();
+        String cycleDisplayName = subscription.getCycle().getDisplayName();
+
+        PushNotificationRequest request = PushNotificationRequest.builder()
+                .userId(subscription.getUser().getId())
+                .title("정기배송 주문이 자동으로 생성되었습니다")
+                .body(productName + " (" + cycleDisplayName + ") | " +
+                        order.getTotalAmount() + "원 결제 완료")
+                .data(Map.of(
+                        "type", "SUBSCRIPTION_ORDER",
+                        "orderId", order.getId().toString(),
+                        "orderNumber", order.getOrderNumber(),
+                        "subscriptionId", subscription.getId().toString(),
+                        "nextDeliveryDate", subscription.getNextDeliveryDate().toString()
+                ))
+                .build();
+
+        sendPushNotification(request);
+    }
 
     private NotificationSetting createDefaultNotificationSettings(Long userId) {
         return NotificationSetting.builder()

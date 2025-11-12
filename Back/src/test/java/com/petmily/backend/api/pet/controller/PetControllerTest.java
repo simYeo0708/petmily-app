@@ -1,15 +1,13 @@
 package com.petmily.backend.api.pet.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petmily.backend.api.pet.dto.PetCreateRequest;
-import com.petmily.backend.api.pet.dto.PetResponse;
-import com.petmily.backend.api.pet.dto.PetUpdateRequest;
+import com.petmily.backend.api.pet.dto.request.PetCreateRequest;
+import com.petmily.backend.api.pet.dto.response.PetResponse;
+import com.petmily.backend.api.pet.dto.request.PetUpdateRequest;
 import com.petmily.backend.api.pet.service.PetService;
 import com.petmily.backend.domain.pet.entity.Pet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;

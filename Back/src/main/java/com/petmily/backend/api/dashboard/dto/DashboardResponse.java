@@ -2,7 +2,7 @@ package com.petmily.backend.api.dashboard.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.petmily.backend.api.pet.dto.PetSummaryResponse;
+import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
 import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import lombok.AllArgsConstructor;

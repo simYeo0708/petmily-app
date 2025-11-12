@@ -3,9 +3,13 @@ package com.petmily.backend.api.dashboard.service;
 import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.api.pet.dto.PetSummaryResponse;
+import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
 import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
+import com.petmily.backend.domain.mall.cart.repository.CartRepository;
+import com.petmily.backend.domain.mall.order.entity.Order;
+import com.petmily.backend.domain.mall.order.entity.OrderStatus;
+import com.petmily.backend.domain.mall.order.repository.OrderRepository;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.entity.User;
@@ -15,10 +19,13 @@ import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +36,8 @@ public class DashboardService {
     private final PetRepository petRepository;
     private final WalkBookingRepository walkBookingRepository;
     private final WalkerRepository walkerRepository;
+    private final OrderRepository orderRepository;
+    private final CartRepository cartRepository;
 
     private User findUserById(Long userId){
         return userRepository.findById(userId)
@@ -166,14 +175,34 @@ public class DashboardService {
     }
 
     private DashboardResponse.ShoppingOverview buildShoppingOverview(Long userId) {
-        // 향후 주문 관련 기능 구현 시 연동
+        User user = findUserById(userId);
+
+        // 주문 통계
+        List<Order> allOrders = orderRepository.findByUser(user, Pageable.unpaged()).getContent();
+        List<Order> pendingOrders = orderRepository.findByUserAndStatus(
+                user, OrderStatus.PENDING, Pageable.unpaged()).getContent();
+
+        // 장바구니 개수
+        int cartCount = cartRepository.findByUser(user).size();
+
+        BigDecimal totalSpent = allOrders.stream()
+                .filter(order -> order.getStatus() != OrderStatus.CANCELED)
+                .map(Order::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        LocalDateTime lastOrderDate = allOrders.stream()
+                .map(Order::getOrderedAt)
+                .filter(Objects::nonNull)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
         return DashboardResponse.ShoppingOverview.builder()
-                .totalOrders(0)
-                .pendingOrders(0)
-                .totalSpent(0.0)
-                .activeSubscriptions(0)
-                .cartItemCount(0)
-                .lastOrderDate(null)
+                .totalOrders(allOrders.size())
+                .pendingOrders(pendingOrders.size())
+                .totalSpent(totalSpent.doubleValue())
+                .activeSubscriptions(0) // 구독 기능 없으면 0
+                .cartItemCount(cartCount)
+                .lastOrderDate(lastOrderDate)
                 .build();
     }
 

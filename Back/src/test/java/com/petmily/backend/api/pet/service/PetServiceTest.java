@@ -1,10 +1,10 @@
 package com.petmily.backend.api.pet.service;
 
 import com.petmily.backend.api.exception.CustomException;
-import com.petmily.backend.api.pet.dto.PetCreateRequest;
-import com.petmily.backend.api.pet.dto.PetResponse;
-import com.petmily.backend.api.pet.dto.PetSearchRequest;
-import com.petmily.backend.api.pet.dto.PetUpdateRequest;
+import com.petmily.backend.api.pet.dto.request.PetCreateRequest;
+import com.petmily.backend.api.pet.dto.response.PetResponse;
+import com.petmily.backend.api.pet.dto.request.PetSearchRequest;
+import com.petmily.backend.api.pet.dto.request.PetUpdateRequest;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.entity.Role;
@@ -20,7 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
