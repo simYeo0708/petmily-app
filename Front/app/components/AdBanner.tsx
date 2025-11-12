@@ -15,9 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { rf, wp, hp } from '../utils/responsive';
 import { ADVERTISEMENTS, type Advertisement } from '../data';
 
-const { width } = Dimensions.get('window');
-const BANNER_WIDTH = width; // 화면 전체 너비
-const CARD_WIDTH = width - 70; // 카드 실제 너비 (섹션 패딩 20 + 슬라이드 패딩 5 = 25씩)
+const { width, height } = Dimensions.get('window');
+const BANNER_WIDTH = width;
+const CARD_WIDTH = width;
+const CARD_HEIGHT = Math.min(height * 0.24, 220);
 const AUTO_SCROLL_INTERVAL = 4000; // 4초마다 자동 넘김
 
 const adData: Advertisement[] = ADVERTISEMENTS;
@@ -103,7 +104,8 @@ const AdBanner: React.FC = () => {
       </ScrollView>
 
       {/* 페이지 인디케이터 */}
-      <View style={styles.pagination}>
+      <View style={styles.paginationContainer}>
+        <View style={styles.pagination}>
         {adData.map((_, index) => (
           <View
             key={index}
@@ -114,25 +116,33 @@ const AdBanner: React.FC = () => {
           />
         ))}
       </View>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: 0,
     marginBottom: 0,
-    marginTop: 5,
+  },
+  paginationContainer: {
+    position: 'absolute',
+    top: hp(12),
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
   },
   scrollContent: {
     paddingHorizontal: 0,
   },
   slideContainer: {
     width: BANNER_WIDTH,
-    paddingHorizontal: 5,
   },
   adCard: {
     width: CARD_WIDTH,
-    height: hp(110),
+    height: CARD_HEIGHT,
     borderRadius: 0,
     padding: wp(18),
     flexDirection: 'row',
@@ -166,11 +176,13 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
   },
   pagination: {
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 999,
+    paddingHorizontal: wp(12),
+    paddingVertical: hp(4),
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: hp(10),
-    paddingVertical: hp(5),
+    justifyContent: 'center',
   },
   paginationDot: {
     width: wp(6),

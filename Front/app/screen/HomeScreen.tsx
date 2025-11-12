@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GuideStepModal from "../components/GuideStepModal";
 import { PetMallContent } from "../components/PetMallContent";
 import { PetWalkerContent } from "../components/PetWalkerContent";
-import PetInfoHeader from "../components/PetInfoHeader";
 import AdBanner from "../components/AdBanner";
 import ServiceGuide from "../components/ServiceGuide";
 import WalkerRecruitmentModal from "../components/WalkerRecruitmentModal";
@@ -156,6 +156,10 @@ const HomeScreen = () => {
 
   const handleNavigateToHelper = () => {
     navigation.navigate("HelperDashboard");
+  };
+
+  const handleNavigateToMyPet = () => {
+    navigation.navigate("Main", { initialTab: "MyPetTab" });
   };
 
   const handleJoinHelper = async () => {
@@ -519,8 +523,7 @@ const HomeScreen = () => {
       {/* 메인 콘텐츠 영역 */}
       <SafeAreaView
         style={[homeScreenStyles.root]}
-        edges={['bottom', 'left', 'right']}>
-        
+        edges={['left', 'right']}>
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
           {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}
@@ -529,7 +532,7 @@ const HomeScreen = () => {
               style={[
                 headerStyles.header,
                 { 
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  backgroundColor: "#FFFFFF",
                 },
               ]}>
               {/* 로고 */}
@@ -555,6 +558,20 @@ const HomeScreen = () => {
                     }}
                   />
                 </View>
+                <TouchableOpacity
+                  onPress={handleNavigateToMyPet}
+                  style={headerStyles.petAvatar}>
+                  {petInfo?.hasPhoto && petInfo.photoUri ? (
+                    <Image
+                      source={{ uri: petInfo.photoUri }}
+                      style={headerStyles.petAvatarImage}
+                    />
+                  ) : (
+                    <Text style={headerStyles.petAvatarPlaceholder}>
+                      {petInfo?.name ? petInfo.name.slice(0, 1) : "🐾"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -611,19 +628,14 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         scrollEnabled={!showGuideOverlay}
       >
-        {/* ========== 반려동물 정보 헤더 (스크롤 가능) ========== */}
         {!showGuideOverlay && (
-          <View style={homeScreenStyles.section}>
-            <Text style={homeScreenStyles.sectionTitle}>🐾 내 반려동물</Text>
-            <PetInfoHeader />
-          </View>
-        )}
-
+        <View style={homeScreenStyles.fullWidthBanner}>
+          <AdBanner />
+        </View>
+      )}
         <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>서비스 선택</Text>
-          
           {/* 디버깅 버튼들 (임시) */}
-          <View style={{ flexDirection: 'row', marginBottom: 10, gap: 10 }}>
+          <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
             <TouchableOpacity 
               style={{ backgroundColor: '#ff6b6b', padding: 8, borderRadius: 4 }}
               onPress={clearGuideData}
@@ -637,6 +649,7 @@ const HomeScreen = () => {
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
           </View>
+          {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
             {(["PW", "PM"] as const).map((mode) => (
               <Animated.View
@@ -683,79 +696,8 @@ const HomeScreen = () => {
             ))}
           </View>
         </View>
-
-        {/* 헬퍼 참여 제안 */}
-        {!helperStatus.isHelper && serviceMode === "PW" && (
-          <View style={modalStyles.modalBox}>
-            <Text style={modalStyles.modalTitle}>
-              🤝 워커로 참여하시겠어요?
-            </Text>
-            <Text style={modalStyles.modalBody}>
-              다른 반려동물 가족들을 도와주는 워커가 되어보세요!
-            </Text>
-            <View style={modalStyles.modalButtonsRow}>
-              <Pressable
-                style={[
-                  modalStyles.choiceBtn,
-                  modalStyles.primaryBtn,
-                  {
-                    backgroundColor: currentMode.color,
-                    borderColor: currentMode.color,
-                    flex: 1,
-                  },
-                ]}
-                onPress={handleJoinHelper}>
-                <Text
-                  style={[
-                    modalStyles.choiceBtnText,
-                    modalStyles.primaryBtnText,
-                  ]}>
-                  네, 참여할게요
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {/* 헬퍼 대시보드 바로가기 */}
-        {helperStatus.isHelper && serviceMode === "PW" && (
-          <View style={modalStyles.modalBox}>
-            <Text style={modalStyles.modalTitle}>🎉 워커로 활동 중입니다!</Text>
-            <Text style={modalStyles.modalBody}>
-              워커 대시보드에서 수익과 매칭 현황을 확인해보세요.
-            </Text>
-            <View style={modalStyles.modalButtonsRow}>
-              <Pressable
-                style={[
-                  modalStyles.choiceBtn,
-                  modalStyles.primaryBtn,
-                  {
-                    backgroundColor: currentMode.color,
-                    borderColor: currentMode.color,
-                  },
-                ]}
-                onPress={handleNavigateToHelper}>
-                <Text
-                  style={[
-                    modalStyles.choiceBtnText,
-                    modalStyles.primaryBtnText,
-                  ]}>
-                  워커 대시보드 보기
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
+        
         {/* ========== 광고 배너 (자동 슬라이더) ========== */}
-        {!showGuideOverlay && (
-          <View style={homeScreenStyles.section}>
-            <Text style={homeScreenStyles.sectionTitle}>🎁 오늘의 특가</Text>
-            <AdBanner />
-          </View>
-        )}
-
-        {serviceMode === "PW" ? (
           <PetWalkerContent 
             currentMode={currentMode}
             walkRequestButtonRef={walkRequestButtonRef}
@@ -763,14 +705,12 @@ const HomeScreen = () => {
             showGuideOverlay={showGuideOverlay}
             currentGuideStep={currentStepData?.id}
           />
-        ) : (
           <View ref={shopButtonRef}>
             <PetMallContent
               currentMode={currentMode}
               onCategoryPress={handleCategoryPress}
             />
           </View>
-        )}
       </ScrollView>
 
       {/* 워커 모집 모달 */}

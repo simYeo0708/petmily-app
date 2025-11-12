@@ -17,39 +17,6 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
   return (
     <>
       <View style={homeScreenStyles.section}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 15,
-          }}>
-          <Text style={homeScreenStyles.sectionTitle}>🏪 카테고리별 쇼핑</Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "rgba(197, 145, 114, 0.1)",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "rgba(197, 145, 114, 0.3)",
-            }}
-            onPress={() => onCategoryPress?.("전체")}
-            activeOpacity={0.7}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: "#C59172",
-              }}>
-              전체 보기
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <CategoryList onCategoryPress={onCategoryPress} />
-      </View>
-
-      <View style={homeScreenStyles.section}>
         <Text style={homeScreenStyles.sectionTitle}>🔥 인기 상품 TOP 10</Text>
         <CardBox
           icon="🏆"

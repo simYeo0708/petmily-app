@@ -183,8 +183,38 @@ class PetServiceClass {
   async getPrimaryPet(): Promise<PetInfo | null> {
     try {
       console.log('Getting primary pet...');
-      
-      // 먼저 공개 API로 시도
+
+      // 1) 인증 토큰이 있으면 우선 사용자별(primary) API 호출
+      const headers = await this.getHeaders();
+      const hasAuth = Boolean(headers['Authorization']);
+
+      if (hasAuth) {
+        try {
+          const response = await fetch(`${this.baseUrl}/primary`, {
+            method: 'GET',
+            headers,
+          });
+
+          if (response.status === 404) {
+            console.log('Primary pet not found for authenticated user, falling back to local data');
+            return await this.getPetFromLocal();
+          }
+
+          if (response.ok) {
+            const data = await response.json() as PetInfo | null;
+            console.log('Primary pet data from authenticated API:', data);
+            return data;
+          }
+
+          console.log('Authenticated API returned non-ok status:', response.status);
+        } catch (authError) {
+          console.log('Authenticated API failed:', authError);
+        }
+      } else {
+        console.log('No auth token found, skipping authenticated primary pet API');
+      }
+
+      // 2) 인증 정보가 없거나 실패한 경우 공개(primary) API 시도 (개발용)
       try {
         const response = await fetch(`${this.baseUrl}/public/primary`, {
           method: 'GET',
@@ -195,34 +225,14 @@ class PetServiceClass {
           console.log('Primary pet data from public API:', data);
           return data;
         }
+
+        console.log('Public API returned non-ok status:', response.status);
       } catch (publicError) {
-        console.log('Public API failed, trying authenticated API:', publicError);
-      }
-      
-      // 공개 API 실패 시 인증된 API 시도
-      try {
-        const headers = await this.getHeaders();
-        const response = await fetch(`${this.baseUrl}/primary`, {
-          method: 'GET',
-          headers,
-        });
-
-        if (response.status === 404) {
-          console.log('Primary pet not found, using local data');
-          return await this.getPetFromLocal();
-        }
-
-        if (response.ok) {
-          const data = await response.json() as PetInfo | null;
-          console.log('Primary pet data from authenticated API:', data);
-          return data;
-        }
-      } catch (authError) {
-        console.log('Authenticated API failed:', authError);
+        console.log('Public API failed:', publicError);
       }
 
-      // 모든 API 실패 시 로컬 데이터 사용
-      console.log('All APIs failed, using local data');
+      // 3) 모든 API 실패 시 로컬 데이터 사용
+      console.log('All primary pet APIs failed, using local data');
       return await this.getPetFromLocal();
     } catch (error) {
       console.error('Failed to get primary pet:', error);

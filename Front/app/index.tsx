@@ -52,7 +52,7 @@ export default function App() {
         console.log('[DEV] 앱 초기화 중...');
         // 자동 로그인 비활성화 - 수동으로 로그인하도록 함
         // await DevTools.loginAsAsdf();
-        console.log('[DEV] ✅ 앱 초기화 완료');
+        console.log('[DEV] 앱 초기화 완료');
       } catch (error) {
         console.error('[DEV] 앱 초기화 실패:', error);
       } finally {
@@ -71,7 +71,7 @@ export default function App() {
 
   return (
     <>
-    <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
+    <StatusBar barStyle="dark-content" backgroundColor={"#FFFFFF"}/>
       {/* 앱 메인 콘텐츠 */}
       <View style={{ flex: 1 }}>
         <PortalProvider>

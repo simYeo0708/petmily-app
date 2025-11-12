@@ -24,7 +24,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 
 const MyPetScreen = () => {
-  const { petInfo, updatePetInfo, refreshPetInfo } = usePet();
+  const { petInfo, updatePetInfo } = usePet();
 
   const localStyles = StyleSheet.create({
     testButtonContainer: {
@@ -129,12 +129,6 @@ const MyPetScreen = () => {
       }
     }
   }, [petInfo]); // petInfo가 변경될 때만 실행
-
-  // 화면이 마운트될 때 1회만 서버에서 최신 데이터 가져오기
-  useEffect(() => {
-    console.log('🚀 MyPetScreen: Component mounted, loading data');
-    refreshPetInfo(true); // 강제 갱신
-  }, []); // 빈 배열로 1회만 실행
 
   const pickImage = () => {
     setShowImageModal(true);

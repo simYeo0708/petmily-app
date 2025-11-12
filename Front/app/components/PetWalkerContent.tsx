@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, ScrollView, Alert, StyleSheet, Image } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Text, View, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,6 +10,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../index";
 import { usePet } from "../contexts/PetContext";
 import { WALKING_REQUESTS, CURRENT_WALKING, type WalkingRequest } from "../data";
+
+type RequestTabKey = 'mine' | 'pending' | 'accepted' | 'in_progress' | 'completed';
+
+const WALKING_REQUEST_TABS: { key: RequestTabKey; label: string }[] = [
+  { key: 'mine', label: '내 요청' },
+  { key: 'pending', label: '대기중' },
+  { key: 'accepted', label: '수락됨' },
+  { key: 'in_progress', label: '진행중' },
+  { key: 'completed', label: '완료' },
+];
 
 type PetWalkerContentNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -38,6 +48,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   const [walkingRequests, setWalkingRequests] = useState<WalkingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentWalking, setCurrentWalking] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<RequestTabKey>('pending');
 
   useEffect(() => {
     loadWalkingRequests();
@@ -97,6 +108,10 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
     navigation.navigate('WalkingMap');
   };
 
+  const handleViewAllRequests = () => {
+    navigation.navigate('MatchingScreen');
+  };
+
   const handleAcceptRequest = (requestId: string) => {
     Alert.alert(
       '요청 수락',
@@ -147,6 +162,25 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       default: return '🐾';
     }
   };
+
+  const filteredRequests = useMemo(() => {
+    if (activeTab === 'mine') {
+      return walkingRequests.filter((request) => request.isMyRequest);
+    }
+
+    const statusKey = activeTab as Exclude<RequestTabKey, 'mine'>;
+    return walkingRequests.filter((request) => request.status === statusKey);
+  }, [walkingRequests, activeTab]);
+
+  const visibleRequests = useMemo(() => {
+    const sorted = [...filteredRequests].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return sorted.slice(0, 4);
+  }, [filteredRequests]);
+
+  const hasMoreRequests = filteredRequests.length > visibleRequests.length;
 
   return (
     <>
@@ -265,13 +299,48 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>로딩 중...</Text>
           </View>
-        ) : walkingRequests.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>등록된 산책 요청이 없습니다</Text>
-          </View>
         ) : (
-          <ScrollView style={styles.requestsList} showsVerticalScrollIndicator={false}>
-            {walkingRequests.map((request) => (
+          <>
+            <View style={styles.tabBar}>
+              {WALKING_REQUEST_TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <TouchableOpacity
+                    key={tab.key}
+                    style={[
+                      styles.tabButton,
+                      isActive && {
+                        backgroundColor: currentMode.color,
+                        borderColor: currentMode.color,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveTab(tab.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.tabButtonLabel,
+                        isActive && styles.tabButtonLabelActive,
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {visibleRequests.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {activeTab === 'mine'
+                    ? '내가 등록한 요청이 없습니다'
+                    : '해당 상태의 요청이 없습니다'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.requestsList}>
+                {visibleRequests.map((request) => (
               <View key={request.id} style={[
                 styles.requestCard,
                 request.isMyRequest && styles.myRequestCard
@@ -333,8 +402,30 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
                   </TouchableOpacity>
                 )}
               </View>
-            ))}
-          </ScrollView>
+                ))}
+              </View>
+            )}
+
+            {hasMoreRequests && (
+              <TouchableOpacity
+                style={[
+                  styles.moreButton,
+                  { borderColor: currentMode.color },
+                ]}
+                onPress={handleViewAllRequests}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.moreButtonText,
+                    { color: currentMode.color },
+                  ]}
+                >
+                  전체 {filteredRequests.length}건 보기
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
     </>
@@ -359,8 +450,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   requestsList: {
-    maxHeight: 400,
-    marginBottom: 30
+    marginBottom: 20,
   },
   requestCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -512,6 +602,41 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  tabButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E2E2E2',
+    backgroundColor: '#FFFFFF',
+  },
+  tabButtonLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  tabButtonLabelActive: {
+    color: '#FFFFFF',
+  },
+  moreButton: {
+    alignSelf: 'center',
+    marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  },
+  moreButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   // 현재 워킹 관련 스타일
   currentWalkingCard: {

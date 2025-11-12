@@ -7,6 +7,7 @@ export const homeScreenStyles = StyleSheet.create({
   },
   root: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
   },
   content: {
     flex: 1,
@@ -15,6 +16,11 @@ export const homeScreenStyles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+  },
+  fullWidthBanner: {
+    width: "100%",
+    paddingHorizontal: 0,
+    marginBottom: 24,
   },
   section: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -163,7 +169,7 @@ export const homeScreenStyles = StyleSheet.create({
 export const headerStyles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 25,        // 상단 여백 제거
+    paddingVertical: 12,
     paddingBottom: 16,
     marginBottom: 20,         // 마진 제거
     flexDirection: "row",
@@ -203,6 +209,25 @@ export const headerStyles = StyleSheet.create({
     gap: 8,
     flex: 1,
     marginLeft: 12,
+  },
+  petAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F6F1ED",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  petAvatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 20,
+  },
+  petAvatarPlaceholder: {
+    fontSize: 16,
+    color: "#C59172",
+    fontWeight: "600",
   },
   searchBar: {
     flexDirection: "row",
@@ -389,186 +414,310 @@ export const navigationStyles = StyleSheet.create({
 });
 
 export const helperDashboardStyles = StyleSheet.create({
+  headerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1ECE8",
+  },
   backButton: {
-    padding: 8,
-    borderRadius: 8,
-  },
-  backButtonText: {
-    fontSize: 20,
-    color: "#C59172",
-    fontWeight: "bold",
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  profileCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  profileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#F0F0F0",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    backgroundColor: "#F6F1ED",
   },
-  avatarText: {
-    fontSize: 24,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#4A4A4A",
-    marginBottom: 4,
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: "#FF8C00",
+  backIcon: {
+    fontSize: 18,
+    color: "#C59172",
     fontWeight: "600",
   },
-  walkCountText: {
-    fontSize: 14,
-    color: "#888",
-  },
-  earningsCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTitle: {
+  headerTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#4A4A4A",
-    marginBottom: 16,
+    fontWeight: "700",
+    color: "#3A2E2A",
   },
-  earningsGrid: {
+  headerSpacer: {
+    width: 40,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    gap: 24,
+  },
+  heroCard: {
+    backgroundColor: "#2F293E",
+    borderRadius: 24,
+    padding: 24,
+  },
+  heroLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  heroAmount: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "700",
+  },
+  heroMetaRow: {
     flexDirection: "row",
-    gap: 16,
-  },
-  earningsItem: {
-    flex: 1,
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#F8F8F8",
-    borderRadius: 12,
+    justifyContent: "space-between",
+    marginTop: 20,
   },
-  earningsLabel: {
+  heroMetaItem: {
+    flex: 1,
+  },
+  heroMetaLabel: {
     fontSize: 12,
-    color: "#888",
+    color: "rgba(255,255,255,0.6)",
     marginBottom: 4,
   },
-  earningsAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#C59172",
-  },
-  statsCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#F8F8F8",
-    borderRadius: 12,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#4A4A4A",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#888",
-  },
-  matchingButton: {
-    backgroundColor: "#C59172",
-    borderRadius: 16,
-    padding: 18,
-    alignItems: "center",
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  matchingButtonText: {
-    color: "#FFF",
+  heroMetaValue: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
-  quickActionsCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+  heroMetaDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    marginHorizontal: 18,
   },
-  actionGrid: {
+  heroBadgeRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 20,
+  },
+  heroBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    color: "#FFFFFF",
+    fontSize: 12,
+  },
+  metricRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
-  actionButton: {
+  metricCard: {
+    flexBasis: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  metricIcon: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  metricValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3A2E2A",
+    marginBottom: 6,
+  },
+  metricLabel: {
+    fontSize: 12,
+    color: "#8E857F",
+  },
+  chartCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  chartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#3A2E2A",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#8E857F",
+    marginTop: 4,
+  },
+  chartHighlight: {
+    fontSize: 12,
+    color: "#C59172",
+    fontWeight: "600",
+  },
+  chartBody: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 16,
+    minHeight: 160,
+  },
+  chartColumn: {
     flex: 1,
     alignItems: "center",
-    padding: 16,
-    backgroundColor: "#F8F8F8",
-    borderRadius: 12,
   },
-  actionIcon: {
-    fontSize: 20,
-    marginBottom: 8,
+  chartValueBadge: {
+    marginBottom: 6,
   },
-  actionLabel: {
+  chartValueText: {
     fontSize: 12,
-    color: "#4A4A4A",
-    fontWeight: "500",
+    color: "#8E857F",
+  },
+  chartBar: {
+    width: 28,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    backgroundColor: "#C59172",
+  },
+  chartLabel: {
+    fontSize: 12,
+    color: "#8E857F",
+    marginTop: 6,
+  },
+  tasksCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  sectionLink: {
+    fontSize: 12,
+    color: "#C59172",
+    fontWeight: "600",
+  },
+  taskItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+  },
+  taskDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1ECE8",
+  },
+  taskIconBubble: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F6F1ED",
+    marginRight: 14,
+  },
+  taskIcon: {
+    fontSize: 20,
+  },
+  taskInfo: {
+    flex: 1,
+  },
+  taskTime: {
+    fontSize: 12,
+    color: "#8E857F",
+    marginBottom: 4,
+  },
+  taskPet: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3A2E2A",
+    marginBottom: 4,
+  },
+  taskNote: {
+    fontSize: 12,
+    color: "#8E857F",
+  },
+  taskChevron: {
+    fontSize: 20,
+    color: "#D0C4BC",
+    paddingHorizontal: 6,
+  },
+  reviewCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  reviewItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingVertical: 16,
+  },
+  reviewDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1ECE8",
+  },
+  reviewAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: "#F6F1ED",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  reviewAvatarText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#C59172",
+  },
+  reviewInfo: {
+    flex: 1,
+  },
+  reviewHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#3A2E2A",
+  },
+  reviewRating: {
+    fontSize: 12,
+    color: "#C59172",
+    fontWeight: "600",
+  },
+  reviewComment: {
+    fontSize: 13,
+    color: "#5B514C",
+    marginBottom: 6,
+  },
+  reviewDate: {
+    fontSize: 11,
+    color: "#8E857F",
   },
 });
 

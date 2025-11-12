@@ -112,8 +112,11 @@ const PetInfoInputScreen = () => {
         const savedPet = await PetService.createPet(petInfoForApi);
         console.log('반려동물 정보 저장 성공:', savedPet);
         
-        // Context 업데이트하여 전체 앱에 반영
-        await updatePetInfo(petInfoForApi);
+        // Context 업데이트하여 전체 앱에 반영 (서버가 반환한 값 우선 사용)
+        await updatePetInfo({
+          ...petInfoForApi,
+          ...savedPet,
+        });
         
         // My Pet 탭으로 이동
         navigation.navigate('Main', { initialTab: 'MyPetTab' });
@@ -442,7 +445,16 @@ const PetInfoInputScreen = () => {
             <View style={styles.placeholder} />
           </View>
 
-          {/* 진행 상황 */}
+          
+
+          {/* 단계별 콘텐츠 */}
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContentContainer}>
+              
+            {/* 진행 상황 */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
               <View
@@ -457,12 +469,6 @@ const PetInfoInputScreen = () => {
             </Text>
           </View>
 
-          {/* 단계별 콘텐츠 */}
-          <ScrollView 
-            style={styles.content} 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContentContainer}>
             {/* 단계 제목 및 설명 */}
             <View style={styles.stepHeader}>
               <Text style={styles.stepTitle}>{currentStepData.title}</Text>
@@ -519,6 +525,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    marginTop: -60,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
@@ -538,7 +545,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
+
   },
   progressBar: {
     height: 6,
