@@ -18,7 +18,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
 
     Page<Subscription> findByUserAndStatus(User user, SubscriptionStatus status, Pageable pageable);
 
-    List<Subscription> findByStatusAndNextDeliveryDate(Subscription status, LocalDate nextDeliveryDate);
+    List<Subscription> findByStatusAndNextDeliveryDate(SubscriptionStatus status, LocalDate nextDeliveryDate);
 
     @Query("SELECT s FROM Subscription s WHERE s.user.id = :userId AND s.status = :status")
     List<Subscription> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") SubscriptionStatus status);

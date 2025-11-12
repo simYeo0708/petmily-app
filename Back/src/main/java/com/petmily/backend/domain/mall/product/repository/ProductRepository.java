@@ -7,6 +7,7 @@ import com.petmily.backend.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -18,6 +19,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryAndStatus(ProductCategory category, ProductStatus status, Pageable pageable);
 
     // 상품명 검색
+    @Query("SELECT p FROM Product p WHERE (p.name LIKE %:keyword% OR p.description LIKE %:keyword%) AND p.status = :status")
     Page<Product> searchByKeyword(@Param("keyword") String keyword,
                                   @Param("status") ProductStatus status,
                                   Pageable pageable);

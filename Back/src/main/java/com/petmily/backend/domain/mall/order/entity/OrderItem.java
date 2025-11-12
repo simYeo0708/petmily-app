@@ -1,8 +1,7 @@
 package com.petmily.backend.domain.mall.order.entity;
 
 import com.petmily.backend.domain.mall.product.entity.Product;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -16,17 +15,27 @@ import java.math.BigDecimal;
 @Builder
 public class OrderItem {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "order_item_id")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @Column(nullable = false)
     private Integer quantity;
 
-    private BigDecimal price;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;  // 주문 당시의 단가
 
-    private BigDecimal totalPrice;
+    @Column(name = "total_price", precision = 10, scale = 2)
+    private BigDecimal totalPrice;  // quantity * price
 
     public void calculateTotalPrice() {
         this.totalPrice = this.price.multiply(BigDecimal.valueOf(this.quantity));
