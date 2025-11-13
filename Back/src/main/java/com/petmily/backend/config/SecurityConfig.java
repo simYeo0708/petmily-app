@@ -101,7 +101,11 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/pets/**"),  // 디버그용: 모든 펫 API 허용
                                 new AntPathRequestMatcher("/map/**"),
                                 new AntPathRequestMatcher("/notifications/**"),
-                                new AntPathRequestMatcher("/auth/test/**")
+                                new AntPathRequestMatcher("/search/**"),
+                                new AntPathRequestMatcher("/auth/test/**"),
+                                new AntPathRequestMatcher("/api/products/**", "GET"),
+                                new AntPathRequestMatcher("/api/reviews/products/**", "GET"),
+                                new AntPathRequestMatcher("/api/reviews/**", "GET")
                         ).permitAll().anyRequest().authenticated()
                 )
 

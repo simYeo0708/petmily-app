@@ -53,6 +53,7 @@ public enum ErrorCode {
     CART_ITEM_ALREADY_EXISTS(CONFLICT, "이미 장바구니에 있는 상품입니다."),
     INVALID_CART_QUANTITY(BAD_REQUEST, "올바르지 않은 수량입니다."),
     CART_IS_EMPTY(BAD_REQUEST, "장바구니가 비어있습니다."),
+    CART_NOT_FOUND(NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
 
     // order
     ORDER_NOT_FOUND(NOT_FOUND, "주문을 찾을 수 없습니다."),
@@ -75,6 +76,10 @@ public enum ErrorCode {
     SUBSCRIPTION_ITEMS_REQUIRED(BAD_REQUEST, "정기배송할 상품을 선택해주세요."),
     INVALID_FIRST_DELIVERY_DATE(BAD_REQUEST, "첫 배송일이 올바르지 않습니다."),
     SUBSCRIPTION_COMPLETED(BAD_REQUEST, "완료된 정기배송입니다."),
+    SUBSCRIPTION_NOT_AVAILABLE(BAD_REQUEST, "이 상품은 정기배송이 불가능합니다."),
+    SUBSCRIPTION_MULTIPLE_ITEMS_NOT_ALLOWED(BAD_REQUEST, "정기배송은 단일 상품만 가능합니다."),
+    SUBSCRIPTION_CYCLE_REQUIRED(BAD_REQUEST, "정기배송 주기를 선택해주세요."),
+    SUBSCRIPTION_CYCLE_NOT_AVAILABLE(BAD_REQUEST, "선택한 배송 주기는 지원하지 않습니다."),
 
     // return
     RETURN_NOT_FOUND(NOT_FOUND, "반품 요청을 찾을 수 없습니다."),
