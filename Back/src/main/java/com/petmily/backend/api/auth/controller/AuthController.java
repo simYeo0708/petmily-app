@@ -39,7 +39,7 @@ public class AuthController {
         TokenResponse token = authService.login(loginRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(token);
     }
-
+    
     @PostMapping("/login")
     public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
         TokenResponse token = authService.login(request);

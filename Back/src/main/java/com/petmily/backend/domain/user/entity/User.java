@@ -1,7 +1,7 @@
 package com.petmily.backend.domain.user.entity;
 
 import com.petmily.backend.domain.common.entity.BaseTimeEntity;
-import com.petmily.backend.domain.order.entity.Order;
+import com.petmily.backend.domain.mall.order.entity.Order;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.walker.entity.WalkerProfile;
 import jakarta.persistence.*;

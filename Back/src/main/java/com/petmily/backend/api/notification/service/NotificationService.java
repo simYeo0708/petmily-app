@@ -2,6 +2,9 @@ package com.petmily.backend.api.notification.service;
 
 import com.petmily.backend.api.notification.dto.DismissNotificationRequest;
 import com.petmily.backend.api.notification.dto.NotificationResponse;
+import com.petmily.backend.domain.mall.order.entity.Order;
+import com.petmily.backend.domain.mall.order.entity.OrderStatus;
+import com.petmily.backend.domain.mall.subscription.entity.Subscription;
 import com.petmily.backend.domain.notification.entity.Notification;
 import com.petmily.backend.domain.notification.entity.UserNotificationSetting;
 import com.petmily.backend.domain.notification.enums.NotificationDismissType;
@@ -112,6 +115,38 @@ public class NotificationService {
         userNotificationSettingRepository.deleteAll(expiredSettings);
         
         log.info("만료된 알림 숨기기 설정 {}개를 정리했습니다.", expiredSettings.size());
+    }
+    
+    /**
+     * Mall 모듈 연동: 주문 생성 알림 (현재는 로그만 남김)
+     */
+    public void sendOrderCreatedNotification(Order order) {
+        log.info("[Notification] 주문 생성 알림 - 사용자:{}, 주문번호:{}, 상품수:{}",
+                order.getUser().getId(), order.getOrderNumber(), order.getOrderItems().size());
+    }
+    
+    /**
+     * Mall 모듈 연동: 주문 상태 변경 알림 (현재는 로그만 남김)
+     */
+    public void sendOrderStatusNotification(Order order, OrderStatus newStatus) {
+        log.info("[Notification] 주문 상태 변경 - 사용자:{}, 주문번호:{}, 상태:{}",
+                order.getUser().getId(), order.getOrderNumber(), newStatus);
+    }
+    
+    /**
+     * Mall 모듈 연동: 정기배송 일시정지 알림 (현재는 로그만 남김)
+     */
+    public void sendSubscriptionPausedNotification(Subscription subscription, String reason) {
+        log.info("[Notification] 정기배송 일시정지 - 사용자:{}, 상품:{}, 사유:{}",
+                subscription.getUser().getId(), subscription.getProduct().getId(), reason);
+    }
+    
+    /**
+     * Mall 모듈 연동: 정기배송 주문 생성 알림 (현재는 로그만 남김)
+     */
+    public void sendSubscriptionOrderCreatedNotification(Order order, Subscription subscription) {
+        log.info("[Notification] 정기배송 주문 생성 - 사용자:{}, 주문번호:{}, 구독ID:{}",
+                subscription.getUser().getId(), order.getOrderNumber(), subscription.getId());
     }
     
     /**
