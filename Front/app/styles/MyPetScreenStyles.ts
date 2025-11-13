@@ -24,13 +24,21 @@ export const myPetScreenStyles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    // elevation: 3,
   },
-  logo: {
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logoIcon: {
+    tintColor: '#FFFFFF',
+  },
+  logoText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
@@ -408,6 +416,7 @@ export const myPetScreenStyles = StyleSheet.create({
   },
   speciesContainer: {
     flexDirection: 'row',
+    justifyContent:'space-around',
     flexWrap: 'wrap',
     gap: 10,
   },
@@ -426,8 +435,7 @@ export const myPetScreenStyles = StyleSheet.create({
     borderColor: '#C59172',
   },
   speciesIcon: {
-    fontSize: 24,
-    marginBottom: 5,
+    marginBottom: 6,
   },
   speciesLabel: {
     fontSize: 14,
@@ -478,6 +486,9 @@ export const myPetScreenStyles = StyleSheet.create({
   genderButtonSelected: {
     backgroundColor: '#C59172',
     borderColor: '#C59172',
+  },
+  genderIcon: {
+    marginBottom: 6,
   },
   genderLabel: {
     fontSize: 16,

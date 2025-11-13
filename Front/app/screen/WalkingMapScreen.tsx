@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
+import { IconImage } from '../components/IconImage';
 import MapService, { MapConfigResponse, LocationResponse } from '../services/MapService';
 import KakaoMapView, { KakaoMapViewHandle } from '../components/KakaoMapView';
 import { KAKAO_MAP_API_KEY } from '../config/api';
@@ -450,7 +451,10 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
 
               <View style={styles.topModalHeader}>
                 <View style={styles.topModalTitleContainer}>
-                  <Text style={styles.topModalTitle}>🚶‍♂️ 현재 산책 중</Text>
+                  <View style={styles.topModalTitleRow}>
+                    <IconImage name="walker" size={18} style={styles.topModalTitleIcon} />
+                    <Text style={styles.topModalTitle}>현재 산책 중</Text>
+                  </View>
                   {__DEV__ && (
                     <Text style={{ fontSize: 10, color: '#999' }}>
                       드래그 상태: {isDragging ? '활성' : '비활성'}
@@ -552,7 +556,10 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           <View style={styles.guideOverlay}>
             <View style={styles.guideContent}>
               <View style={styles.guideMessage}>
-                <Text style={styles.guideTitle}>🚶‍♂️ 산책 요청하기</Text>
+                <View style={styles.guideTitleRow}>
+                  <IconImage name="walker" size={18} style={styles.guideTitleIcon} />
+                  <Text style={styles.guideTitle}>산책 요청하기</Text>
+                </View>
                 <Text style={styles.guideDescription}>
                   아래 버튼을 눌러 워커와 매칭해보세요!
                 </Text>
@@ -849,6 +856,15 @@ const styles = StyleSheet.create({
   guideMessage: {
     alignItems: 'center',
     marginBottom: 30,
+  },
+  guideTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  guideTitleIcon: {
+    width: 20,
+    height: 20,
   },
   guideTitle: {
     fontSize: 22,
@@ -1148,6 +1164,15 @@ const styles = StyleSheet.create({
   },
   topModalTitleContainer: {
     flex: 1,
+  },
+  topModalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  topModalTitleIcon: {
+    width: 18,
+    height: 18,
   },
   topModalTitle: {
     fontSize: 16,

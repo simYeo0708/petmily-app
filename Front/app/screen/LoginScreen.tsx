@@ -19,6 +19,8 @@ import {
 import { RootStackParamList } from "../index";
 import AuthService from "../services/AuthService";
 import DevTools from "../utils/DevTools";
+import { Ionicons } from "@expo/vector-icons";
+import { IconImage } from "../components/IconImage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 type ErrorModalContent = {
@@ -227,7 +229,7 @@ const LoginScreen = ({ navigation }: Props) => {
             {/* Logo Section */}
             <View style={styles.logoSection}>
               <View style={styles.logoIconPlaceholder}>
-                <Text style={styles.logoIconText}>🐾</Text>
+                <IconImage name="paw" size={36} />
               </View>
               <Text style={styles.logoTitle}>PetMily</Text>
               <Text style={styles.welcomeText}>
@@ -439,9 +441,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: "center",
     alignItems: "center",
-  },
-  logoIconText: {
-    fontSize: 50,
   },
   logoTitle: {
     fontSize: 36,

@@ -77,8 +77,17 @@ class PetServiceClass {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
+        const errorText = await response.clone().text();
+        let errorMessage = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed && typeof parsed.message === 'string') {
+            errorMessage = parsed.message;
+          }
+        } catch (_) {
+          // text가 JSON이 아닐 수 있음
+        }
+        console.warn('PetService.createPet server error:', errorMessage);
         console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
@@ -120,6 +129,17 @@ class PetServiceClass {
       }
 
       if (!response.ok) {
+        const errorText = await response.clone().text();
+        let errorMessage = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed && typeof parsed.message === 'string') {
+            errorMessage = parsed.message;
+          }
+        } catch (_) {
+          // ignore parse error
+        }
+        console.warn('PetService.updatePet server error:', errorMessage);
         console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;

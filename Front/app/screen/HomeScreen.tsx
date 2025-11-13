@@ -33,15 +33,35 @@ import {
   modalStyles,
   modeStyles,
 } from "../styles/HomeScreenStyles";
+import { IconImage, IconName } from "../components/IconImage";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  GuideStep as GuideStepType,
+  SearchResult as SearchResultType,
+  PetInfo as PetInfoType,
+} from "../types/HomeScreen";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface PetInfo {
-  name: string;
-  breed: string;
-  age: string;
-  weight: string;
-}
+type SearchResult = SearchResultType;
+
+const MODE_ICON_SOURCE_MAP: Record<string, any> = {
+  "@dog_food.png": require("../../assets/images/dog_food.png"),
+  "@dog_snack.png": require("../../assets/images/dog_snack.png"),
+  "@cat_food.png": require("../../assets/images/cat_food.png"),
+  "@cat_snack.png": require("../../assets/images/cat_snack.png"),
+  "@toy.png": require("../../assets/images/toy.png"),
+  "@toilet.png": require("../../assets/images/toilet.png"),
+  "@grooming.png": require("../../assets/images/grooming.png"),
+  "@clothing.png": require("../../assets/images/clothing.png"),
+  "@outdoor.png": require("../../assets/images/outdoor.png"),
+  "@house.png": require("../../assets/images/house.png"),
+  "@shop.png": require("../../assets/images/shop.png"),
+  "@walker.png": require("../../assets/images/walker.png"),
+};
+
+const resolveModeIconSource = (icon: string) =>
+  icon.startsWith("@") ? MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"] : null;
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -51,7 +71,7 @@ const HomeScreen = () => {
   const [serviceMode, setServiceMode] = useState<ServiceMode>("PW");
   const [searchQuery, setSearchQuery] = useState("");
   const [showWalkerModal, setShowWalkerModal] = useState(true);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showServiceGuide, setShowServiceGuide] = useState(false);
   const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
@@ -215,7 +235,7 @@ const HomeScreen = () => {
       const savedPetInfo = await AsyncStorage.getItem("petInfo");
       console.log("🔍 [DEBUG] savedPetInfo from AsyncStorage:", savedPetInfo);
       if (savedPetInfo) {
-        const petInfo: PetInfo = JSON.parse(savedPetInfo);
+        const petInfo: PetInfoType = JSON.parse(savedPetInfo);
         console.log("🔍 [DEBUG] parsed petInfo:", petInfo);
         // 필수 정보가 있는지 확인
         const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
@@ -296,24 +316,27 @@ const HomeScreen = () => {
   };
 
   // 가이드 단계별 설명 데이터
-  const guideSteps = [
+  const guideSteps: Array<GuideStepType & { iconName: IconName }> = [
     {
       id: "pet_walker_button",
-      title: "🐕 Pet Walker 서비스",
+      title: "Pet Walker 서비스",
       description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!",
       nextButtonText: "다음",
+      iconName: "walker",
     },
     {
-      id: "pet_mall_button", 
-      title: "🛒 Pet Mall 서비스",
+      id: "pet_mall_button",
+      title: "Pet Mall 서비스",
       description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!",
       nextButtonText: "다음",
+      iconName: "shop",
     },
     {
       id: "walk_booking",
-      title: "🐾 반려동물 정보 입력",
+      title: "반려동물 정보 입력",
       description: "산책 예약을 위해 먼저 반려동물 정보를\n입력해주세요!",
       nextButtonText: "정보 입력하기",
+      iconName: "paw",
     },
   ];
 
@@ -442,7 +465,7 @@ const HomeScreen = () => {
     setShowSearchResults(true);
   };
 
-  const generateSearchResults = (query: string, mode: ServiceMode) => {
+  const generateSearchResults = (query: string, mode: ServiceMode): SearchResult[] => {
     const lowerQuery = query.toLowerCase();
     
     if (mode === "PW") {
@@ -453,7 +476,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '산책 요청하기',
           description: '워커와 매칭하여 산책 서비스를 요청하세요',
-          icon: '🚶‍♂️',
+          iconName: 'walker',
           action: () => navigation.navigate('WalkingRequest'),
         },
         {
@@ -461,7 +484,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '산책 지도',
           description: '실시간 위치 추적과 산책 경로를 확인하세요',
-          icon: '🗺️',
+          iconName: 'map',
           action: () => navigation.navigate('WalkingMap'),
         },
         {
@@ -469,7 +492,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '워커 매칭',
           description: '나에게 맞는 워커를 찾아보세요',
-          icon: '👥',
+          iconName: 'paw',
           action: () => navigation.navigate('WalkerMatching', { 
             bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
           }),
@@ -483,26 +506,26 @@ const HomeScreen = () => {
       return [
         {
           id: '1',
-          type: 'category',
+          type: 'service',
           title: '사료',
           description: '건강한 사료를 찾아보세요',
-          icon: '🍽️',
+          iconName: 'food',
           action: () => navigation.navigate('Shop', { category: '사료' }),
         },
         {
           id: '2',
-          type: 'category',
+          type: 'service',
           title: '장난감',
           description: '재미있는 장난감을 만나보세요',
-          icon: '🎾',
+          iconName: 'toy',
           action: () => navigation.navigate('Shop', { category: '장난감' }),
         },
         {
           id: '3',
-          type: 'category',
+          type: 'service',
           title: '의류',
           description: '귀여운 의류를 쇼핑하세요',
-          icon: '👕',
+          iconName: 'clothing',
           action: () => navigation.navigate('Shop', { category: '의류' }),
         },
       ].filter(item => 
@@ -512,7 +535,7 @@ const HomeScreen = () => {
     }
   };
 
-  const handleSearchResultPress = (result: any) => {
+  const handleSearchResultPress = (result: SearchResult) => {
     setShowSearchResults(false);
     setSearchQuery('');
     result.action();
@@ -536,12 +559,15 @@ const HomeScreen = () => {
                 },
               ]}>
               {/* 로고 */}
-              <Text style={headerStyles.logo}>🐾 Petmily</Text>
+              <View style={headerStyles.logoContainer}>
+                <IconImage name="paw" size={22} style={headerStyles.logoIcon} />
+                <Text style={headerStyles.logoText}>Petmily</Text>
+              </View>
               
               {/* 검색바 영역 */}
               <View style={headerStyles.headerRight}>
                 <View style={headerStyles.searchBar}>
-                  <Text style={headerStyles.searchIcon}>🔍</Text>
+                  <Ionicons name="search" size={16} color="#888" style={headerStyles.searchIcon} />
                   <TextInput
                     style={headerStyles.searchInput}
                     placeholder={
@@ -567,9 +593,15 @@ const HomeScreen = () => {
                       style={headerStyles.petAvatarImage}
                     />
                   ) : (
-                    <Text style={headerStyles.petAvatarPlaceholder}>
-                      {petInfo?.name ? petInfo.name.slice(0, 1) : "🐾"}
-                    </Text>
+                  <View style={headerStyles.petAvatarPlaceholder}>
+                    {petInfo?.name ? (
+                      <Text style={headerStyles.petAvatarInitial}>
+                        {petInfo.name.slice(0, 1)}
+                      </Text>
+                    ) : (
+                      <IconImage name="paw" size={20} />
+                    )}
+                  </View>
                   )}
                 </TouchableOpacity>
               </View>
@@ -602,7 +634,13 @@ const HomeScreen = () => {
                     style={styles.searchResultItem}
                     onPress={() => handleSearchResultPress(result)}
                   >
-                    <Text style={styles.searchResultIcon}>{result.icon}</Text>
+                    {result.iconName && (
+                      <IconImage
+                        name={result.iconName}
+                        size={28}
+                        style={styles.searchResultIcon}
+                      />
+                    )}
                     <View style={styles.searchResultContent}>
                       <Text style={styles.searchResultTitle}>{result.title}</Text>
                       <Text style={styles.searchResultDescription}>{result.description}</Text>
@@ -613,7 +651,7 @@ const HomeScreen = () => {
               ) : (
                 <View style={styles.noSearchResults}>
                   <Text style={styles.noSearchResultsText}>
-                    "{searchQuery}"에 대한 검색 결과가 없습니다
+                    &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다
                   </Text>
                 </View>
               )}
@@ -680,9 +718,17 @@ const HomeScreen = () => {
                   ]}
                   onPress={() => setServiceMode(mode)}>
                   <View style={modeStyles.modeIconContainer}>
-                    <Text style={modeStyles.modeIcon}>
-                      {SERVICE_MODE_CONFIG[mode].icon}
-                    </Text>
+                    {SERVICE_MODE_CONFIG[mode].icon.startsWith("@") ? (
+                      <Image
+                        source={resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon)}
+                        style={modeStyles.modeIconImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={modeStyles.modeIcon}>
+                        {SERVICE_MODE_CONFIG[mode].icon}
+                      </Text>
+                    )}
                   </View>
                   <Text
                     style={[
@@ -698,27 +744,33 @@ const HomeScreen = () => {
         </View>
         
         {/* ========== 광고 배너 (자동 슬라이더) ========== */}
-          <PetWalkerContent 
-            currentMode={currentMode}
-            walkRequestButtonRef={walkRequestButtonRef}
-            walkRequestListRef={walkRequestListRef}
-            showGuideOverlay={showGuideOverlay}
-            currentGuideStep={currentStepData?.id}
-          />
-          <View ref={shopButtonRef}>
-            <PetMallContent
+          {serviceMode === "PW" && (
+            <PetWalkerContent 
               currentMode={currentMode}
-              onCategoryPress={handleCategoryPress}
+              walkRequestButtonRef={walkRequestButtonRef}
+              walkRequestListRef={walkRequestListRef}
+              showGuideOverlay={showGuideOverlay}
+              currentGuideStep={currentStepData?.id}
             />
-          </View>
+          )}
+          {serviceMode === "PM" && (
+            <View ref={shopButtonRef}>
+              <PetMallContent
+                currentMode={currentMode}
+                onCategoryPress={handleCategoryPress}
+              />
+            </View>
+          )}
       </ScrollView>
 
       {/* 워커 모집 모달 */}
-      <WalkerRecruitmentModal
-        visible={showWalkerModal}
-        onClose={() => setShowWalkerModal(false)}
-        onDismiss={() => setShowWalkerModal(false)}
-      />
+      {serviceMode === "PW" && (
+        <WalkerRecruitmentModal
+          visible={showWalkerModal}
+          onClose={() => setShowWalkerModal(false)}
+          onDismiss={() => setShowWalkerModal(false)}
+        />
+      )}
 
         </View>
       </SafeAreaView>
@@ -733,6 +785,7 @@ const HomeScreen = () => {
         currentStep={currentGuideStep + 1}
         totalSteps={guideSteps.length}
         nextButtonText={currentStepData?.nextButtonText}
+      iconName={currentStepData?.iconName}
       />
     </>
   );
@@ -799,7 +852,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f8f8f8',
   },
   searchResultIcon: {
-    fontSize: rf(24),
     marginRight: 15,
   },
   searchResultContent: {

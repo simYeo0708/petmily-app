@@ -14,6 +14,7 @@ import { usePet } from '../contexts/PetContext';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { rf, wp, hp } from '../utils/responsive';
+import { IconImage, IconName } from './IconImage';
 
 const { width } = Dimensions.get('window');
 
@@ -98,7 +99,7 @@ const PetInfoHeader: React.FC = () => {
         <View style={styles.petInfoCard}>
           <View style={styles.petImageContainer}>
             <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>🐾</Text>
+              <IconImage name="paw" size={28} />
             </View>
           </View>
           <View style={styles.petDetails}>
@@ -110,12 +111,16 @@ const PetInfoHeader: React.FC = () => {
     );
   }
 
-  const getSpeciesEmoji = (species: string) => {
+  const getSpeciesIcon = (species: string): IconName => {
     switch (species) {
-      case 'dog': return '🐕';
-      case 'cat': return '🐱';
-      case 'other': return '🐾';
-      default: return '🐾';
+      case 'dog':
+        return 'dog';
+      case 'cat':
+        return 'cat';
+      case 'other':
+        return 'paw';
+      default:
+        return 'paw';
     }
   };
 
@@ -158,9 +163,16 @@ const PetInfoHeader: React.FC = () => {
           </Pressable>
           <View style={styles.petDetails}>
             <Text style={styles.petName}>{petInfo.name}</Text>
-            <Text style={styles.petSpecies}>
-              {getSpeciesLabel(petInfo.species)} • {petInfo.breed}
-            </Text>
+            <View style={styles.speciesRow}>
+              <IconImage
+                name={getSpeciesIcon(petInfo.species)}
+                size={18}
+                style={styles.speciesIcon}
+              />
+              <Text style={styles.petSpecies}>
+                {getSpeciesLabel(petInfo.species)} • {petInfo.breed}
+              </Text>
+            </View>
           </View>
         </View>
       </Pressable>
@@ -253,8 +265,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#C59172', // 브라운 색 테두리로 통일
   },
-  placeholderText: {
-    fontSize: rf(24),
+  speciesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  speciesIcon: {
+    marginRight: 6,
   },
   petDetails: {
     flex: 1,

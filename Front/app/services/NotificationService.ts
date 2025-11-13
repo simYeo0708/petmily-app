@@ -36,14 +36,14 @@ class NotificationService {
       const mockNotifications: Notification[] = [
         {
           id: 1,
-          title: '워커로 활동 중입니다! 🚶‍♂️',
+          title: '워커로 활동 중입니다!',
           content: '반려동물 산책 서비스의 워커로 활동해보세요. 유연한 시간에 수익을 창출할 수 있습니다!',
           type: 'WALKER_RECRUITMENT',
           priority: 10,
         },
         {
           id: 2,
-          title: '새로운 기능이 추가되었습니다! 🎉',
+          title: '새로운 기능이 추가되었습니다!',
           content: '산책 경로 추적 기능과 실시간 위치 공유 기능이 추가되었습니다.',
           type: 'FEATURE_UPDATE',
           priority: 5,

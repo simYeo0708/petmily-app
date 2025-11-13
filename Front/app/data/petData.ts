@@ -1,7 +1,7 @@
 export const speciesOptions = [
-    { key: "dog", label: "강아지", emoji: "🐕" },
-    { key: "cat", label: "고양이", emoji: "🐱" },
-    { key: "other", label: "기타", emoji: "🐾" },
+    { key: "dog", label: "강아지", iconName: "dog" as const },
+    { key: "cat", label: "고양이", iconName: "cat" as const },
+    { key: "other", label: "기타", iconName: "paw" as const },
   ];
 
 export const breedOptions = {

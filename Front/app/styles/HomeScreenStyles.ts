@@ -194,7 +194,14 @@ export const headerStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  logo: {
+  logoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logoIcon: {
+    marginRight: 6,
+  },
+  logoText: {
     fontSize: 24,
     fontWeight: "700",
     color: "#C59172",
@@ -225,6 +232,12 @@ export const headerStyles = StyleSheet.create({
     borderRadius: 20,
   },
   petAvatarPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
+  },
+  petAvatarInitial: {
     fontSize: 16,
     color: "#C59172",
     fontWeight: "600",
@@ -239,7 +252,6 @@ export const headerStyles = StyleSheet.create({
     flex: 1,
   },
   searchIcon: {
-    fontSize: 14,
     marginRight: 6,
   },
   searchInput: {
@@ -252,7 +264,7 @@ export const headerStyles = StyleSheet.create({
 export const modeStyles = StyleSheet.create({
   modeRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: 30,
   },
   modeChip: {
     flex: 1,
@@ -290,6 +302,10 @@ export const modeStyles = StyleSheet.create({
   modeIcon: {
     fontSize: 24,
     marginRight: 12,
+  },
+  modeIconImage: {
+    width: 36,
+    height: 36,
   },
   modeTextContainer: {
     flex: 1,
@@ -497,12 +513,20 @@ export const helperDashboardStyles = StyleSheet.create({
     marginTop: 20,
   },
   heroBadge: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.12)",
+  },
+  heroBadgeIcon: {
+    marginRight: 6,
+  },
+  heroBadgeText: {
     color: "#FFFFFF",
     fontSize: 12,
+    fontWeight: "500",
   },
   metricRow: {
     flexDirection: "row",
@@ -521,7 +545,6 @@ export const helperDashboardStyles = StyleSheet.create({
     elevation: 3,
   },
   metricIcon: {
-    fontSize: 18,
     marginBottom: 10,
   },
   metricValue: {
@@ -633,7 +656,8 @@ export const helperDashboardStyles = StyleSheet.create({
     marginRight: 14,
   },
   taskIcon: {
-    fontSize: 20,
+    width: 18,
+    height: 18,
   },
   taskInfo: {
     flex: 1,
@@ -707,8 +731,16 @@ export const helperDashboardStyles = StyleSheet.create({
   },
   reviewRating: {
     fontSize: 12,
-    color: "#C59172",
+    color: "#3A2E2A",
     fontWeight: "600",
+    marginLeft: 4,
+  },
+  reviewRatingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  reviewRatingIcon: {
+    marginRight: 2,
   },
   reviewComment: {
     fontSize: 13,
@@ -725,6 +757,13 @@ export const matchingScreenStyles = StyleSheet.create({
   backButton: {
     padding: 8,
     borderRadius: 8,
+  },
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerTitleIcon: {
+    marginLeft: 4,
   },
   backButtonText: {
     fontSize: 20,
@@ -804,8 +843,8 @@ export const matchingScreenStyles = StyleSheet.create({
     gap: 8,
   },
   detailIcon: {
-    fontSize: 14,
-    width: 20,
+    width: 16,
+    height: 16,
   },
   detailText: {
     fontSize: 14,
@@ -836,8 +875,9 @@ export const matchingScreenStyles = StyleSheet.create({
     elevation: 3,
   },
   emptyIcon: {
-    fontSize: 40,
     marginBottom: 16,
+    width: 42,
+    height: 42,
   },
   emptyTitle: {
     fontSize: 18,
@@ -884,11 +924,20 @@ export const matchingScreenStyles = StyleSheet.create({
   modalSection: {
     marginBottom: 20,
   },
+  modalSectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 8,
+  },
+  modalSectionIcon: {
+    width: 18,
+    height: 18,
+  },
   modalSectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
     color: "#4A4A4A",
-    marginBottom: 8,
   },
   modalText: {
     fontSize: 14,

@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { Image, Text, TouchableOpacity, View, Animated } from "react-native";
 import HomeScreen from "../screen/HomeScreen";
 import MyPetScreen from "../screen/MyPetScreen";
+import CartScreen from "../screen/CartScreen";
 import SettingsScreen from "../screen/SettingsScreen";
 import { navigationStyles } from "../styles/HomeScreenStyles";
 import { useGuideContext } from "../contexts/GuideContext";
@@ -10,6 +11,7 @@ import { useGuideContext } from "../contexts/GuideContext";
 export type TabParamList = {
   HomeTab: undefined;
   MyPetTab: undefined;
+  CartTab: undefined;
   SettingsTab: undefined;
 };
 
@@ -128,6 +130,11 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
                     name: "My Pet",
                     icon: require("../../assets/images/paw.png"),
                   };
+                case "CartTab":
+                  return {
+                    name: "Cart",
+                    icon: require("../../assets/images/cart.png"),
+                  };
                 case "SettingsTab":
                   return {
                     name: "Settings",
@@ -239,6 +246,19 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
           tabBarIcon: ({ focused }) => (
             <Image
               source={require("../../assets/images/paw.png")}
+              style={[navigationStyles.navIcon]}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="CartTab"
+        component={CartScreen}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require("../../assets/images/cart.png")}
               style={[navigationStyles.navIcon]}
               resizeMode="contain"
             />

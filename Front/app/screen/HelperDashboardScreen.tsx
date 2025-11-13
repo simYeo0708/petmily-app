@@ -12,6 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useHelperStatus } from "../hooks/useHelperStatus";
 import { RootStackParamList } from "../index";
 import { helperDashboardStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import { Ionicons } from "@expo/vector-icons";
+import { IconImage } from "../components/IconImage";
 
 type HelperDashboardScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -58,22 +60,22 @@ const HelperDashboardScreen = () => {
   const quickMetrics = useMemo(
     () => [
       {
-        icon: "💼",
+        ionIcon: "briefcase-outline" as const,
         label: "이번 주 수익",
         value: `${earningsSummary.week.toLocaleString()}원`,
       },
       {
-        icon: "⭐",
+        ionIcon: "star" as const,
         label: "평균 평점",
         value: `${helperStatus.rating.toFixed(1)} / 5`,
       },
       {
-        icon: "👥",
+        ionIcon: "people-outline" as const,
         label: "총 산책 횟수",
         value: `${helperStatus.totalWalks}회`,
       },
       {
-        icon: "🔁",
+        ionIcon: "refresh" as const,
         label: "재요청률",
         value: "92%",
       },
@@ -141,7 +143,7 @@ const HelperDashboardScreen = () => {
       <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       <View style={helperDashboardStyles.headerBar}>
         <Pressable onPress={handleBackPress} style={helperDashboardStyles.backButton}>
-          <Text style={helperDashboardStyles.backIcon}>←</Text>
+          <Ionicons name="chevron-back" size={20} color="#333" />
         </Pressable>
         <Text style={helperDashboardStyles.headerTitle}>대시보드</Text>
         <View style={helperDashboardStyles.headerSpacer} />
@@ -169,17 +171,30 @@ const HelperDashboardScreen = () => {
             </View>
           </View>
           <View style={helperDashboardStyles.heroBadgeRow}>
-            <Text style={helperDashboardStyles.heroBadge}>
-              📈 지난달 대비 {earningsSummary.growthRate}% 성장
-            </Text>
-            <Text style={helperDashboardStyles.heroBadge}>⭐ 평균 평점 {helperStatus.rating.toFixed(1)}</Text>
+            <View style={helperDashboardStyles.heroBadge}>
+              <Ionicons name="trending-up" size={14} color="#2E7D32" style={helperDashboardStyles.heroBadgeIcon} />
+              <Text style={helperDashboardStyles.heroBadgeText}>
+                지난달 대비 {earningsSummary.growthRate}% 성장
+              </Text>
+            </View>
+            <View style={helperDashboardStyles.heroBadge}>
+              <Ionicons name="star" size={14} color="#FFC107" style={helperDashboardStyles.heroBadgeIcon} />
+              <Text style={helperDashboardStyles.heroBadgeText}>
+                평균 평점 {helperStatus.rating.toFixed(1)}
+              </Text>
+            </View>
           </View>
         </View>
 
         <View style={helperDashboardStyles.metricRow}>
           {quickMetrics.map((metric) => (
             <View key={metric.label} style={helperDashboardStyles.metricCard}>
-              <Text style={helperDashboardStyles.metricIcon}>{metric.icon}</Text>
+              <Ionicons
+                name={metric.ionIcon}
+                size={22}
+                color="#C59172"
+                style={helperDashboardStyles.metricIcon}
+              />
               <Text style={helperDashboardStyles.metricValue}>{metric.value}</Text>
               <Text style={helperDashboardStyles.metricLabel}>{metric.label}</Text>
             </View>
@@ -243,7 +258,7 @@ const HelperDashboardScreen = () => {
               ]}
             >
               <View style={helperDashboardStyles.taskIconBubble}>
-                <Text style={helperDashboardStyles.taskIcon}>🐾</Text>
+                <IconImage name="paw" size={18} style={helperDashboardStyles.taskIcon} />
               </View>
               <View style={helperDashboardStyles.taskInfo}>
                 <Text style={helperDashboardStyles.taskTime}>{task.time}</Text>
@@ -276,7 +291,10 @@ const HelperDashboardScreen = () => {
               <View style={helperDashboardStyles.reviewInfo}>
                 <View style={helperDashboardStyles.reviewHeader}>
                   <Text style={helperDashboardStyles.reviewName}>{review.name}</Text>
-                  <Text style={helperDashboardStyles.reviewRating}>⭐ {review.rating}</Text>
+                  <View style={helperDashboardStyles.reviewRatingRow}>
+                    <Ionicons name="star" size={14} color="#FFC107" style={helperDashboardStyles.reviewRatingIcon} />
+                    <Text style={helperDashboardStyles.reviewRating}>{review.rating}</Text>
+                  </View>
                 </View>
                 <Text style={helperDashboardStyles.reviewComment} numberOfLines={2}>
                   {review.comment}

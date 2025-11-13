@@ -1,12 +1,27 @@
-export const SPECIES_OPTIONS = [
-  { value: 'dog', label: '개', emoji: '🐕' },
-  { value: 'cat', label: '고양이', emoji: '🐱' },
-  { value: 'other', label: '기타', emoji: '🐾' },
+import { IconName } from "../components/IconImage";
+import { Ionicons } from "@expo/vector-icons";
+
+type SpeciesOption = {
+  value: string;
+  label: string;
+  iconName: IconName;
+};
+
+type GenderOption = {
+  value: string;
+  label: string;
+  ionIcon: keyof typeof Ionicons.glyphMap;
+};
+
+export const SPECIES_OPTIONS: SpeciesOption[] = [
+  { value: 'dog', label: '개', iconName: 'dog' },
+  { value: 'cat', label: '고양이', iconName: 'cat' },
+  { value: 'other', label: '기타', iconName: 'paw' },
 ];
 
-export const GENDER_OPTIONS = [
-  { value: 'male', label: '수컷', emoji: '♂️' },
-  { value: 'female', label: '암컷', emoji: '♀️' },
+export const GENDER_OPTIONS: GenderOption[] = [
+  { value: 'male', label: '수컷', ionIcon: 'male' },
+  { value: 'female', label: '암컷', ionIcon: 'female' },
 ];
 
 export const TEMPERAMENT_OPTIONS = [

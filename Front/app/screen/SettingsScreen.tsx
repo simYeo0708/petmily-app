@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
+import { IconImage, IconName } from "../components/IconImage";
 import { usePet } from "../contexts/PetContext";
 
 type SettingsScreenNavigationProp =
@@ -26,7 +27,7 @@ const SettingsScreen = () => {
   const [locationServices, setLocationServices] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
   
-  // 화면 포커스될 때만 펫 정보 갱신 (필요시에만)
+  // 화면 포커스될 때만 펫 정보 갱신
   // SettingsScreen에서는 펫 정보를 직접 수정하지 않으므로 자동 갱신 비활성화
   // useFocusEffect(
   //   useCallback(() => {
@@ -35,23 +36,32 @@ const SettingsScreen = () => {
   //   }, [refreshPetInfo])
   // );
 
-  const settingSections = [
+  type SettingItem = {
+    title: string;
+    icon: IconName;
+    action?: () => void;
+    hasSwitch?: boolean;
+    value?: boolean;
+    onToggle?: (value: boolean) => void;
+  };
+
+  const settingSections: { title: string; items: SettingItem[] }[] = [
     {
       title: "계정 설정",
       items: [
         {
           title: "프로필 편집",
-          icon: "👤",
+          icon: "paw",
           action: () => console.log("프로필 편집"),
         },
         {
           title: "반려동물 정보",
-          icon: "🐕",
+          icon: "dog",
           action: () => console.log("반려동물 정보"),
         },
         {
           title: "비밀번호 변경",
-          icon: "🔒",
+          icon: "setting",
           action: () => console.log("비밀번호 변경"),
         },
       ],
@@ -61,14 +71,14 @@ const SettingsScreen = () => {
       items: [
         {
           title: "푸시 알림",
-          icon: "🔔",
+          icon: "setting",
           hasSwitch: true,
           value: pushNotifications,
           onToggle: setPushNotifications,
         },
         {
           title: "마케팅 수신",
-          icon: "📧",
+          icon: "shop",
           hasSwitch: true,
           value: marketingEmails,
           onToggle: setMarketingEmails,
@@ -80,19 +90,19 @@ const SettingsScreen = () => {
       items: [
         {
           title: "위치 서비스",
-          icon: "📍",
+          icon: "map",
           hasSwitch: true,
           value: locationServices,
           onToggle: setLocationServices,
         },
         {
           title: "개인정보 처리방침",
-          icon: "📋",
+          icon: "home",
           action: () => console.log("개인정보 처리방침"),
         },
         {
           title: "이용약관",
-          icon: "📝",
+          icon: "paw",
           action: () => console.log("이용약관"),
         },
       ],
@@ -102,11 +112,11 @@ const SettingsScreen = () => {
       items: [
         {
           title: "고객센터",
-          icon: "💬",
+          icon: "cart",
           action: () => console.log("고객센터"),
         },
-        { title: "FAQ", icon: "❓", action: () => console.log("FAQ") },
-        { title: "앱 정보", icon: "ℹ️", action: () => console.log("앱 정보") },
+        { title: "FAQ", icon: "paw", action: () => console.log("FAQ") },
+        { title: "앱 정보", icon: "home", action: () => console.log("앱 정보") },
       ],
     },
   ];
@@ -138,17 +148,15 @@ const SettingsScreen = () => {
   return (
     <SafeAreaView
       style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
-      <StatusBar 
-        backgroundColor="#C59172" 
-        barStyle="light-content" 
-        translucent={false}
-      />
       <View
         style={[
           headerStyles.header,
           { backgroundColor: "rgba(255, 255, 255, 0.95)" },
         ]}>
-        <Text style={headerStyles.logo}>⚙️ Settings</Text>
+        <View style={headerStyles.logoContainer}>
+          <IconImage name="setting" size={22} style={headerStyles.logoIcon} />
+          <Text style={headerStyles.logoText}>Settings</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={homeScreenStyles.scrollContent}>
@@ -187,9 +195,7 @@ const SettingsScreen = () => {
                       alignItems: "center",
                       flex: 1,
                     }}>
-                    <Text style={{ fontSize: 20, marginRight: 12 }}>
-                      {item.icon}
-                    </Text>
+                    <IconImage name={item.icon} size={22} style={{ marginRight: 12 }} />
                     <Text
                       style={{
                         fontSize: 16,

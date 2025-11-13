@@ -1,8 +1,11 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { IconImage, IconName } from "./IconImage";
+import { Ionicons } from "@expo/vector-icons";
 
 interface CardBoxProps {
-  icon: string;
+  iconName?: IconName;
+  ionIconName?: keyof typeof Ionicons.glyphMap;
   description: string;
   actionText: string;
   borderColor: string;
@@ -11,7 +14,8 @@ interface CardBoxProps {
 }
 
 export const CardBox: React.FC<CardBoxProps> = ({
-  icon,
+  iconName,
+  ionIconName,
   description,
   actionText,
   borderColor,
@@ -20,11 +24,18 @@ export const CardBox: React.FC<CardBoxProps> = ({
 }) => {
   return (
     <View style={[styles.cardBox, { borderColor }]}>
-      <Text style={styles.cardIcon}>{icon}</Text>
+      <View style={styles.iconWrapper}>
+        {iconName ? (
+          <IconImage name={iconName} size={32} />
+        ) : ionIconName ? (
+          <Ionicons name={ionIconName} size={28} color={borderColor} />
+        ) : null}
+      </View>
       <Text style={styles.infoText}>{description}</Text>
       <TouchableOpacity
         style={[styles.actionBtn, { backgroundColor }]}
-        onPress={onPress}>
+        onPress={onPress}
+      >
         <Text style={styles.actionBtnText}>{actionText}</Text>
       </TouchableOpacity>
     </View>
@@ -42,8 +53,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 16,
   },
-  cardIcon: {
-    fontSize: 32,
+  iconWrapper: {
     marginBottom: 8,
   },
   infoText: {

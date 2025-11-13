@@ -7,6 +7,10 @@ import HelperDashboardScreen from "./screen/HelperDashboardScreen";
 import LoginScreen from "./screen/LoginScreen";
 import MatchingScreen from "./screen/MatchingScreen";
 import ShopScreen from "./screen/ShopScreen";
+import ProductDetailScreen from "./screen/ProductDetailScreen";
+import MyOrdersScreen from "./screen/MyOrdersScreen";
+import CheckoutScreen from "./screen/CheckoutScreen";
+import OrderCompleteScreen from "./screen/OrderCompleteScreen";
 import SplashScreen from "./screen/SplashScreen";
 import WalkingMapScreen from "./screen/WalkingMapScreen";
 import WalkingMapScreenEnhanced from "./screen/WalkingMapScreenEnhanced";
@@ -18,12 +22,18 @@ import PetInfoInputScreen from "./screen/PetInfoInputScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
+import { CartProvider } from "./contexts/CartContext";
+import { Product } from "./constants/ProductData";
 import DevTools from "./utils/DevTools";
 
 export type RootStackParamList = {
   Login: undefined;
   Main: { initialTab?: string } | undefined;
   Shop: { category: string };
+  ProductDetail: { product: Product };
+  MyOrders: undefined;
+  Checkout: undefined;
+  OrderComplete: { orderNumber: string };
   HelperDashboard: undefined;
   MatchingScreen: undefined;
   WalkingMap: undefined;
@@ -77,6 +87,7 @@ export default function App() {
         <PortalProvider>
           <GuideProvider>
             <PetProvider>
+              <CartProvider>
               <Stack.Navigator
               id={undefined}
               initialRouteName="Login" // 로그인 스크린부터 시작
@@ -92,6 +103,10 @@ export default function App() {
                 )}
               </Stack.Screen>
               <Stack.Screen name="Shop" component={ShopScreen}/>
+              <Stack.Screen name="ProductDetail" component={ProductDetailScreen}/>
+              <Stack.Screen name="MyOrders" component={MyOrdersScreen}/>
+              <Stack.Screen name="Checkout" component={CheckoutScreen}/>
+              <Stack.Screen name="OrderComplete" component={OrderCompleteScreen}/>
               <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
               <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
               <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
@@ -102,6 +117,7 @@ export default function App() {
               <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
               <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
               </Stack.Navigator>
+              </CartProvider>
             </PetProvider>
           </GuideProvider>
         </PortalProvider>

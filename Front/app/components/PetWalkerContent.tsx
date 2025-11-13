@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../index";
 import { usePet } from "../contexts/PetContext";
 import { WALKING_REQUESTS, CURRENT_WALKING, type WalkingRequest } from "../data";
+import { IconImage, IconName } from "./IconImage";
 
 type RequestTabKey = 'mine' | 'pending' | 'accepted' | 'in_progress' | 'completed';
 
@@ -154,12 +155,16 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
     }
   };
 
-  const getSpeciesEmoji = (species: string) => {
+  const getSpeciesIcon = (species: string): IconName => {
     switch (species) {
-      case 'dog': return '🐕';
-      case 'cat': return '🐱';
-      case 'other': return '🐾';
-      default: return '🐾';
+      case 'dog':
+        return 'dog';
+      case 'cat':
+        return 'cat';
+      case 'other':
+        return 'paw';
+      default:
+        return 'paw';
     }
   };
 
@@ -187,7 +192,10 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       {/* 현재 진행 중인 워킹 */}
       {currentWalking && (
         <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>🚶‍♂️ 현재 진행 중인 워킹</Text>
+          <View style={styles.sectionTitleRow}>
+            <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
+            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 워킹</Text>
+          </View>
           <View style={styles.currentWalkingCard}>
             <View style={styles.walkingParticipants}>
               <View style={styles.participantInfo}>
@@ -271,9 +279,12 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           }
         ]}
       >
-        <Text style={homeScreenStyles.sectionTitle}>🚶‍♂️ 산책 요청</Text>
+        <View style={styles.sectionTitleRow}>
+          <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
+          <Text style={homeScreenStyles.sectionTitle}>산책 요청</Text>
+        </View>
         <CardBox
-          icon="📝"
+          iconName="walker"
           description="새로운 산책 요청을 등록하세요"
           actionText="요청하기"
           borderColor={currentMode.color}
@@ -373,7 +384,11 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
                 <View style={styles.petInfo}>
                   <View style={styles.petImage}>
                     <View style={styles.petIconContainer}>
-                      <Text style={styles.petEmoji}>{getSpeciesEmoji(request.pet.species)}</Text>
+                    <IconImage
+                      name={getSpeciesIcon(request.pet.species)}
+                      size={24}
+                      style={styles.petIcon}
+                    />
                     </View>
                   </View>
                   <View style={styles.petDetails}>
@@ -433,6 +448,14 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 };
 
 const styles = StyleSheet.create({
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitleIcon: {
+    marginRight: 8,
+  },
   loadingContainer: {
     padding: 20,
     alignItems: 'center',
@@ -563,8 +586,9 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
   },
-  petEmoji: {
-    fontSize: 20,
+  petIcon: {
+    width: 24,
+    height: 24,
   },
   petDetails: {
     flex: 1,

@@ -5,7 +5,8 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { RootStackParamList } from "../index";
 import GuideTooltip from "./GuideTooltip";
-import GuideHighlight from "./GuideHighlight";
+import { GuideStep as GuideStepType } from "../types/HomeScreen";
+import { IconName } from "../components/IconImage";
 
 interface ServiceGuideProps {
   isVisible: boolean;
@@ -16,13 +17,6 @@ interface ServiceGuideProps {
   walkBookingButtonRef: React.RefObject<View | null>;
   shopButtonRef: React.RefObject<View | null>;
   onStepChange: (step: number) => void;
-}
-
-interface GuideStep {
-  id: string;
-  title: string;
-  description: string;
-  nextButtonText?: string;
 }
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -40,22 +34,25 @@ const ServiceGuide: React.FC<ServiceGuideProps> = ({
   const navigation = useNavigation<NavigationProp>();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  const allGuideSteps: GuideStep[] = [
+  const allGuideSteps: Array<GuideStepType & { iconName: IconName }> = [
     {
       id: "pet_walker_button",
-      title: "🐕 Pet Walker 서비스",
+      title: "Pet Walker 서비스",
       description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!\n\n• 전문 워커와의 매칭\n• 실시간 산책 추적\n• 안전한 산책 경로 제공",
+      iconName: "walker",
     },
     {
       id: "pet_mall_button",
-      title: "🛒 Pet Mall 서비스",
+      title: "Pet Mall 서비스",
       description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!\n\n• 다양한 펫 용품 카테고리\n• 합리적인 가격\n• 빠른 배송 서비스",
+      iconName: "shop",
     },
     {
       id: "walk_booking",
-      title: "🐾 반려동물 정보 입력",
+      title: "반려동물 정보 입력",
       description: "산책 예약을 위해 먼저 반려동물 정보를\n입력해주세요!\n\n• 반려동물 프로필 생성\n• 산책 요청 작성\n• 워커와의 매칭",
       nextButtonText: "정보 입력하기",
+      iconName: "paw",
     },
   ];
 
@@ -157,6 +154,7 @@ const ServiceGuide: React.FC<ServiceGuideProps> = ({
       totalSteps={guideSteps.length}
       nextButtonText={getNextButtonText()}
       skipButtonText="건너뛰기"
+      iconName={currentStep.iconName}
     />
   );
 };

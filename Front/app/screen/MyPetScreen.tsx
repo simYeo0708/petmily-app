@@ -22,6 +22,7 @@ import { myPetScreenStyles, modalStyles } from "../styles/MyPetScreenStyles";
 import { StyleSheet } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { IconImage } from "../components/IconImage";
 
 const MyPetScreen = () => {
   const { petInfo, updatePetInfo } = usePet();
@@ -455,9 +456,9 @@ const MyPetScreen = () => {
   };
 
   const speciesOptions = [
-    { key: "dog", label: "강아지", emoji: "🐕" },
-    { key: "cat", label: "고양이", emoji: "🐱" },
-    { key: "other", label: "기타", emoji: "🐾" },
+    { key: "dog", label: "강아지", iconName: "dog" as const },
+    { key: "cat", label: "고양이", iconName: "cat" as const },
+    { key: "other", label: "기타", iconName: "paw" as const },
   ];
 
   const breedOptions = {
@@ -491,7 +492,10 @@ const MyPetScreen = () => {
   return (
     <SafeAreaView style={[myPetScreenStyles.root, { backgroundColor: '#FFFFFF' }]}>
       <View style={myPetScreenStyles.header}>
-        <Text style={myPetScreenStyles.logo}>🐾 My Pet</Text>
+        <View style={myPetScreenStyles.logoRow}>
+          <IconImage name="paw" size={22} style={myPetScreenStyles.logoIcon} />
+          <Text style={myPetScreenStyles.logoText}>My Pet</Text>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={myPetScreenStyles.scrollContent}>
@@ -672,9 +676,11 @@ const MyPetScreen = () => {
                       breed: "" // 동물 종류 변경 시 품종 초기화
                     });
                   }}>
-                  <Text style={myPetScreenStyles.speciesIcon}>
-                    {option.emoji}
-                  </Text>
+                  <IconImage
+                    name={option.iconName}
+                    size={28}
+                    style={myPetScreenStyles.speciesIcon}
+                  />
                   <Text
                     style={[
                       myPetScreenStyles.speciesLabel,
@@ -756,7 +762,12 @@ const MyPetScreen = () => {
                   localPetInfo.gender === "male" && myPetScreenStyles.genderButtonSelected
                 ]}
                 onPress={() => setLocalPetInfo({ ...localPetInfo, gender: "male" })}>
-                <Text style={{ fontSize: 20, marginBottom: 5 }}>♂️</Text>
+                <Ionicons
+                  name="male"
+                  size={22}
+                  color={localPetInfo.gender === "male" ? '#FFFFFF' : '#C59172'}
+                  style={myPetScreenStyles.genderIcon}
+                />
                 <Text
                   style={[
                     myPetScreenStyles.genderLabel,
@@ -773,7 +784,12 @@ const MyPetScreen = () => {
                   localPetInfo.gender === "female" && myPetScreenStyles.genderButtonSelected
                 ]}
                 onPress={() => setLocalPetInfo({ ...localPetInfo, gender: "female" })}>
-                <Text style={{ fontSize: 20, marginBottom: 5 }}>♀️</Text>
+                <Ionicons
+                  name="female"
+                  size={22}
+                  color={localPetInfo.gender === "female" ? '#FFFFFF' : '#C59172'}
+                  style={myPetScreenStyles.genderIcon}
+                />
                 <Text
                   style={[
                     myPetScreenStyles.genderLabel,
