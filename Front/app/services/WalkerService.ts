@@ -1,7 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// ⚠️ Expo에서는 localhost 대신 Mac의 IP 주소 사용
-const API_BASE_URL = 'http://10.50.235.215:8080/api';  // TODO: 본인의 Mac IP로 변경
+import { API_BASE_URL } from '../config/api';
 
 interface WalkerResponse {
   id: number;

@@ -1,11 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Expo에서는 localhost 대신 Mac의 IP 주소를 사용해야 합니다
-// Mac의 IP 주소를 확인하려면: 시스템 환경설정 → 네트워크
-// 또는 터미널에서: ipconfig getifaddr en0
-// 
-// ⚠️ 아래 IP 주소를 본인의 Mac IP 주소로 변경하세요!
-const API_BASE_URL = 'http://10.50.235.215:8080/api';
+import { API_BASE_URL } from '../config/api';
 
 interface LoginRequest {
   username: string;

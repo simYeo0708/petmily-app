@@ -1,10 +1,16 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
+import { View, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import TabNavigator, { TabParamList } from "./navigation/TabNavigator";
 import HelperDashboardScreen from "./screen/HelperDashboardScreen";
 import LoginScreen from "./screen/LoginScreen";
 import MatchingScreen from "./screen/MatchingScreen";
 import ShopScreen from "./screen/ShopScreen";
+import ProductDetailScreen from "./screen/ProductDetailScreen";
+import MyOrdersScreen from "./screen/MyOrdersScreen";
+import CheckoutScreen from "./screen/CheckoutScreen";
+import OrderCompleteScreen from "./screen/OrderCompleteScreen";
 import SplashScreen from "./screen/SplashScreen";
 import WalkingMapScreen from "./screen/WalkingMapScreen";
 import WalkingMapScreenEnhanced from "./screen/WalkingMapScreenEnhanced";
@@ -16,12 +22,18 @@ import PetInfoInputScreen from "./screen/PetInfoInputScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
+import { CartProvider } from "./contexts/CartContext";
+import { Product } from "./constants/ProductData";
 import DevTools from "./utils/DevTools";
 
 export type RootStackParamList = {
   Login: undefined;
   Main: { initialTab?: string } | undefined;
   Shop: { category: string };
+  ProductDetail: { product: Product };
+  MyOrders: undefined;
+  Checkout: undefined;
+  OrderComplete: { orderNumber: string };
   HelperDashboard: undefined;
   MatchingScreen: undefined;
   WalkingMap: undefined;
@@ -50,7 +62,7 @@ export default function App() {
         console.log('[DEV] 앱 초기화 중...');
         // 자동 로그인 비활성화 - 수동으로 로그인하도록 함
         // await DevTools.loginAsAsdf();
-        console.log('[DEV] ✅ 앱 초기화 완료');
+        console.log('[DEV] 앱 초기화 완료');
       } catch (error) {
         console.error('[DEV] 앱 초기화 실패:', error);
       } finally {
@@ -68,36 +80,48 @@ export default function App() {
   }
 
   return (
-    <PortalProvider>
-      <GuideProvider>
-        <PetProvider>
-          <Stack.Navigator
-          id={undefined}
-          initialRouteName="Login" // 로그인 스크린부터 시작
-          screenOptions={{
-            headerShown: false,
-          }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Main">
-            {({ route }) => (
-              <TabNavigator
-                initialTab={route.params?.initialTab as keyof TabParamList}
-              />
-            )}
-          </Stack.Screen>
-          <Stack.Screen name="Shop" component={ShopScreen} />
-          <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen} />
-          <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
-          <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
-          <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
-          <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
-          <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
-          <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
-          <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
-          <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
-          </Stack.Navigator>
-        </PetProvider>
-      </GuideProvider>
-    </PortalProvider>
+    <>
+    <StatusBar barStyle="dark-content" backgroundColor={"#FFFFFF"}/>
+      {/* 앱 메인 콘텐츠 */}
+      <View style={{ flex: 1 }}>
+        <PortalProvider>
+          <GuideProvider>
+            <PetProvider>
+              <CartProvider>
+              <Stack.Navigator
+              id={undefined}
+              initialRouteName="Login" // 로그인 스크린부터 시작
+              screenOptions={{
+                headerShown: false,
+              }}>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Main">
+                {({ route }) => (
+                  <TabNavigator
+                    initialTab={route.params?.initialTab as keyof TabParamList}
+                  />
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="Shop" component={ShopScreen}/>
+              <Stack.Screen name="ProductDetail" component={ProductDetailScreen}/>
+              <Stack.Screen name="MyOrders" component={MyOrdersScreen}/>
+              <Stack.Screen name="Checkout" component={CheckoutScreen}/>
+              <Stack.Screen name="OrderComplete" component={OrderCompleteScreen}/>
+              <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
+              <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
+              <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
+              <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
+              <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
+              <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
+              <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
+              <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
+              <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
+              </Stack.Navigator>
+              </CartProvider>
+            </PetProvider>
+          </GuideProvider>
+        </PortalProvider>
+      </View>
+    </>
   );
 }

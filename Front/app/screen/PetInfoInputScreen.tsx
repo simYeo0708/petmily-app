@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { IconImage } from "../components/IconImage";
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,13 +24,13 @@ import { SPECIES_OPTIONS, GENDER_OPTIONS, TEMPERAMENT_OPTIONS, BREED_OPTIONS } f
 import { BreedSelectionModal } from '../components/BreedSelectionModal';
 import { RootStackParamList } from '../index';
 import { usePet } from '../contexts/PetContext';
-import { PetService } from '../services/PetService';
+import { PetInfo } from '../services/PetService';
 
 type PetInfoInputScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const PetInfoInputScreen = () => {
   const navigation = useNavigation<PetInfoInputScreenNavigationProp>();
-  const { updatePetInfo } = usePet();
+  const { petInfo, updatePetInfo } = usePet();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [petData, setPetData] = useState({
@@ -95,7 +96,7 @@ const PetInfoInputScreen = () => {
       
       try {
         // 백엔드 API 호출하여 저장
-        const petInfoForApi = {
+        const petInfoForApi: PetInfo = {
           name: petData.name,
           species: petData.species,
           breed: petData.breed,
@@ -108,12 +109,16 @@ const PetInfoInputScreen = () => {
           temperaments: petData.temperaments,
           description: petData.description,
         };
-        
-        const savedPet = await PetService.createPet(petInfoForApi);
-        console.log('반려동물 정보 저장 성공:', savedPet);
-        
-        // Context 업데이트하여 전체 앱에 반영
-        await updatePetInfo(petInfoForApi);
+
+        const mergedPetInfo: PetInfo = {
+          ...(petInfo ?? {}),
+          ...petInfoForApi,
+          id: petInfo?.id,
+          hasPhoto: !!petData.photoUri || petInfo?.hasPhoto,
+          temperaments: petData.temperaments,
+        };
+
+        await updatePetInfo(mergedPetInfo);
         
         // My Pet 탭으로 이동
         navigation.navigate('Main', { initialTab: 'MyPetTab' });
@@ -213,7 +218,11 @@ const PetInfoInputScreen = () => {
                       petData.species === option.value && styles.optionButtonSelected,
                     ]}
                     onPress={() => handleSpeciesChange(option.value)}>
-                    <Text style={styles.optionEmoji}>{option.emoji}</Text>
+                    <IconImage
+                      name={option.iconName}
+                      size={24}
+                      style={styles.optionIcon}
+                    />
                     <Text
                       style={[
                         styles.optionText,
@@ -296,7 +305,12 @@ const PetInfoInputScreen = () => {
                       petData.gender === option.value && styles.genderButtonSelected,
                     ]}
                     onPress={() => setPetData({ ...petData, gender: option.value })}>
-                    <Text style={styles.optionEmoji}>{option.emoji}</Text>
+                    <Ionicons
+                      name={option.ionIcon}
+                      size={22}
+                      color={petData.gender === option.value ? '#FFFFFF' : '#C59172'}
+                      style={styles.optionIcon}
+                    />
                     <Text
                       style={[
                         styles.optionText,
@@ -426,7 +440,7 @@ const PetInfoInputScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -442,7 +456,16 @@ const PetInfoInputScreen = () => {
             <View style={styles.placeholder} />
           </View>
 
-          {/* 진행 상황 */}
+          
+
+          {/* 단계별 콘텐츠 */}
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.scrollContentContainer}>
+              
+            {/* 진행 상황 */}
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
               <View
@@ -457,12 +480,6 @@ const PetInfoInputScreen = () => {
             </Text>
           </View>
 
-          {/* 단계별 콘텐츠 */}
-          <ScrollView 
-            style={styles.content} 
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.scrollContentContainer}>
             {/* 단계 제목 및 설명 */}
             <View style={styles.stepHeader}>
               <Text style={styles.stepTitle}>{currentStepData.title}</Text>
@@ -519,6 +536,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
+    marginTop: -60,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
@@ -538,7 +556,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#FFFFFF',
+
   },
   progressBar: {
     height: 6,
@@ -637,9 +655,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#C59172',
     borderColor: '#C59172',
   },
-  optionEmoji: {
-    fontSize: 28,
-    marginBottom: 5,
+  optionIcon: {
+    marginBottom: 6,
   },
   optionText: {
     fontSize: 14,

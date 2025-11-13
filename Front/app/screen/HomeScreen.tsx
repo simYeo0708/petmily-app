@@ -4,9 +4,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Image,
   Pressable,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import GuideStepModal from "../components/GuideStepModal";
 import { PetMallContent } from "../components/PetMallContent";
 import { PetWalkerContent } from "../components/PetWalkerContent";
-import PetInfoHeader from "../components/PetInfoHeader";
 import AdBanner from "../components/AdBanner";
 import ServiceGuide from "../components/ServiceGuide";
 import WalkerRecruitmentModal from "../components/WalkerRecruitmentModal";
@@ -34,15 +33,35 @@ import {
   modalStyles,
   modeStyles,
 } from "../styles/HomeScreenStyles";
+import { IconImage, IconName } from "../components/IconImage";
+import { Ionicons } from "@expo/vector-icons";
+import {
+  GuideStep as GuideStepType,
+  SearchResult as SearchResultType,
+  PetInfo as PetInfoType,
+} from "../types/HomeScreen";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface PetInfo {
-  name: string;
-  breed: string;
-  age: string;
-  weight: string;
-}
+type SearchResult = SearchResultType;
+
+const MODE_ICON_SOURCE_MAP: Record<string, any> = {
+  "@dog_food.png": require("../../assets/images/dog_food.png"),
+  "@dog_snack.png": require("../../assets/images/dog_snack.png"),
+  "@cat_food.png": require("../../assets/images/cat_food.png"),
+  "@cat_snack.png": require("../../assets/images/cat_snack.png"),
+  "@toy.png": require("../../assets/images/toy.png"),
+  "@toilet.png": require("../../assets/images/toilet.png"),
+  "@grooming.png": require("../../assets/images/grooming.png"),
+  "@clothing.png": require("../../assets/images/clothing.png"),
+  "@outdoor.png": require("../../assets/images/outdoor.png"),
+  "@house.png": require("../../assets/images/house.png"),
+  "@shop.png": require("../../assets/images/shop.png"),
+  "@walker.png": require("../../assets/images/walker.png"),
+};
+
+const resolveModeIconSource = (icon: string) =>
+  icon.startsWith("@") ? MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"] : null;
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -52,7 +71,7 @@ const HomeScreen = () => {
   const [serviceMode, setServiceMode] = useState<ServiceMode>("PW");
   const [searchQuery, setSearchQuery] = useState("");
   const [showWalkerModal, setShowWalkerModal] = useState(true);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showServiceGuide, setShowServiceGuide] = useState(false);
   const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
@@ -159,6 +178,10 @@ const HomeScreen = () => {
     navigation.navigate("HelperDashboard");
   };
 
+  const handleNavigateToMyPet = () => {
+    navigation.navigate("Main", { initialTab: "MyPetTab" });
+  };
+
   const handleJoinHelper = async () => {
     await becomeHelper();
     handleNavigateToHelper();
@@ -212,7 +235,7 @@ const HomeScreen = () => {
       const savedPetInfo = await AsyncStorage.getItem("petInfo");
       console.log("🔍 [DEBUG] savedPetInfo from AsyncStorage:", savedPetInfo);
       if (savedPetInfo) {
-        const petInfo: PetInfo = JSON.parse(savedPetInfo);
+        const petInfo: PetInfoType = JSON.parse(savedPetInfo);
         console.log("🔍 [DEBUG] parsed petInfo:", petInfo);
         // 필수 정보가 있는지 확인
         const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
@@ -293,24 +316,27 @@ const HomeScreen = () => {
   };
 
   // 가이드 단계별 설명 데이터
-  const guideSteps = [
+  const guideSteps: Array<GuideStepType & { iconName: IconName }> = [
     {
       id: "pet_walker_button",
-      title: "🐕 Pet Walker 서비스",
+      title: "Pet Walker 서비스",
       description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!",
       nextButtonText: "다음",
+      iconName: "walker",
     },
     {
-      id: "pet_mall_button", 
-      title: "🛒 Pet Mall 서비스",
+      id: "pet_mall_button",
+      title: "Pet Mall 서비스",
       description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!",
       nextButtonText: "다음",
+      iconName: "shop",
     },
     {
       id: "walk_booking",
-      title: "🐾 반려동물 정보 입력",
+      title: "반려동물 정보 입력",
       description: "산책 예약을 위해 먼저 반려동물 정보를\n입력해주세요!",
       nextButtonText: "정보 입력하기",
+      iconName: "paw",
     },
   ];
 
@@ -439,7 +465,7 @@ const HomeScreen = () => {
     setShowSearchResults(true);
   };
 
-  const generateSearchResults = (query: string, mode: ServiceMode) => {
+  const generateSearchResults = (query: string, mode: ServiceMode): SearchResult[] => {
     const lowerQuery = query.toLowerCase();
     
     if (mode === "PW") {
@@ -450,7 +476,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '산책 요청하기',
           description: '워커와 매칭하여 산책 서비스를 요청하세요',
-          icon: '🚶‍♂️',
+          iconName: 'walker',
           action: () => navigation.navigate('WalkingRequest'),
         },
         {
@@ -458,7 +484,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '산책 지도',
           description: '실시간 위치 추적과 산책 경로를 확인하세요',
-          icon: '🗺️',
+          iconName: 'map',
           action: () => navigation.navigate('WalkingMap'),
         },
         {
@@ -466,7 +492,7 @@ const HomeScreen = () => {
           type: 'feature',
           title: '워커 매칭',
           description: '나에게 맞는 워커를 찾아보세요',
-          icon: '👥',
+          iconName: 'paw',
           action: () => navigation.navigate('WalkerMatching', { 
             bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
           }),
@@ -480,26 +506,26 @@ const HomeScreen = () => {
       return [
         {
           id: '1',
-          type: 'category',
+          type: 'service',
           title: '사료',
           description: '건강한 사료를 찾아보세요',
-          icon: '🍽️',
+          iconName: 'food',
           action: () => navigation.navigate('Shop', { category: '사료' }),
         },
         {
           id: '2',
-          type: 'category',
+          type: 'service',
           title: '장난감',
           description: '재미있는 장난감을 만나보세요',
-          icon: '🎾',
+          iconName: 'toy',
           action: () => navigation.navigate('Shop', { category: '장난감' }),
         },
         {
           id: '3',
-          type: 'category',
+          type: 'service',
           title: '의류',
           description: '귀여운 의류를 쇼핑하세요',
-          icon: '👕',
+          iconName: 'clothing',
           action: () => navigation.navigate('Shop', { category: '의류' }),
         },
       ].filter(item => 
@@ -509,7 +535,7 @@ const HomeScreen = () => {
     }
   };
 
-  const handleSearchResultPress = (result: any) => {
+  const handleSearchResultPress = (result: SearchResult) => {
     setShowSearchResults(false);
     setSearchQuery('');
     result.action();
@@ -517,77 +543,69 @@ const HomeScreen = () => {
 
   return (
     <>
-      {/* ==================== SafeAreaView (최상단 영역) ==================== */}
-      {/* 
-        - StatusBar 영역 (시계, 배터리 표시)
-        - 배경색: #C59172 (브랜드 갈색)
-        - edges={['top']}: 상단만 safe area 적용
-      */}
-        <SafeAreaView
-          style={[
-          homeScreenStyles.root,
-          { backgroundColor: '#FFFFFF' },
-        ]}
-        edges={['top']}>
-        
-        {/* StatusBar 설정 */}
-        <StatusBar 
-          backgroundColor="#C59172" 
-          barStyle="light-content"  // 흰색 텍스트
-          translucent={false}
-        />
-        
+      {/* 메인 콘텐츠 영역 */}
+      <SafeAreaView
+        style={[homeScreenStyles.root]}
+        edges={['left', 'right']}>
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
-        
-          {/* ==================== 헤더 영역 (가이드 모드 시 숨김) ==================== */}
-          {/* 
-            가이드 모드가 아닐 때만 표시:
-            1. Petmily 로고 및 검색바 (최상단에 여백 없이 붙음)
-          */}
+          {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}
           {!showGuideOverlay && (
-            <>
-              {/* ========== Petmily 헤더 (로고 + 검색바) ========== */}
-              {/* 
-                - 최상단에 여백 없이 배치 (marginTop: 0, paddingTop: 0)
-                - 반투명 흰색 배경
-                - 로고: "🐾 Petmily"
-                - 검색바: 서비스 모드별 placeholder
-              */}
-              <View
-                style={[
-                  headerStyles.header,
-                  { 
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    marginTop: -20,    // 최상단 여백 제거
-                  },
-                ]}>
-                {/* 로고 */}
-                <Text style={headerStyles.logo}>🐾 Petmily</Text>
-                
-                {/* 검색바 영역 */}
-                <View style={headerStyles.headerRight}>
-                  <View style={headerStyles.searchBar}>
-                    <Text style={headerStyles.searchIcon}>🔍</Text>
-                    <TextInput
-                      style={headerStyles.searchInput}
-                      placeholder={
-                        serviceMode === "PW" ? "기능 검색 (산책, 지도, 워커...)" : "상품 검색 (사료, 장난감...)"
-                      }
-                      placeholderTextColor="#888"
-                      value={searchQuery}
-                      onChangeText={handleSearch}
-                      returnKeyType="search"
-                      onFocus={() => {
-                        if (searchQuery.trim().length > 0) {
-                          setShowSearchResults(true);
-                        }
-                      }}
-                    />
-                  </View>
-                </View>
+            <View
+              style={[
+                headerStyles.header,
+                { 
+                  backgroundColor: "#FFFFFF",
+                },
+              ]}>
+              {/* 로고 */}
+              <View style={headerStyles.logoContainer}>
+                <IconImage name="paw" size={22} style={headerStyles.logoIcon} />
+                <Text style={headerStyles.logoText}>Petmily</Text>
               </View>
-            </>
+              
+              {/* 검색바 영역 */}
+              <View style={headerStyles.headerRight}>
+                <View style={headerStyles.searchBar}>
+                  <Ionicons name="search" size={16} color="#888" style={headerStyles.searchIcon} />
+                  <TextInput
+                    style={headerStyles.searchInput}
+                    placeholder={
+                      serviceMode === "PW" ? "기능 검색 (산책, 지도, 워커...)" : "상품 검색 (사료, 장난감...)"
+                    }
+                    placeholderTextColor="#888"
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                    returnKeyType="search"
+                    onFocus={() => {
+                      if (searchQuery.trim().length > 0) {
+                        setShowSearchResults(true);
+                      }
+                    }}
+                  />
+                </View>
+                <TouchableOpacity
+                  onPress={handleNavigateToMyPet}
+                  style={headerStyles.petAvatar}>
+                  {petInfo?.hasPhoto && petInfo.photoUri ? (
+                    <Image
+                      source={{ uri: petInfo.photoUri }}
+                      style={headerStyles.petAvatarImage}
+                    />
+                  ) : (
+                  <View style={headerStyles.petAvatarPlaceholder}>
+                    {petInfo?.name ? (
+                      <Text style={headerStyles.petAvatarInitial}>
+                        {petInfo.name.slice(0, 1)}
+                      </Text>
+                    ) : (
+                      <IconImage name="paw" size={20} />
+                    )}
+                  </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
 
       {/* 검색 결과 오버레이 */}
@@ -616,7 +634,13 @@ const HomeScreen = () => {
                     style={styles.searchResultItem}
                     onPress={() => handleSearchResultPress(result)}
                   >
-                    <Text style={styles.searchResultIcon}>{result.icon}</Text>
+                    {result.iconName && (
+                      <IconImage
+                        name={result.iconName}
+                        size={28}
+                        style={styles.searchResultIcon}
+                      />
+                    )}
                     <View style={styles.searchResultContent}>
                       <Text style={styles.searchResultTitle}>{result.title}</Text>
                       <Text style={styles.searchResultDescription}>{result.description}</Text>
@@ -627,7 +651,7 @@ const HomeScreen = () => {
               ) : (
                 <View style={styles.noSearchResults}>
                   <Text style={styles.noSearchResultsText}>
-                    "{searchQuery}"에 대한 검색 결과가 없습니다
+                    &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다
                   </Text>
                 </View>
               )}
@@ -642,19 +666,14 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         scrollEnabled={!showGuideOverlay}
       >
-        {/* ========== 반려동물 정보 헤더 (스크롤 가능) ========== */}
         {!showGuideOverlay && (
-          <View style={homeScreenStyles.section}>
-            <Text style={homeScreenStyles.sectionTitle}>🐾 내 반려동물</Text>
-            <PetInfoHeader />
-          </View>
-        )}
-
+        <View style={homeScreenStyles.fullWidthBanner}>
+          <AdBanner />
+        </View>
+      )}
         <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>서비스 선택</Text>
-          
           {/* 디버깅 버튼들 (임시) */}
-          <View style={{ flexDirection: 'row', marginBottom: 10, gap: 10 }}>
+          <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
             <TouchableOpacity 
               style={{ backgroundColor: '#ff6b6b', padding: 8, borderRadius: 4 }}
               onPress={clearGuideData}
@@ -668,6 +687,7 @@ const HomeScreen = () => {
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
           </View>
+          {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
             {(["PW", "PM"] as const).map((mode) => (
               <Animated.View
@@ -698,9 +718,17 @@ const HomeScreen = () => {
                   ]}
                   onPress={() => setServiceMode(mode)}>
                   <View style={modeStyles.modeIconContainer}>
-                    <Text style={modeStyles.modeIcon}>
-                      {SERVICE_MODE_CONFIG[mode].icon}
-                    </Text>
+                    {SERVICE_MODE_CONFIG[mode].icon.startsWith("@") ? (
+                      <Image
+                        source={resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon)}
+                        style={modeStyles.modeIconImage}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={modeStyles.modeIcon}>
+                        {SERVICE_MODE_CONFIG[mode].icon}
+                      </Text>
+                    )}
                   </View>
                   <Text
                     style={[
@@ -714,102 +742,35 @@ const HomeScreen = () => {
             ))}
           </View>
         </View>
-
-        {/* 헬퍼 참여 제안 */}
-        {!helperStatus.isHelper && serviceMode === "PW" && (
-          <View style={modalStyles.modalBox}>
-            <Text style={modalStyles.modalTitle}>
-              🤝 워커로 참여하시겠어요?
-            </Text>
-            <Text style={modalStyles.modalBody}>
-              다른 반려동물 가족들을 도와주는 워커가 되어보세요!
-            </Text>
-            <View style={modalStyles.modalButtonsRow}>
-              <Pressable
-                style={[
-                  modalStyles.choiceBtn,
-                  modalStyles.primaryBtn,
-                  {
-                    backgroundColor: currentMode.color,
-                    borderColor: currentMode.color,
-                    flex: 1,
-                  },
-                ]}
-                onPress={handleJoinHelper}>
-                <Text
-                  style={[
-                    modalStyles.choiceBtnText,
-                    modalStyles.primaryBtnText,
-                  ]}>
-                  네, 참여할게요
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {/* 헬퍼 대시보드 바로가기 */}
-        {helperStatus.isHelper && serviceMode === "PW" && (
-          <View style={modalStyles.modalBox}>
-            <Text style={modalStyles.modalTitle}>🎉 워커로 활동 중입니다!</Text>
-            <Text style={modalStyles.modalBody}>
-              워커 대시보드에서 수익과 매칭 현황을 확인해보세요.
-            </Text>
-            <View style={modalStyles.modalButtonsRow}>
-              <Pressable
-                style={[
-                  modalStyles.choiceBtn,
-                  modalStyles.primaryBtn,
-                  {
-                    backgroundColor: currentMode.color,
-                    borderColor: currentMode.color,
-                  },
-                ]}
-                onPress={handleNavigateToHelper}>
-                <Text
-                  style={[
-                    modalStyles.choiceBtnText,
-                    modalStyles.primaryBtnText,
-                  ]}>
-                  워커 대시보드 보기
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
+        
         {/* ========== 광고 배너 (자동 슬라이더) ========== */}
-        {!showGuideOverlay && (
-          <View style={homeScreenStyles.section}>
-            <Text style={homeScreenStyles.sectionTitle}>🎁 오늘의 특가</Text>
-            <AdBanner />
-          </View>
-        )}
-
-        {serviceMode === "PW" ? (
-          <PetWalkerContent 
-            currentMode={currentMode}
-            walkRequestButtonRef={walkRequestButtonRef}
-            walkRequestListRef={walkRequestListRef}
-            showGuideOverlay={showGuideOverlay}
-            currentGuideStep={currentStepData?.id}
-          />
-        ) : (
-          <View ref={shopButtonRef}>
-            <PetMallContent
+          {serviceMode === "PW" && (
+            <PetWalkerContent 
               currentMode={currentMode}
-              onCategoryPress={handleCategoryPress}
+              walkRequestButtonRef={walkRequestButtonRef}
+              walkRequestListRef={walkRequestListRef}
+              showGuideOverlay={showGuideOverlay}
+              currentGuideStep={currentStepData?.id}
             />
-          </View>
-        )}
+          )}
+          {serviceMode === "PM" && (
+            <View ref={shopButtonRef}>
+              <PetMallContent
+                currentMode={currentMode}
+                onCategoryPress={handleCategoryPress}
+              />
+            </View>
+          )}
       </ScrollView>
 
       {/* 워커 모집 모달 */}
-      <WalkerRecruitmentModal
-        visible={showWalkerModal}
-        onClose={() => setShowWalkerModal(false)}
-        onDismiss={() => setShowWalkerModal(false)}
-      />
+      {serviceMode === "PW" && (
+        <WalkerRecruitmentModal
+          visible={showWalkerModal}
+          onClose={() => setShowWalkerModal(false)}
+          onDismiss={() => setShowWalkerModal(false)}
+        />
+      )}
 
         </View>
       </SafeAreaView>
@@ -824,6 +785,7 @@ const HomeScreen = () => {
         currentStep={currentGuideStep + 1}
         totalSteps={guideSteps.length}
         nextButtonText={currentStepData?.nextButtonText}
+      iconName={currentStepData?.iconName}
       />
     </>
   );
@@ -890,7 +852,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f8f8f8',
   },
   searchResultIcon: {
-    fontSize: rf(24),
     marginRight: 15,
   },
   searchResultContent: {

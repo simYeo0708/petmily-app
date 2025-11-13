@@ -19,6 +19,8 @@ import {
   matchingScreenStyles,
   modalStyles,
 } from "../styles/HomeScreenStyles";
+import { Ionicons } from "@expo/vector-icons";
+import { IconImage } from "../components/IconImage";
 
 type MatchingScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -122,7 +124,7 @@ const MatchingScreen = () => {
 
   return (
     <SafeAreaView style={homeScreenStyles.root}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       {/* Header */}
       <View
         style={[
@@ -133,11 +135,14 @@ const MatchingScreen = () => {
           <Pressable
             onPress={handleBackPress}
             style={matchingScreenStyles.backButton}>
-            <Text style={matchingScreenStyles.backButtonText}>←</Text>
+            <Ionicons name="chevron-back" size={20} color="#C59172" />
           </Pressable>
-          <Text style={[headerStyles.logo, { marginLeft: 10 }]}>
-            🤝 산책 매칭
-          </Text>
+          <View style={matchingScreenStyles.headerTitleRow}>
+            <Ionicons name="people-outline" size={20} color="#C59172" style={matchingScreenStyles.headerTitleIcon} />
+            <Text style={[headerStyles.logo, { marginLeft: 10 }]}>
+              산책 매칭
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -174,13 +179,13 @@ const MatchingScreen = () => {
 
             <View style={matchingScreenStyles.requestDetails}>
               <View style={matchingScreenStyles.detailRow}>
-                <Text style={matchingScreenStyles.detailIcon}>👤</Text>
+                  <Ionicons name="person-circle-outline" size={16} color="#C59172" style={matchingScreenStyles.detailIcon} />
                 <Text style={matchingScreenStyles.detailText}>
                   {request.ownerName}
                 </Text>
               </View>
               <View style={matchingScreenStyles.detailRow}>
-                <Text style={matchingScreenStyles.detailIcon}>📍</Text>
+                  <Ionicons name="location-outline" size={16} color="#C59172" style={matchingScreenStyles.detailIcon} />
                 <Text style={matchingScreenStyles.detailText}>
                   {request.location}
                 </Text>
@@ -189,7 +194,7 @@ const MatchingScreen = () => {
                 </Text>
               </View>
               <View style={matchingScreenStyles.detailRow}>
-                <Text style={matchingScreenStyles.detailIcon}>🕐</Text>
+                  <Ionicons name="time-outline" size={16} color="#C59172" style={matchingScreenStyles.detailIcon} />
                 <Text style={matchingScreenStyles.detailText}>
                   {request.date} {request.time} ({request.duration}분)
                 </Text>
@@ -206,7 +211,7 @@ const MatchingScreen = () => {
 
         {mockRequests.length === 0 && (
           <View style={matchingScreenStyles.emptyState}>
-            <Text style={matchingScreenStyles.emptyIcon}>🔍</Text>
+            <Ionicons name="search-outline" size={36} color="#C59172" style={matchingScreenStyles.emptyIcon} />
             <Text style={matchingScreenStyles.emptyTitle}>
               새로운 요청이 없습니다
             </Text>
@@ -235,9 +240,12 @@ const MatchingScreen = () => {
             {selectedRequest && (
               <ScrollView style={matchingScreenStyles.modalContent}>
                 <View style={matchingScreenStyles.modalSection}>
-                  <Text style={matchingScreenStyles.modalSectionTitle}>
-                    🐕 반려동물 정보
-                  </Text>
+                  <View style={matchingScreenStyles.modalSectionTitleRow}>
+                    <IconImage name="dog" size={18} style={matchingScreenStyles.modalSectionIcon} />
+                    <Text style={matchingScreenStyles.modalSectionTitle}>
+                      반려동물 정보
+                    </Text>
+                  </View>
                   <Text style={matchingScreenStyles.modalText}>
                     이름: {selectedRequest.petName}
                   </Text>
@@ -247,9 +255,12 @@ const MatchingScreen = () => {
                 </View>
 
                 <View style={matchingScreenStyles.modalSection}>
-                  <Text style={matchingScreenStyles.modalSectionTitle}>
-                    📍 산책 정보
-                  </Text>
+                  <View style={matchingScreenStyles.modalSectionTitleRow}>
+                    <Ionicons name="map-outline" size={18} color="#C59172" style={matchingScreenStyles.modalSectionIcon} />
+                    <Text style={matchingScreenStyles.modalSectionTitle}>
+                      산책 정보
+                    </Text>
+                  </View>
                   <Text style={matchingScreenStyles.modalText}>
                     위치: {selectedRequest.location}
                   </Text>

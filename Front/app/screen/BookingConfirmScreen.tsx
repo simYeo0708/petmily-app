@@ -153,7 +153,7 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
       
       {/* 헤더 */}
       <View style={styles.header}>

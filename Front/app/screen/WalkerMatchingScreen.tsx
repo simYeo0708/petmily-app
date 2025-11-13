@@ -17,24 +17,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import WalkerCard from '../components/WalkerCard';
 import { RootStackParamList } from '../index';
+import { WALKER_MATCHING_DATA, type Walker } from '../data';
 
 type WalkerMatchingScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WalkerMatching'>;
 type WalkerMatchingScreenRouteProp = RouteProp<RootStackParamList, 'WalkerMatching'>;
 
 const { width } = Dimensions.get('window');
-
-interface Walker {
-  id: string;
-  name: string;
-  rating: number;
-  reviewCount: number;
-  profileImage: string;
-  bio: string;
-  experience: string;
-  hourlyRate: number;
-  isAvailable: boolean;
-  location: string;
-}
 
 interface WalkerMatchingScreenProps {
   navigation: any;
@@ -71,80 +59,8 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
   ];
 
   // 더미 데이터 (실제로는 API에서 가져옴)
-  const dummyWalkers: Walker[] = [
-    {
-      id: '1',
-      name: '김산책',
-      rating: 4.8,
-      reviewCount: 127,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물과 함께하는 즐거운 산책을 도와드립니다!',
-      experience: '3년 경력',
-      hourlyRate: 15000,
-      isAvailable: true,
-      location: '강남구',
-    },
-    {
-      id: '2',
-      name: '박워커',
-      rating: 4.9,
-      reviewCount: 89,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '안전하고 신뢰할 수 있는 산책 서비스를 제공합니다.',
-      experience: '5년 경력',
-      hourlyRate: 18000,
-      isAvailable: true,
-      location: '서초구',
-    },
-    {
-      id: '3',
-      name: '이펫시터',
-      rating: 4.7,
-      reviewCount: 203,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물 행동 전문가와 함께하는 특별한 산책',
-      experience: '7년 경력',
-      hourlyRate: 20000,
-      isAvailable: true,
-      location: '송파구',
-    },
-    {
-      id: '4',
-      name: '최도우미',
-      rating: 4.6,
-      reviewCount: 156,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '사랑과 정성으로 반려동물을 돌봐드립니다.',
-      experience: '2년 경력',
-      hourlyRate: 12000,
-      isAvailable: true,
-      location: '마포구',
-    },
-    {
-      id: '5',
-      name: '정산책러',
-      rating: 4.9,
-      reviewCount: 98,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '반려동물의 건강한 생활을 위한 전문 산책 서비스',
-      experience: '4년 경력',
-      hourlyRate: 16000,
-      isAvailable: true,
-      location: '용산구',
-    },
-    {
-      id: '6',
-      name: '한펫케어',
-      rating: 4.8,
-      reviewCount: 234,
-      profileImage: 'https://via.placeholder.com/100',
-      bio: '24시간 언제든지 반려동물을 돌봐드립니다.',
-      experience: '6년 경력',
-      hourlyRate: 17000,
-      isAvailable: true,
-      location: '영등포구',
-    },
-  ];
+  // 중앙 관리 샘플 데이터 사용
+  const dummyWalkers: Walker[] = WALKER_MATCHING_DATA;
 
   useEffect(() => {
     loadWalkers();
@@ -157,9 +73,9 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
       // const response = await fetch('/api/walkers');
       // const data = await response.json();
       
-      // 더미 데이터 사용
+      // 중앙 관리 샘플 데이터 사용
       setTimeout(() => {
-        setWalkers(dummyWalkers);
+        setWalkers(dummyWalkers as Walker[]);
         setLoading(false);
       }, 1000);
     } catch (error) {
@@ -184,7 +100,7 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
 
     return (
       <WalkerCard
-        walker={item}
+        walker={item as any}
         cardColor={cardColor}
         onPress={() => handleWalkerSelect(item)}
         style={{ width: (width - 60) / columnsCount }}
@@ -201,36 +117,58 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>워커 선택</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>워커 선택</Text>
+          <Text style={styles.headerSubtitle}>{walkers.length}명의 워커</Text>
+        </View>
         <View style={styles.placeholder} />
       </View>
       
       <View style={styles.bookingInfo}>
-        <View style={styles.infoItem}>
-          <Ionicons name="time" size={16} color="#4A90E2" />
-          <Text style={styles.infoText}>{bookingData.timeSlot}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="location" size={16} color="#4A90E2" />
-          <Text style={styles.infoText}>{bookingData.address}</Text>
-        </View>
+        <LinearGradient
+          colors={['#E3F2FD', '#F5F5F5']}
+          style={styles.bookingInfoGradient}
+        >
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="time" size={18} color="#4A90E2" />
+            </View>
+            <Text style={styles.infoText}>{bookingData.timeSlot}</Text>
+          </View>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoItem}>
+            <View style={styles.infoIconContainer}>
+              <Ionicons name="location" size={18} color="#4A90E2" />
+            </View>
+            <Text style={styles.infoText} numberOfLines={1}>{bookingData.address}</Text>
+          </View>
+        </LinearGradient>
       </View>
     </View>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Ionicons name="paw" size={64} color="#ddd" />
+      <View style={styles.emptyStateIconContainer}>
+        <Ionicons name="paw" size={64} color="#C59172" />
+      </View>
       <Text style={styles.emptyStateTitle}>사용 가능한 워커가 없습니다</Text>
       <Text style={styles.emptyStateText}>
         다른 시간대나 지역을 선택해보세요
       </Text>
+      <TouchableOpacity
+        style={styles.refreshButton}
+        onPress={handleRefresh}
+      >
+        <Ionicons name="refresh" size={20} color="#4A90E2" />
+        <Text style={styles.refreshButtonText}>다시 검색</Text>
+      </TouchableOpacity>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
       
       <FlatList
         data={walkers}
@@ -266,56 +204,120 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   backButton: {
-    padding: 5,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: '#999',
   },
   placeholder: {
-    width: 34,
+    width: 40,
   },
   bookingInfo: {
-    gap: 8,
+    marginTop: 8,
+  },
+  bookingInfoGradient: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E3F2FD',
   },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingVertical: 4,
+  },
+  infoIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(74, 144, 226, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 8,
+    marginLeft: 44,
   },
   infoText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 15,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1,
   },
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
+    paddingHorizontal: 40,
+  },
+  emptyStateIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(197, 145, 114, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
   },
   emptyStateTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptyStateText: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#666',
     textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+  },
+  refreshButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#4A90E2',
   },
 });
 

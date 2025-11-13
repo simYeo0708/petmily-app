@@ -8,6 +8,7 @@ import com.petmily.backend.api.auth.dto.response.TokenResponse;
 import com.petmily.backend.api.auth.service.AuthService;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
+import com.petmily.backend.config.DevTestUserProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +21,17 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final DevTestUserProperties devTestUserProperties;
 
     @PostMapping("/signup")
     public ResponseEntity<TokenResponse> signup(@RequestBody SignupRequest request) {
-        User newUser = authService.signup(request);
+        authService.signup(request);
         // 회원가입 후 자동 로그인 처리
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setUsername(request.getUsername());
@@ -89,32 +91,25 @@ public class AuthController {
     }
 
     // 테스트용 사용자 생성 및 로그인 API
+    @SuppressWarnings("ConstantConditions")
     @PostMapping("/test/setup")
     public ResponseEntity<TokenResponse> setupTestUser() {
+        if (!devTestUserProperties.isEnabled()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
         try {
-            // 테스트용 사용자 생성
-            SignupRequest signupRequest = new SignupRequest();
-            signupRequest.setEmail("test@example.com");
-            signupRequest.setPassword("asdf");
-            signupRequest.setUsername("testuser");
-            signupRequest.setName("testuser");
-            
-            User testUser = authService.signup(signupRequest);
-            System.out.println("Test user created with ID: " + testUser.getId());
-            
-            // 로그인하여 토큰 발급
+            User devUser = authService.ensureDevTestUser();
             LoginRequest loginRequest = new LoginRequest();
-            loginRequest.setUsername("testuser");
-            loginRequest.setPassword("asdf");
-            
+            loginRequest.setUsername(devTestUserProperties.getUsername());
+            loginRequest.setPassword(devTestUserProperties.getPassword());
+
             TokenResponse token = authService.login(loginRequest);
-            System.out.println("Test user logged in successfully");
-            
+            log.info("Dev test user '{}' ({}) logged in via /auth/test/setup", devUser.getUsername(), devUser.getId());
             return ResponseEntity.ok(token);
         } catch (Exception e) {
-            System.err.println("Error setting up test user: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().build();
+            log.error("Error setting up test user", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     

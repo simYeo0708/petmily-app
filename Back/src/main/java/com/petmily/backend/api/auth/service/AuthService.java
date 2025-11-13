@@ -8,10 +8,10 @@ import com.petmily.backend.api.auth.jwt.JwtTokenProvider;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.domain.auth.token.AuthRefreshToken;
 import com.petmily.backend.domain.auth.token.AuthRefreshTokenRepository;
+import com.petmily.backend.config.DevTestUserProperties;
 import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -28,25 +29,24 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final org.springframework.security.authentication.AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthRefreshTokenRepository refreshTokenRepository;
-    
+    private final DevTestUserProperties devTestUserProperties;
+
     public AuthService(UserRepository userRepository, 
                       PasswordEncoder passwordEncoder,
-                      org.springframework.security.authentication.AuthenticationManager authenticationManager,
                       JwtTokenProvider jwtTokenProvider,
-                      AuthRefreshTokenRepository refreshTokenRepository) {
+                      AuthRefreshTokenRepository refreshTokenRepository,
+                      DevTestUserProperties devTestUserProperties) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.refreshTokenRepository = refreshTokenRepository;
-        log.info("✅ AuthService initialized with AuthenticationManager: {}", authenticationManager != null);
+        this.devTestUserProperties = devTestUserProperties;
     }
 
     @Transactional
-    public User signup(SignupRequest request) {
+    public void signup(SignupRequest request) {
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
             throw new IllegalArgumentException("Username already exists.");
         }
@@ -54,15 +54,18 @@ public class AuthService {
             throw new IllegalArgumentException("Email already exists.");
         }
 
-        User newUser = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .email(request.getEmail())
-                .name(request.getName())
-                .role(Role.USER)
-                .build();
+        User newUser = Objects.requireNonNull(
+                User.builder()
+                        .username(request.getUsername())
+                        .password(passwordEncoder.encode(request.getPassword()))
+                        .email(request.getEmail())
+                        .name(request.getName())
+                        .role(Role.USER)
+                        .build(),
+                "User builder returned null"
+        );
 
-        return userRepository.save(newUser);
+        userRepository.save(newUser);
     }
 
     @Transactional
@@ -118,11 +121,14 @@ public class AuthService {
                                 log.info("✅ Refresh token 업데이트 완료");
                             },
                             () -> {
-                                AuthRefreshToken newRefreshToken = AuthRefreshToken.builder()
-                                        .token(refreshToken)
-                                        .userId(userId)
-                                        .expirationDate(Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()))
-                                        .build();
+                                AuthRefreshToken newRefreshToken = Objects.requireNonNull(
+                                        AuthRefreshToken.builder()
+                                                .token(refreshToken)
+                                                .userId(userId)
+                                                .expirationDate(Instant.now().plusMillis(jwtTokenProvider.getRefreshTokenExpiration()))
+                                                .build(),
+                                        "AuthRefreshToken builder returned null"
+                                );
                                 refreshTokenRepository.save(newRefreshToken);
                                 log.info("✅ 새 Refresh token 생성 완료");
                             }
@@ -182,6 +188,84 @@ public class AuthService {
                 .ifPresent(refreshTokenRepository::delete);
 
         userRepository.delete(user);
+    }
+
+    @Transactional
+    public User ensureDevTestUser() {
+        String username = devTestUserProperties.getUsername();
+        if (username == null || username.isBlank()) {
+            throw new IllegalStateException("Dev test user username must be configured.");
+        }
+
+        java.util.Optional<User> existingUser = userRepository.findByUsername(username);
+        User result = existingUser.isPresent()
+                ? refreshDevTestUser(existingUser.get())
+                : createDevTestUser();
+
+        if (result == null) {
+            throw new IllegalStateException("Dev test user could not be ensured.");
+        }
+        return result;
+    }
+
+    private User refreshDevTestUser(User existingUser) {
+        boolean updated = false;
+
+        String rawPassword = devTestUserProperties.getPassword();
+        if (rawPassword != null && !rawPassword.isBlank() &&
+                !passwordEncoder.matches(rawPassword, existingUser.getPassword())) {
+            existingUser.setPassword(passwordEncoder.encode(rawPassword));
+            updated = true;
+        }
+
+        String email = devTestUserProperties.getEmail();
+        if (email != null && !email.isBlank() && !email.equals(existingUser.getEmail())) {
+            existingUser.setEmail(email);
+            updated = true;
+        }
+
+        String name = devTestUserProperties.getName();
+        if (name != null && !name.isBlank() && !name.equals(existingUser.getName())) {
+            existingUser.setName(name);
+            updated = true;
+        }
+
+        if (existingUser.getRole() == null) {
+            existingUser.setRole(Role.USER);
+            updated = true;
+        }
+
+        if (updated) {
+            return Objects.requireNonNull(
+                    userRepository.save(existingUser),
+                    "Failed to persist dev test user updates."
+            );
+        }
+        return Objects.requireNonNull(existingUser, "Existing user must not be null");
+    }
+
+    private User createDevTestUser() {
+        String username = devTestUserProperties.getUsername();
+        String password = devTestUserProperties.getPassword();
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            throw new IllegalStateException("Dev test user credentials must be configured.");
+        }
+
+        User newUser = Objects.requireNonNull(
+                User.builder()
+                        .username(username)
+                        .password(passwordEncoder.encode(password))
+                        .email(devTestUserProperties.getEmail())
+                        .name(devTestUserProperties.getName())
+                        .role(Role.USER)
+                        .build(),
+                "User builder returned null"
+        );
+
+        return Objects.requireNonNull(
+                userRepository.save(newUser),
+                "Failed to create dev test user."
+        );
     }
     
     // 🔧 개발용: 모든 사용자 조회

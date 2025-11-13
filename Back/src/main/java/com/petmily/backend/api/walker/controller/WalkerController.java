@@ -16,7 +16,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/walkers")
+@RequestMapping("/walkers")
 public class WalkerController {
 
     private final WalkerService walkerService;
