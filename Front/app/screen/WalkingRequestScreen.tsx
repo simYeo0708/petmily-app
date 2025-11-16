@@ -60,8 +60,7 @@ const WalkingRequestScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
-      
+      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -401,8 +400,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     backgroundColor: '#C59172',
   },
   backButton: {

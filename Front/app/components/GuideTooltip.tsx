@@ -7,6 +7,7 @@ import {
   Modal,
   Dimensions,
 } from 'react-native';
+import { IconImage, IconName } from './IconImage';
 
 interface GuideTooltipProps {
   isVisible: boolean;
@@ -20,6 +21,7 @@ interface GuideTooltipProps {
   totalSteps: number;
   nextButtonText: string;
   skipButtonText: string;
+  iconName?: IconName;
 }
 
 const { width, height } = Dimensions.get('window');
@@ -36,6 +38,7 @@ const GuideTooltip: React.FC<GuideTooltipProps> = ({
   totalSteps,
   nextButtonText,
   skipButtonText,
+  iconName,
 }) => {
   if (!isVisible) return null;
 
@@ -49,7 +52,12 @@ const GuideTooltip: React.FC<GuideTooltipProps> = ({
       <View style={styles.overlay}>
         <View style={[styles.tooltip, getTooltipPosition(position)]}>
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
+            <View style={styles.titleWrapper}>
+              {iconName && (
+                <IconImage name={iconName} size={22} style={styles.titleIcon} />
+              )}
+              <Text style={styles.title}>{title}</Text>
+            </View>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -126,6 +134,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  titleWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  titleIcon: {
+    marginRight: 8,
   },
   title: {
     fontSize: 20,

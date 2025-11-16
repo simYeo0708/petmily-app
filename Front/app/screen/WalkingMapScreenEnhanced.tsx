@@ -124,7 +124,7 @@ const WalkingMapScreenEnhanced: React.FC<WalkingMapScreenEnhancedProps> = ({
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
 
       {/* 헤더 */}
       <View style={styles.header}>

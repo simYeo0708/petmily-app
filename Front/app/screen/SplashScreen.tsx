@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View, StatusBar } from "react-native";
+import { IconImage } from "../components/IconImage";
 
 const SplashScreen = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -23,7 +24,7 @@ const SplashScreen = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#C59172" translucent={false} />
+      <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
       <Animated.View
         style={[
           styles.logoContainer,
@@ -33,9 +34,8 @@ const SplashScreen = () => {
           },
         ]}>
         <View style={styles.logoWrapper}>
-          {/* 임시 아이콘 - 실제 아이콘으로 교체 필요 */}
           <View style={styles.pawIconPlaceholder}>
-            <Text style={styles.pawIconText}>🐾</Text>
+            <IconImage name="paw" size={42} />
           </View>
           <Text style={styles.logoText}>PetMily</Text>
         </View>
@@ -68,9 +68,6 @@ const styles = StyleSheet.create({
     marginRight: 15,
     justifyContent: "center",
     alignItems: "center",
-  },
-  pawIconText: {
-    fontSize: 40,
   },
   logoText: {
     fontSize: 48,

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, TouchableOpacity, ScrollView, Alert, StyleSheet, Image } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Text, View, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,18 @@ import { CardBox } from "./CardBox";
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from "../index";
 import { usePet } from "../contexts/PetContext";
+import { WALKING_REQUESTS, CURRENT_WALKING, type WalkingRequest } from "../data";
+import { IconImage, IconName } from "./IconImage";
+
+type RequestTabKey = 'mine' | 'pending' | 'accepted' | 'in_progress' | 'completed';
+
+const WALKING_REQUEST_TABS: { key: RequestTabKey; label: string }[] = [
+  { key: 'mine', label: '내 요청' },
+  { key: 'pending', label: '대기중' },
+  { key: 'accepted', label: '수락됨' },
+  { key: 'in_progress', label: '진행중' },
+  { key: 'completed', label: '완료' },
+];
 
 type PetWalkerContentNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,25 +30,6 @@ interface PetWalkerContentProps {
   walkRequestListRef?: React.RefObject<View | null>;
   showGuideOverlay?: boolean;
   currentGuideStep?: string;
-}
-
-interface WalkingRequest {
-  id: string;
-  user: {
-    name: string;
-    profileImage?: string;
-  };
-  pet: {
-    name: string;
-    species: string;
-    breed: string;
-    image?: string;
-  };
-  timeSlot: string;
-  address: string;
-  status: 'pending' | 'accepted' | 'in_progress' | 'completed';
-  createdAt: string;
-  isMyRequest?: boolean;
 }
 
 export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
@@ -56,6 +49,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   const [walkingRequests, setWalkingRequests] = useState<WalkingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentWalking, setCurrentWalking] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<RequestTabKey>('pending');
 
   useEffect(() => {
     loadWalkingRequests();
@@ -64,57 +58,20 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
   const loadWalkingRequests = async () => {
     try {
-      // Context에서 myPetInfo를 사용하므로 별도 로드 불필요
-
       // TODO: 실제 API 호출로 대체
-      // 임시 데이터
+      // 중앙 관리 샘플 데이터 사용
       const mockRequests: WalkingRequest[] = [
+        ...WALKING_REQUESTS,
+        // 내 요청 예시 (동적 생성) - id를 고유하게 변경
         {
-          id: '1',
-          user: {
-            name: '김철수',
-            profileImage: 'https://via.placeholder.com/50',
-          },
-          pet: {
-            name: '멍멍이',
-            species: 'dog',
-            breed: '골든 리트리버',
-            image: 'https://via.placeholder.com/50',
-          },
-          timeSlot: '오후 2:00-4:00',
-          address: '서울시 강남구 테헤란로 123',
-          status: 'pending',
-          createdAt: '2024-01-15 10:30',
-          isMyRequest: false,
-        },
-        {
-          id: '2',
-          user: {
-            name: '이영희',
-            profileImage: 'https://via.placeholder.com/50',
-          },
-          pet: {
-            name: '야옹이',
-            species: 'cat',
-            breed: '페르시안',
-            image: 'https://via.placeholder.com/50',
-          },
-          timeSlot: '오전 9:00-11:00',
-          address: '서울시 서초구 서초대로 456',
-          status: 'accepted',
-          createdAt: '2024-01-15 09:15',
-          isMyRequest: false,
-        },
-        // 내 요청 예시
-        {
-          id: '3',
+          id: 'my-request-1',
           user: {
             name: '나',
             profileImage: 'https://via.placeholder.com/50',
           },
           pet: {
             name: myPetInfo?.name || '내 반려동물',
-            species: myPetInfo?.species || 'dog',
+            species: (myPetInfo?.species as 'dog' | 'cat' | 'other') || 'dog',
             breed: myPetInfo?.breed || '믹스',
             image: myPetInfo?.photoUri,
           },
@@ -136,30 +93,9 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
   const loadCurrentWalking = async () => {
     try {
-      // 실제로는 API에서 현재 워킹 정보를 가져옴
-      // 샘플 데이터
-      const sampleWalking = {
-        id: '1',
-        walker: {
-          id: '1',
-          name: '김산책',
-          profileImage: 'https://via.placeholder.com/100',
-          rating: 4.8,
-          reviewCount: 127,
-        },
-        user: {
-          id: '1',
-          name: '홍길동',
-          profileImage: 'https://via.placeholder.com/100',
-        },
-        startTime: new Date().toISOString(),
-        duration: 120, // 분
-        location: '서울시 강남구 테헤란로 123',
-        status: 'in_progress',
-        distance: 2.5,
-      };
-      
-      setCurrentWalking(sampleWalking);
+      // TODO: 실제 API 호출로 대체
+      // 중앙 관리 샘플 데이터 사용
+      setCurrentWalking(CURRENT_WALKING);
     } catch (error) {
       console.error('현재 워킹 정보 로드 실패:', error);
     }
@@ -171,6 +107,10 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
   const handleViewMap = () => {
     navigation.navigate('WalkingMap');
+  };
+
+  const handleViewAllRequests = () => {
+    navigation.navigate('MatchingScreen');
   };
 
   const handleAcceptRequest = (requestId: string) => {
@@ -215,28 +155,53 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
     }
   };
 
-  const getSpeciesEmoji = (species: string) => {
+  const getSpeciesIcon = (species: string): IconName => {
     switch (species) {
-      case 'dog': return '🐕';
-      case 'cat': return '🐱';
-      case 'other': return '🐾';
-      default: return '🐾';
+      case 'dog':
+        return 'dog';
+      case 'cat':
+        return 'cat';
+      case 'other':
+        return 'paw';
+      default:
+        return 'paw';
     }
   };
+
+  const filteredRequests = useMemo(() => {
+    if (activeTab === 'mine') {
+      return walkingRequests.filter((request) => request.isMyRequest);
+    }
+
+    const statusKey = activeTab as Exclude<RequestTabKey, 'mine'>;
+    return walkingRequests.filter((request) => request.status === statusKey);
+  }, [walkingRequests, activeTab]);
+
+  const visibleRequests = useMemo(() => {
+    const sorted = [...filteredRequests].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return sorted.slice(0, 4);
+  }, [filteredRequests]);
+
+  const hasMoreRequests = filteredRequests.length > visibleRequests.length;
 
   return (
     <>
       {/* 현재 진행 중인 워킹 */}
       {currentWalking && (
         <View style={homeScreenStyles.section}>
-          <Text style={homeScreenStyles.sectionTitle}>🚶‍♂️ 현재 진행 중인 워킹</Text>
+          <View style={styles.sectionTitleRow}>
+            <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
+            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 워킹</Text>
+          </View>
           <View style={styles.currentWalkingCard}>
             <View style={styles.walkingParticipants}>
               <View style={styles.participantInfo}>
-                <Image
-                  source={{ uri: currentWalking.walker.profileImage }}
-                  style={styles.participantImage}
-                />
+                <View style={styles.participantImage}>
+                  <Ionicons name="person-circle" size={40} color="#C59172" />
+                </View>
                 <View style={styles.participantDetails}>
                   <Text style={styles.participantName}>{currentWalking.walker.name}</Text>
                   <Text style={styles.participantRole}>워커</Text>
@@ -251,10 +216,9 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
               <View style={styles.participantDivider} />
               
               <View style={styles.participantInfo}>
-                <Image
-                  source={{ uri: currentWalking.user.profileImage }}
-                  style={styles.participantImage}
-                />
+                <View style={styles.participantImage}>
+                  <Ionicons name="person-circle" size={40} color="#4A90E2" />
+                </View>
                 <View style={styles.participantDetails}>
                   <Text style={styles.participantName}>{currentWalking.user.name}</Text>
                   <Text style={styles.participantRole}>사용자</Text>
@@ -295,7 +259,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
                 style={[styles.actionButton, styles.mapButton]}
                 onPress={handleViewMap}
               >
-                <Ionicons name="location-sharp" size={18} color="#28a745" />
+                <Ionicons name="map" size={18} color="#f2f2ed" />
                 <Text style={[styles.actionButtonText, styles.mapButtonText]}>지도 보기</Text>
               </TouchableOpacity>
             </View>
@@ -315,9 +279,12 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           }
         ]}
       >
-        <Text style={homeScreenStyles.sectionTitle}>🚶‍♂️ 산책 요청</Text>
+        <View style={styles.sectionTitleRow}>
+          <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
+          <Text style={homeScreenStyles.sectionTitle}>산책 요청</Text>
+        </View>
         <CardBox
-          icon="📝"
+          iconName="walker"
           description="새로운 산책 요청을 등록하세요"
           actionText="요청하기"
           borderColor={currentMode.color}
@@ -343,13 +310,48 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>로딩 중...</Text>
           </View>
-        ) : walkingRequests.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>등록된 산책 요청이 없습니다</Text>
-          </View>
         ) : (
-          <ScrollView style={styles.requestsList} showsVerticalScrollIndicator={false}>
-            {walkingRequests.map((request) => (
+          <>
+            <View style={styles.tabBar}>
+              {WALKING_REQUEST_TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                return (
+                  <TouchableOpacity
+                    key={tab.key}
+                    style={[
+                      styles.tabButton,
+                      isActive && {
+                        backgroundColor: currentMode.color,
+                        borderColor: currentMode.color,
+                      },
+                    ]}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveTab(tab.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.tabButtonLabel,
+                        isActive && styles.tabButtonLabelActive,
+                      ]}
+                    >
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {visibleRequests.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {activeTab === 'mine'
+                    ? '내가 등록한 요청이 없습니다'
+                    : '해당 상태의 요청이 없습니다'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.requestsList}>
+                {visibleRequests.map((request) => (
               <View key={request.id} style={[
                 styles.requestCard,
                 request.isMyRequest && styles.myRequestCard
@@ -381,14 +383,13 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
                 <View style={styles.petInfo}>
                   <View style={styles.petImage}>
-                    {request.pet.image ? (
-                      <Image
-                        source={{ uri: request.pet.image }}
-                        style={styles.petProfileImage}
-                      />
-                    ) : (
-                      <Text style={styles.petEmoji}>{getSpeciesEmoji(request.pet.species)}</Text>
-                    )}
+                    <View style={styles.petIconContainer}>
+                    <IconImage
+                      name={getSpeciesIcon(request.pet.species)}
+                      size={24}
+                      style={styles.petIcon}
+                    />
+                    </View>
                   </View>
                   <View style={styles.petDetails}>
                     <Text style={styles.petName}>{request.pet.name}</Text>
@@ -416,8 +417,30 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
                   </TouchableOpacity>
                 )}
               </View>
-            ))}
-          </ScrollView>
+                ))}
+              </View>
+            )}
+
+            {hasMoreRequests && (
+              <TouchableOpacity
+                style={[
+                  styles.moreButton,
+                  { borderColor: currentMode.color },
+                ]}
+                onPress={handleViewAllRequests}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.moreButtonText,
+                    { color: currentMode.color },
+                  ]}
+                >
+                  전체 {filteredRequests.length}건 보기
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
       </View>
     </>
@@ -425,6 +448,14 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 };
 
 const styles = StyleSheet.create({
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitleIcon: {
+    marginRight: 8,
+  },
   loadingContainer: {
     padding: 20,
     alignItems: 'center',
@@ -442,13 +473,13 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   requestsList: {
-    maxHeight: 400,
+    marginBottom: 20,
   },
   requestCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 15,
+    borderRadius: 0,
     padding: 15,
-    marginBottom: 10,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -542,13 +573,22 @@ const styles = StyleSheet.create({
     marginRight: 10,
     overflow: 'hidden',
   },
+  petIconContainer: {
+    width: 35,
+    height: 35,
+    borderRadius: 18,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   petProfileImage: {
     width: 30,
     height: 30,
     borderRadius: 15,
   },
-  petEmoji: {
-    fontSize: 16,
+  petIcon: {
+    width: 24,
+    height: 24,
   },
   petDetails: {
     flex: 1,
@@ -587,10 +627,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  tabBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  tabButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E2E2E2',
+    backgroundColor: '#FFFFFF',
+  },
+  tabButtonLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  tabButtonLabelActive: {
+    color: '#FFFFFF',
+  },
+  moreButton: {
+    alignSelf: 'center',
+    marginTop: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  },
+  moreButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   // 현재 워킹 관련 스타일
   currentWalkingCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 0,
     padding: 16,
     marginTop: 10,
     shadowColor: '#000',
@@ -614,8 +689,8 @@ const styles = StyleSheet.create({
   participantImage: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 10,
   },
   participantDetails: {

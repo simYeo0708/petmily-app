@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { IconImage } from "./IconImage";
 
 interface BreedOption {
   value: string;
@@ -52,9 +53,18 @@ export const BreedSelectionModal: React.FC<BreedSelectionModalProps> = ({
         />
         <View style={styles.container}>
           <View style={styles.header}>
-            <Text style={styles.title}>
-              {species === 'dog' ? '🐕 강아지 품종' : species === 'cat' ? '🐱 고양이 품종' : '품종 선택'}
-            </Text>
+            <View style={styles.titleRow}>
+              {species === 'dog' ? (
+                <IconImage name="dog" size={20} style={styles.titleIcon} />
+              ) : species === 'cat' ? (
+                <IconImage name="cat" size={20} style={styles.titleIcon} />
+              ) : (
+                <IconImage name="paw" size={20} style={styles.titleIcon} />
+              )}
+              <Text style={styles.titleText}>
+                {species === 'dog' ? '강아지 품종' : species === 'cat' ? '고양이 품종' : '품종 선택'}
+              </Text>
+            </View>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
@@ -131,7 +141,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  title: {
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  titleIcon: {
+    width: 20,
+    height: 20,
+  },
+  titleText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
@@ -192,5 +211,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+
+
+
 
 

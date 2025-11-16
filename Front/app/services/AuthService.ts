@@ -1,9 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// iOS 시뮬레이터는 localhost 사용 가능
-// 실제 기기에서 테스트할 때는 Mac의 IP 주소로 변경하세요
-// Mac의 IP 주소 확인: 터미널에서 ipconfig getifaddr en0
-const API_BASE_URL = 'http://localhost:8080/api';
+import { API_BASE_URL } from '../config/api';
 
 interface LoginRequest {
   username: string;
@@ -19,7 +15,10 @@ interface SignupRequest {
 
 interface AuthResponse {
   accessToken: string;
-  refreshToken?: string | null;
+  refreshToken?: string;
+  userId: number;
+  username: string;
+  email: string;
 }
 
 interface User {
@@ -48,14 +47,16 @@ const AuthService = {
       }
 
       const data = await response.json() as AuthResponse;
-      console.log('로그인 성공, 토큰 저장 중...');
-
+      console.log('로그인 성공:', { userId: data.userId, username: data.username });
+      
       // 토큰 저장
       await AsyncStorage.setItem('authToken', data.accessToken);
+      await AsyncStorage.setItem('userId', data.userId.toString());
+      await AsyncStorage.setItem('username', data.username);
       if (data.refreshToken) {
         await AsyncStorage.setItem('refreshToken', data.refreshToken);
       }
-
+      
       return data;
     } catch (error) {
       console.error('로그인 에러:', error);
@@ -64,12 +65,12 @@ const AuthService = {
   },
 
   /**
-   * 회원가입 - 회원가입 후 자동으로 로그인
+   * 회원가입
    */
   async signup(signupData: SignupRequest): Promise<AuthResponse> {
     try {
       console.log('회원가입 시도:', { username: signupData.username, email: signupData.email });
-
+      
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: {
@@ -83,12 +84,18 @@ const AuthService = {
         throw new Error(errorData.message || '회원가입 실패');
       }
 
-      const userData = await response.json() as User;
-      console.log('회원가입 성공:', { userId: userData.id, username: userData.username });
-
-      // 회원가입 성공 후 자동 로그인
-      console.log('자동 로그인 시도...');
-      return await this.login(signupData.username, signupData.password);
+      const data = await response.json() as AuthResponse;
+      console.log('회원가입 성공:', { userId: data.userId, username: data.username });
+      
+      // 토큰 저장
+      await AsyncStorage.setItem('authToken', data.accessToken);
+      await AsyncStorage.setItem('userId', data.userId.toString());
+      await AsyncStorage.setItem('username', data.username);
+      if (data.refreshToken) {
+        await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      }
+      
+      return data;
     } catch (error) {
       console.error('회원가입 에러:', error);
       throw error;

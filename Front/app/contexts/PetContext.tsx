@@ -28,19 +28,19 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
       // 중복 호출 방지: 마지막 호출로부터 3초 이내면 건너뜀
       const now = Date.now();
       if (!forceRefresh && now - lastFetchTime < 3000) {
-        console.log('⏭️ PetContext: Skipping refresh (too soon)', (now - lastFetchTime) / 1000, 'seconds ago');
+        console.log('PetContext: Skipping refresh (too soon)', (now - lastFetchTime) / 1000, 'seconds ago');
         return;
       }
       
       setLastFetchTime(now);
       setIsLoading(true);
-      console.log('🔄 PetContext: Loading pet info...');
+      console.log('PetContext: Loading pet info...');
       
       // 먼저 로컬에서 로드 (즉시 UI 업데이트)
       const localPetInfo = await PetService.getPetFromLocal();
       if (localPetInfo) {
         setPetInfo(localPetInfo);
-        console.log('✅ PetContext: Loaded from local storage');
+        console.log('PetContext: Loaded from local storage');
       }
       
       // 서버에서 최신 정보 가져오기
@@ -49,14 +49,14 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
         if (serverPetInfo) {
           setPetInfo(serverPetInfo);
           await PetService.savePetToLocal(serverPetInfo); // 로컬에도 저장
-          console.log('✅ PetContext: Loaded from server:', serverPetInfo.name);
+          console.log('PetContext: Loaded from server:', serverPetInfo.name);
         }
       } catch (error) {
         // 서버 연결 실패 시 로컬 데이터 사용
-        console.log('⚠️ PetContext: Server fetch failed, using local data');
+        console.log('PetContext: Server fetch failed, using local data');
       }
     } catch (error) {
-      console.error('❌ PetContext: Load failed:', error);
+      console.error('PetContext: Load failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +65,7 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
   // 반려동물 정보 업데이트 (useCallback으로 메모이제이션)
   const updatePetInfo = useCallback(async (newPetInfo: PetInfo) => {
     try {
-      console.log('🔄 PetContext: Updating pet info...');
+      console.log('PetContext: Updating pet info...');
       
       // 먼저 Context 상태를 즉시 업데이트 (UI 반응성 향상)
       setPetInfo(newPetInfo);
@@ -76,14 +76,14 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
         let savedPet: PetInfo;
         if (newPetInfo.id) {
           // 기존 펫 업데이트
-          console.log('📝 PetContext: Updating existing pet:', newPetInfo.id);
+          console.log('PetContext: Updating existing pet:', newPetInfo.id);
           savedPet = await PetService.updatePet(newPetInfo.id, newPetInfo);
-          console.log('✅ PetContext: Pet updated successfully:', savedPet.name);
+          console.log('PetContext: Pet updated successfully:', savedPet.name);
         } else {
           // 새 펫 생성
-          console.log('📝 PetContext: Creating new pet:', newPetInfo.name);
+          console.log('PetContext: Creating new pet:', newPetInfo.name);
           savedPet = await PetService.createPet(newPetInfo);
-          console.log('✅ PetContext: Pet created successfully with ID:', savedPet.id);
+          console.log('PetContext: Pet created successfully with ID:', savedPet.id);
         }
         
         // 서버 저장 성공 시 Context 상태를 서버 데이터로 업데이트
@@ -95,10 +95,10 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
         setTimeout(() => loadPetInfo(true), 500); // 0.5초 후 강제 갱신
       } catch (error) {
         // 서버 저장 실패 시 로컬에만 저장 (이미 Context는 업데이트됨)
-        console.log('⚠️ PetContext: Server save failed, using local only:', error);
+        console.log('PetContext: Server save failed, using local only:', error);
       }
     } catch (error) {
-      console.error('❌ PetContext: Update failed:', error);
+      console.error('PetContext: Update failed:', error);
     }
   }, [loadPetInfo]);
 
@@ -109,7 +109,7 @@ export const PetProvider: React.FC<PetProviderProps> = ({ children }) => {
 
   // 최초 로드 (1회만)
   useEffect(() => {
-    console.log('🚀 PetContext: Initial load');
+    console.log('PetContext: Initial load');
     loadPetInfo(true);
   }, []); // 빈 배열로 1회만 실행
 

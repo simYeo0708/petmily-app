@@ -1,30 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
 export interface PetInfo {
   id?: number;
   name: string;
   species: string;
   breed: string;
-  age: number;
-  weight: number;
+  age: string;
+  weight: string;
   gender: string;
-  personality?: string;
-  imageUrl?: string;
-  medicalConditions?: string;
-  specialNotes?: string;
-  size?: 'SMALL' | 'MEDIUM' | 'LARGE';
-
-  // 로컬 저장용 (백엔드와 무관)
+  isNeutered: boolean;
+  description: string;
   photoUri?: string;
   hasPhoto?: boolean;
   temperaments?: string[];
-  isNeutered?: boolean;
-  description?: string;
+  
+  // 건강 및 알레르기 정보 (상품 추천에 활용)
+  isVaccinated?: boolean;
+  allergies?: string[];        // 알레르기 목록
+  medications?: string[];      // 복용 중인 약물
+  medicalConditions?: string;  // 기존 질병/건강 상태
+  specialNotes?: string;       // 특별 주의사항
 }
 
 class PetServiceClass {
-  // ⚠️ Expo에서는 localhost 대신 Mac의 IP 주소 사용
-  private baseUrl = 'http://10.50.235.215:8080/api/pets';  // TODO: 본인의 Mac IP로 변경
+  private baseUrl = `${API_BASE_URL}/pets`;
 
   async getAuthToken(): Promise<string | null> {
     try {
@@ -77,8 +77,17 @@ class PetServiceClass {
       }
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
+        const errorText = await response.clone().text();
+        let errorMessage = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed && typeof parsed.message === 'string') {
+            errorMessage = parsed.message;
+          }
+        } catch (_) {
+          // text가 JSON이 아닐 수 있음
+        }
+        console.warn('PetService.createPet server error:', errorMessage);
         console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
@@ -120,6 +129,17 @@ class PetServiceClass {
       }
 
       if (!response.ok) {
+        const errorText = await response.clone().text();
+        let errorMessage = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          if (parsed && typeof parsed.message === 'string') {
+            errorMessage = parsed.message;
+          }
+        } catch (_) {
+          // ignore parse error
+        }
+        console.warn('PetService.updatePet server error:', errorMessage);
         console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
@@ -183,8 +203,38 @@ class PetServiceClass {
   async getPrimaryPet(): Promise<PetInfo | null> {
     try {
       console.log('Getting primary pet...');
-      
-      // 먼저 공개 API로 시도
+
+      // 1) 인증 토큰이 있으면 우선 사용자별(primary) API 호출
+      const headers = await this.getHeaders();
+      const hasAuth = Boolean(headers['Authorization']);
+
+      if (hasAuth) {
+        try {
+          const response = await fetch(`${this.baseUrl}/primary`, {
+            method: 'GET',
+            headers,
+          });
+
+          if (response.status === 404) {
+            console.log('Primary pet not found for authenticated user, falling back to local data');
+            return await this.getPetFromLocal();
+          }
+
+          if (response.ok) {
+            const data = await response.json() as PetInfo | null;
+            console.log('Primary pet data from authenticated API:', data);
+            return data;
+          }
+
+          console.log('Authenticated API returned non-ok status:', response.status);
+        } catch (authError) {
+          console.log('Authenticated API failed:', authError);
+        }
+      } else {
+        console.log('No auth token found, skipping authenticated primary pet API');
+      }
+
+      // 2) 인증 정보가 없거나 실패한 경우 공개(primary) API 시도 (개발용)
       try {
         const response = await fetch(`${this.baseUrl}/public/primary`, {
           method: 'GET',
@@ -195,34 +245,14 @@ class PetServiceClass {
           console.log('Primary pet data from public API:', data);
           return data;
         }
+
+        console.log('Public API returned non-ok status:', response.status);
       } catch (publicError) {
-        console.log('Public API failed, trying authenticated API:', publicError);
-      }
-      
-      // 공개 API 실패 시 인증된 API 시도
-      try {
-        const headers = await this.getHeaders();
-        const response = await fetch(`${this.baseUrl}/primary`, {
-          method: 'GET',
-          headers,
-        });
-
-        if (response.status === 404) {
-          console.log('Primary pet not found, using local data');
-          return await this.getPetFromLocal();
-        }
-
-        if (response.ok) {
-          const data = await response.json() as PetInfo | null;
-          console.log('Primary pet data from authenticated API:', data);
-          return data;
-        }
-      } catch (authError) {
-        console.log('Authenticated API failed:', authError);
+        console.log('Public API failed:', publicError);
       }
 
-      // 모든 API 실패 시 로컬 데이터 사용
-      console.log('All APIs failed, using local data');
+      // 3) 모든 API 실패 시 로컬 데이터 사용
+      console.log('All primary pet APIs failed, using local data');
       return await this.getPetFromLocal();
     } catch (error) {
       console.error('Failed to get primary pet:', error);

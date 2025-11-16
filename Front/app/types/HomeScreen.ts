@@ -1,4 +1,5 @@
 import { View, ScrollView } from 'react-native';
+import { IconName } from '../components/IconImage';
 
 export interface PetInfo {
   name: string;
@@ -13,6 +14,7 @@ export interface SearchResult {
   description: string;
   type: 'screen' | 'feature' | 'service';
   action: () => void;
+  iconName?: IconName;
 }
 
 export interface GuideStep {
@@ -20,6 +22,7 @@ export interface GuideStep {
   title: string;
   description: string;
   nextButtonText: string;
+  iconName?: IconName;
 }
 
 export interface HomeScreenState {

@@ -7,6 +7,7 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
+import { IconImage, IconName } from './IconImage';
 
 interface GuideStepModalProps {
   isVisible: boolean;
@@ -17,6 +18,7 @@ interface GuideStepModalProps {
   currentStep: number;
   totalSteps: number;
   nextButtonText?: string;
+  iconName?: IconName;
 }
 
 const { width } = Dimensions.get('window');
@@ -30,6 +32,7 @@ const GuideStepModal: React.FC<GuideStepModalProps> = ({
   currentStep,
   totalSteps,
   nextButtonText = "다음",
+  iconName,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(100)).current;
@@ -97,7 +100,12 @@ const GuideStepModal: React.FC<GuideStepModalProps> = ({
         ]}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
+          <View style={styles.titleContainer}>
+            {iconName && (
+              <IconImage name={iconName} size={24} style={styles.titleIcon} />
+            )}
+            <Text style={styles.title}>{title}</Text>
+          </View>
           <View style={styles.stepIndicator}>
             <Text style={styles.stepText}>
               {currentStep} / {totalSteps}
@@ -164,11 +172,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  titleIcon: {
+    marginRight: 8,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    flex: 1,
   },
   stepIndicator: {
     backgroundColor: '#4A90E2',

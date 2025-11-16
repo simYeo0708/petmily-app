@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
 
 export interface Notification {
   id: number;
@@ -17,8 +18,7 @@ export interface DismissNotificationRequest {
 
 class NotificationService {
   private static instance: NotificationService;
-  // ⚠️ Expo에서는 localhost 대신 Mac의 IP 주소 사용
-  private baseUrl = 'http://10.50.235.215:8080/api/notifications';  // TODO: 본인의 Mac IP로 변경
+  private baseUrl = `${API_BASE_URL}/notifications`;
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -36,14 +36,14 @@ class NotificationService {
       const mockNotifications: Notification[] = [
         {
           id: 1,
-          title: '워커로 활동 중입니다! 🚶‍♂️',
+          title: '워커로 활동 중입니다!',
           content: '반려동물 산책 서비스의 워커로 활동해보세요. 유연한 시간에 수익을 창출할 수 있습니다!',
           type: 'WALKER_RECRUITMENT',
           priority: 10,
         },
         {
           id: 2,
-          title: '새로운 기능이 추가되었습니다! 🎉',
+          title: '새로운 기능이 추가되었습니다!',
           content: '산책 경로 추적 기능과 실시간 위치 공유 기능이 추가되었습니다.',
           type: 'FEATURE_UPDATE',
           priority: 5,

@@ -19,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { PET_INFO_INPUT_STEPS, SAFETY_INFO } from '../constants/PetInfoInputSteps';
 import { SPECIES_OPTIONS, GENDER_OPTIONS, TEMPERAMENT_OPTIONS, BREED_OPTIONS } from '../constants/PetConstants';
 import { BreedSelectionModal } from './BreedSelectionModal';
+import { IconImage } from "./IconImage";
 
 const { width } = Dimensions.get('window');
 
@@ -187,7 +188,11 @@ export const PetInfoInputModal: React.FC<PetInfoInputModalProps> = ({
                       petData.species === option.value && styles.optionButtonSelected,
                     ]}
                     onPress={() => handleSpeciesChange(option.value)}>
-                    <Text style={styles.optionEmoji}>{option.emoji}</Text>
+                    <IconImage
+                      name={option.iconName}
+                      size={24}
+                      style={styles.optionIcon}
+                    />
                     <Text
                       style={[
                         styles.optionText,
@@ -270,7 +275,12 @@ export const PetInfoInputModal: React.FC<PetInfoInputModalProps> = ({
                       petData.gender === option.value && styles.genderButtonSelected,
                     ]}
                     onPress={() => setPetData({ ...petData, gender: option.value })}>
-                    <Text style={styles.optionEmoji}>{option.emoji}</Text>
+                    <Ionicons
+                      name={option.ionIcon}
+                      size={22}
+                      color={petData.gender === option.value ? '#FFFFFF' : '#C59172'}
+                      style={styles.optionIcon}
+                    />
                     <Text
                       style={[
                         styles.optionText,
@@ -617,9 +627,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#C59172',
     borderColor: '#C59172',
   },
-  optionEmoji: {
-    fontSize: 28,
-    marginBottom: 5,
+  optionIcon: {
+    marginBottom: 6,
   },
   optionText: {
     fontSize: 14,

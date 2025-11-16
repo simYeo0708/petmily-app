@@ -1,11 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_BASE_URL } from '../config/api';
+
+type AuthTokenResponse = {
+  accessToken?: string;
+  refreshToken?: string;
+  userId?: number;
+  username?: string;
+  email?: string;
+};
 
 /**
  * 개발용 유틸리티 함수들
  * 실제 배포 시에는 제거해야 합니다
  */
-
-const API_BASE_URL = 'http://10.50.235.215:8080/api';
 
 /**
  * 테스트용 JWT 토큰을 받아서 AsyncStorage에 저장
@@ -26,20 +33,35 @@ export const setupTestAuth = async (): Promise<boolean> => {
       throw new Error('테스트 사용자 생성 실패');
     }
 
-    const data = await response.json() as any;
-    console.log('[DEV] 테스트 토큰 받음:', data.accessToken.substring(0, 30) + '...');
+    const data = await response.json() as AuthTokenResponse;
+
+    if (!data?.accessToken) {
+      throw new Error('액세스 토큰을 발급받지 못했습니다.');
+    }
+
+    console.log(
+      '[DEV] 테스트 토큰 받음:',
+      (data.username ?? 'unknown') + ' / ' + data.accessToken.substring(0, 30) + '...'
+    );
     
     // 2. 토큰을 AsyncStorage에 저장
     await AsyncStorage.setItem('authToken', data.accessToken);
     if (data.refreshToken) {
       await AsyncStorage.setItem('refreshToken', data.refreshToken);
     }
-    await AsyncStorage.setItem('userId', '1'); // 테스트 사용자 ID
-    await AsyncStorage.setItem('username', 'testuser');
+    if (typeof data.userId !== 'undefined') {
+      await AsyncStorage.setItem('userId', String(data.userId));
+    }
+    if (data.username) {
+      await AsyncStorage.setItem('username', data.username);
+    }
+    if (data.email) {
+      await AsyncStorage.setItem('userEmail', data.email);
+    }
     
     console.log('[DEV] ✅ 테스트 인증 설정 완료!');
-    console.log('[DEV] Username: testuser');
-    console.log('[DEV] Password: asdf');
+    console.log('[DEV] Username:', data.username ?? 'unknown');
+    console.log('[DEV] Password:', 'asdf (기본값)');
     console.log('[DEV] JWT 토큰이 AsyncStorage에 저장되었습니다.');
     
     return true;
