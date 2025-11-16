@@ -3,22 +3,23 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API 기본 설정
 const API_BASE_URL = __DEV__
-  ? 'http://localhost:8080/api'  // 개발 환경
+  ? 'http://localhost:8080/api'  // 개발 환경 (시뮬레이터는 localhost 사용)
   : 'https://api.petmily.com/api';  // 프로덕션 환경
 
 // Axios 인스턴스 생성
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // 쿠키 자동 포함
+  // withCredentials: true, // React Native에서는 쿠키 대신 AsyncStorage 사용
 });
 
 // Request Interceptor - JWT 토큰 자동 포함
 apiClient.interceptors.request.use(
   async (config) => {
+    console.log('🚀 API 요청:', config.method?.toUpperCase(), config.baseURL + config.url);
     try {
       const token = await AsyncStorage.getItem('access_token');
       if (token) {
@@ -30,6 +31,7 @@ apiClient.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('❌ 요청 에러:', error);
     return Promise.reject(error);
   }
 );
@@ -37,20 +39,21 @@ apiClient.interceptors.request.use(
 // Response Interceptor - 토큰 만료 처리
 apiClient.interceptors.response.use(
   (response) => {
+    console.log('✅ API 응답:', response.status, response.config.url);
     return response;
   },
   async (error) => {
+    console.error('❌ API 에러:', error.message, error.config?.url);
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // RefreshToken은 HttpOnly 쿠키로 자동 전송됨
+        // RefreshToken 재발급 요청
         const response = await axios.post(
           `${API_BASE_URL}/auth/reissue`,
-          {},
-          { withCredentials: true }
+          {}
         );
 
         const newAccessToken = response.data.accessToken;

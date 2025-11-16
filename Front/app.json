@@ -8,24 +8,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.petmily.app",
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "산책 경로를 추적하기 위해 위치 권한이 필요합니다.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "백그라운드에서도 산책 경로를 추적하기 위해 위치 권한이 필요합니다."
-      }
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static"

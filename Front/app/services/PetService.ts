@@ -5,21 +5,21 @@ export interface PetInfo {
   name: string;
   species: string;
   breed: string;
-  age: string;
-  weight: string;
+  age: number;
+  weight: number;
   gender: string;
-  isNeutered: boolean;
-  description: string;
+  personality?: string;
+  imageUrl?: string;
+  medicalConditions?: string;
+  specialNotes?: string;
+  size?: 'SMALL' | 'MEDIUM' | 'LARGE';
+
+  // 로컬 저장용 (백엔드와 무관)
   photoUri?: string;
   hasPhoto?: boolean;
   temperaments?: string[];
-  
-  // 건강 및 알레르기 정보 (상품 추천에 활용)
-  isVaccinated?: boolean;
-  allergies?: string[];        // 알레르기 목록
-  medications?: string[];      // 복용 중인 약물
-  medicalConditions?: string;  // 기존 질병/건강 상태
-  specialNotes?: string;       // 특별 주의사항
+  isNeutered?: boolean;
+  description?: string;
 }
 
 class PetServiceClass {

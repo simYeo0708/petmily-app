@@ -12,6 +12,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GuideStepModal from "../components/GuideStepModal";
@@ -34,6 +35,7 @@ import {
   modalStyles,
   modeStyles,
 } from "../styles/HomeScreenStyles";
+import searchService, { SearchResultItem } from "../services/searchService";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -52,8 +54,10 @@ const HomeScreen = () => {
   const [serviceMode, setServiceMode] = useState<ServiceMode>("PW");
   const [searchQuery, setSearchQuery] = useState("");
   const [showWalkerModal, setShowWalkerModal] = useState(true);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [showServiceGuide, setShowServiceGuide] = useState(false);
   const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
@@ -424,95 +428,52 @@ const HomeScreen = () => {
   };
 
   // 검색 기능
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    
+
     if (query.trim().length === 0) {
       setShowSearchResults(false);
       setSearchResults([]);
+      setSearchError(null);
       return;
     }
 
-    // 검색 결과 생성 (실제로는 API 호출)
-    const results = generateSearchResults(query, serviceMode);
-    setSearchResults(results);
-    setShowSearchResults(true);
-  };
+    try {
+      setSearchLoading(true);
+      setSearchError(null);
 
-  const generateSearchResults = (query: string, mode: ServiceMode) => {
-    const lowerQuery = query.toLowerCase();
-    
-    if (mode === "PW") {
-      // Pet Walker 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'feature',
-          title: '산책 요청하기',
-          description: '워커와 매칭하여 산책 서비스를 요청하세요',
-          icon: '🚶‍♂️',
-          action: () => navigation.navigate('WalkingRequest'),
-        },
-        {
-          id: '2',
-          type: 'feature',
-          title: '산책 지도',
-          description: '실시간 위치 추적과 산책 경로를 확인하세요',
-          icon: '🗺️',
-          action: () => navigation.navigate('WalkingMap'),
-        },
-        {
-          id: '3',
-          type: 'feature',
-          title: '워커 매칭',
-          description: '나에게 맞는 워커를 찾아보세요',
-          icon: '👥',
-          action: () => navigation.navigate('WalkerMatching', { 
-            bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
-          }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
-    } else {
-      // Pet Mall 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'category',
-          title: '사료',
-          description: '건강한 사료를 찾아보세요',
-          icon: '🍽️',
-          action: () => navigation.navigate('Shop', { category: '사료' }),
-        },
-        {
-          id: '2',
-          type: 'category',
-          title: '장난감',
-          description: '재미있는 장난감을 만나보세요',
-          icon: '🎾',
-          action: () => navigation.navigate('Shop', { category: '장난감' }),
-        },
-        {
-          id: '3',
-          type: 'category',
-          title: '의류',
-          description: '귀여운 의류를 쇼핑하세요',
-          icon: '👕',
-          action: () => navigation.navigate('Shop', { category: '의류' }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
+      // 백엔드 API 호출
+      const response = await searchService.searchAll(query, [serviceMode === "PW" ? "menu" : "product"]);
+
+      // 검색 결과를 평탄화
+      const allResults: SearchResultItem[] = [];
+      Object.values(response.results).forEach(items => {
+        allResults.push(...items);
+      });
+
+      setSearchResults(allResults);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('검색 오류:', error);
+      setSearchError('검색 중 오류가 발생했습니다.');
+      setSearchResults([]);
+      setShowSearchResults(true);
+    } finally {
+      setSearchLoading(false);
     }
   };
 
-  const handleSearchResultPress = (result: any) => {
+  const handleSearchResultPress = (result: SearchResultItem) => {
     setShowSearchResults(false);
     setSearchQuery('');
-    result.action();
+
+    // route가 있으면 해당 라우트로 이동
+    if (result.route) {
+      // route는 예: "WalkingRequest", "Shop", "WalkerMatching" 등
+      // metadata에 추가 파라미터가 있을 수 있음
+      const params = result.metadata || {};
+      navigation.navigate(result.route as any, params);
+    }
   };
 
   return (
@@ -609,17 +570,33 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.searchResultsList}>
-              {searchResults.length > 0 ? (
+              {searchLoading ? (
+                <View style={styles.searchLoadingContainer}>
+                  <ActivityIndicator size="large" color="#C59172" />
+                  <Text style={styles.searchLoadingText}>검색 중...</Text>
+                </View>
+              ) : searchError ? (
+                <View style={styles.noSearchResults}>
+                  <Text style={styles.noSearchResultsText}>{searchError}</Text>
+                </View>
+              ) : searchResults.length > 0 ? (
                 searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
                     style={styles.searchResultItem}
                     onPress={() => handleSearchResultPress(result)}
                   >
-                    <Text style={styles.searchResultIcon}>{result.icon}</Text>
+                    <Text style={styles.searchResultIcon}>
+                      {result.type === 'menu' ? '📱' : result.type === 'product' ? '🛍️' : '🔍'}
+                    </Text>
                     <View style={styles.searchResultContent}>
                       <Text style={styles.searchResultTitle}>{result.title}</Text>
-                      <Text style={styles.searchResultDescription}>{result.description}</Text>
+                      {result.subtitle && (
+                        <Text style={styles.searchResultSubtitle}>{result.subtitle}</Text>
+                      )}
+                      {result.description && (
+                        <Text style={styles.searchResultDescription}>{result.description}</Text>
+                      )}
                     </View>
                     <Text style={styles.searchResultArrow}>›</Text>
                   </TouchableOpacity>
@@ -902,6 +879,12 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 4,
   },
+  searchResultSubtitle: {
+    fontSize: rf(13),
+    fontWeight: '500',
+    color: '#888',
+    marginBottom: 2,
+  },
   searchResultDescription: {
     fontSize: rf(14),
     color: '#666',
@@ -909,6 +892,16 @@ const styles = StyleSheet.create({
   searchResultArrow: {
     fontSize: rf(20),
     color: '#ccc',
+  },
+  searchLoadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchLoadingText: {
+    marginTop: 10,
+    fontSize: rf(14),
+    color: '#666',
   },
   noSearchResults: {
     padding: 30,

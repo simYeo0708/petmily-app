@@ -27,9 +27,7 @@ export interface User {
 class AuthService {
   async login(request: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, request, {
-        withCredentials: true, // 쿠키 포함
-      });
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.LOGIN, request);
       const authData = response.data;
 
       // AccessToken만 저장 (RefreshToken은 HttpOnly 쿠키로 자동 관리됨)
@@ -54,13 +52,11 @@ class AuthService {
 
   async logout(): Promise<void> {
     try {
-      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {}, {
-        withCredentials: true, // RefreshToken 쿠키 포함
-      });
+      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, {});
     } catch (error) {
       console.error('Logout API failed:', error);
     } finally {
-      // AccessToken만 삭제 (RefreshToken은 서버에서 쿠키 삭제)
+      // AccessToken 삭제
       await AsyncStorage.removeItem('access_token');
     }
   }

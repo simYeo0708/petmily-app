@@ -99,16 +99,15 @@ const PetInfoInputScreen = () => {
           name: petData.name,
           species: petData.species,
           breed: petData.breed,
-          age: petData.age,
-          weight: petData.weight,
+          age: parseInt(petData.age, 10), // String → Integer
+          weight: parseFloat(petData.weight), // String → Double
           gender: petData.gender,
-          isNeutered: petData.neutered,  // neutered → isNeutered
-          photoUri: petData.photoUri,
-          hasPhoto: !!petData.photoUri,
-          temperaments: petData.temperaments,
-          description: petData.description,
+          personality: petData.temperaments.join(', '), // temperaments 배열을 문자열로 변환
+          imageUrl: petData.photoUri || '',
+          medicalConditions: '',
+          specialNotes: petData.description || '',
         };
-        
+
         const savedPet = await PetService.createPet(petInfoForApi);
         console.log('반려동물 정보 저장 성공:', savedPet);
         

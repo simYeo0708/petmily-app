@@ -70,10 +70,10 @@ const LoginScreen = ({ navigation }: Props) => {
     
     try {
       // AuthService를 통해 로그인
-      const authResponse = await AuthService.login(username, password);
-      
-      console.log('로그인 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
-      
+      await AuthService.login(username, password);
+
+      console.log('로그인 성공!');
+
       // 홈 화면으로 이동
       navigation.navigate("Main");
     } catch (error: any) {
@@ -98,15 +98,15 @@ const LoginScreen = ({ navigation }: Props) => {
     
     try {
       // AuthService를 통해 회원가입
-      const authResponse = await AuthService.signup({
+      await AuthService.signup({
         username,
         password,
         email,
         name: username, // name 필드 추가
       });
-      
-      console.log('회원가입 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
-      
+
+      console.log('회원가입 및 로그인 성공!');
+
       Alert.alert(
         "회원가입 완료",
         "환영합니다! 로그인되었습니다.",
