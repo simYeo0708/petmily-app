@@ -53,7 +53,7 @@ const MyOrdersScreen = () => {
       <TouchableOpacity
         key={order.id}
         style={styles.orderCard}
-        onPress={() => console.log("주문 상세:", order.orderNumber)}
+        onPress={() => {}}
         activeOpacity={0.7}>
         {/* 주문 헤더 */}
         <View style={styles.orderHeader}>
@@ -152,7 +152,7 @@ const MyOrdersScreen = () => {
           )}
           <TouchableOpacity
             style={[styles.actionButton, styles.actionButtonPrimary]}
-            onPress={() => console.log("주문 상세:", order.orderNumber)}>
+            onPress={() => {}}>
             <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
               주문 상세
             </Text>

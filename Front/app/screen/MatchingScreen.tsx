@@ -139,7 +139,7 @@ const MatchingScreen = () => {
           </Pressable>
           <View style={matchingScreenStyles.headerTitleRow}>
             <Ionicons name="people-outline" size={20} color="#C59172" style={matchingScreenStyles.headerTitleIcon} />
-            <Text style={[headerStyles.logo, { marginLeft: 10 }]}>
+            <Text style={[headerStyles.logoText, { marginLeft: 10 }]}>
               산책 매칭
             </Text>
           </View>

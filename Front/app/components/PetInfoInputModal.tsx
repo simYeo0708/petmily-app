@@ -58,7 +58,6 @@ export const PetInfoInputModal: React.FC<PetInfoInputModalProps> = ({
   // 품종 선택 모달이 표시될 때 즉시 렌더링되도록 강제
   useEffect(() => {
     if (showBreedModal) {
-      console.log('품종 선택 모달 열림 - 즉시 렌더링');
     }
   }, [showBreedModal]);
 
@@ -214,7 +213,6 @@ export const PetInfoInputModal: React.FC<PetInfoInputModalProps> = ({
                   errors.breed && styles.inputError
                 ]}
                 onPress={() => {
-                  console.log('품종 선택 버튼 클릭');
                   setShowBreedModal(true);
                 }}
                 activeOpacity={0.7}>

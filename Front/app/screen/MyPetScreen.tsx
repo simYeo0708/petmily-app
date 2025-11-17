@@ -91,7 +91,6 @@ const MyPetScreen = () => {
   // Context의 petInfo가 변경될 때마다 로컬 상태 동기화
   useEffect(() => {
     if (petInfo) {
-      console.log('🔄 MyPetScreen: Syncing with Context petInfo:', petInfo.name);
       setLocalPetInfo({
         name: petInfo.name || "",
         species: petInfo.species || "dog",
@@ -158,7 +157,6 @@ const MyPetScreen = () => {
         setHasPhoto(true);
         setShowImageModal(false);  // 모달 닫기
         triggerSuccessAnimation();
-        console.log('선택한 파일:', result.assets[0]);
         
         // 즉시 Context 업데이트
         if (petInfo) {
@@ -173,7 +171,6 @@ const MyPetScreen = () => {
         setShowImageModal(false);  // 취소 시에도 모달 닫기
       }
     } catch (error) {
-      console.error('앨범 선택 오류:', error);
       Alert.alert('오류', '사진 선택 중 문제가 발생했습니다.');
       setShowImageModal(false);
     }
@@ -201,7 +198,6 @@ const MyPetScreen = () => {
         setHasPhoto(true);
         setShowImageModal(false);  // 모달 닫기
         triggerSuccessAnimation();
-        console.log('촬영한 파일:', result.assets[0]);
         
         // 즉시 Context 업데이트
         if (petInfo) {
@@ -216,7 +212,6 @@ const MyPetScreen = () => {
         setShowImageModal(false);  // 취소 시에도 모달 닫기
       }
     } catch (error) {
-      console.error('카메라 촬영 오류:', error);
       Alert.alert('오류', '사진 촬영 중 문제가 발생했습니다.');
       setShowImageModal(false);
     }
@@ -345,7 +340,6 @@ const MyPetScreen = () => {
         specialNotes: localPetInfo.specialNotes,
       };
       
-      console.log('💾 MyPetScreen: Saving pet data:', { id: petData.id, name: petData.name });
       
       // Context를 통해 업데이트 (서버 + 로컬 저장 자동 처리)
       await updatePetInfo(petData);
@@ -354,12 +348,10 @@ const MyPetScreen = () => {
         {
           text: "확인",
           onPress: () => {
-            console.log("✅ Pet Info Saved:", { id: petData.id, name: petData.name });
           },
         },
       ]);
     } catch (error) {
-      console.error("Failed to save pet info:", error);
       Alert.alert(
         "오류",
         "정보 저장 중 문제가 발생했습니다. 다시 시도해주세요."

@@ -1,12 +1,4 @@
 import Constants from 'expo-constants';
-console.log(
-  'KakaoMap API key (process.env)',
-  process.env.EXPO_PUBLIC_KAKAO_MAP_API_KEY
-);
-console.log(
-  'KakaoMap API key (extra)',
-  Constants.expoConfig?.extra?.kakaoMapApiKey
-);
 /**
  * API 설정 관리
  * .env.local 파일의 EXPO_PUBLIC_API_HOST를 사용하여 IP 주소를 동적으로 관리합니다.
@@ -37,10 +29,7 @@ export const API_BASE_URL = `http://${API_HOST}:${API_PORT}/api`;
  * 현재 API 설정 정보 출력 (디버깅용)
  */
 export const logApiConfig = () => {
-  console.log('📡 API Configuration:');
-  console.log(`  - Host: ${API_HOST}`);
-  console.log(`  - Port: ${API_PORT}`);
-  console.log(`  - Base URL: ${API_BASE_URL}`);
+  // 콘솔 로그 제거됨
 };
 
 /**
@@ -54,15 +43,11 @@ export const testApiConnection = async (): Promise<boolean> => {
     });
     return response.ok;
   } catch (error) {
-    console.error('❌ API 연결 실패:', error);
     return false;
   }
 };
 
-// 앱 시작 시 API 설정 로그 출력
-if (__DEV__) {
-  logApiConfig();
-}
+// 앱 시작 시 API 설정 로그 출력 제거됨
 
 /**
  * Kakao Maps API Key

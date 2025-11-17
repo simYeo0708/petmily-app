@@ -17,14 +17,11 @@ export const useSearch = (serviceMode: ServiceMode) => {
       return;
     }
 
-    console.log("🔍 [DEBUG] Searching for:", query);
-    console.log("🔍 [DEBUG] Service mode:", serviceMode);
     
     const results = generateSearchResults(query, serviceMode);
     setSearchResults(results);
     setShowSearchResults(true);
     
-    console.log("🔍 [DEBUG] Search results:", results);
   }, [serviceMode]);
 
   const handleSearchResultPress = useCallback((result: SearchResult) => {

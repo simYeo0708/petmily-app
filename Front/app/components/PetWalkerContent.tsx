@@ -44,7 +44,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   
   // 디버깅용 로그
   React.useEffect(() => {
-    console.log('PetWalkerContent - myPetInfo 업데이트:', myPetInfo);
   }, [myPetInfo]);
   const [walkingRequests, setWalkingRequests] = useState<WalkingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +85,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       setWalkingRequests(mockRequests);
       setIsLoading(false);
     } catch (error) {
-      console.error('산책 요청 로드 실패:', error);
       setIsLoading(false);
     }
   };
@@ -97,7 +95,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       // 중앙 관리 샘플 데이터 사용
       setCurrentWalking(CURRENT_WALKING);
     } catch (error) {
-      console.error('현재 워킹 정보 로드 실패:', error);
     }
   };
 

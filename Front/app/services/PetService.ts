@@ -31,14 +31,11 @@ class PetServiceClass {
       const token = await AsyncStorage.getItem('authToken');
       
       if (!token) {
-        console.warn('인증 토큰 없음 - 로그인이 필요합니다');
         return null;
       }
       
-      console.log('Using auth token:', token.substring(0, 20) + '...');
       return token;
     } catch (error) {
-      console.error('Failed to get auth token:', error);
       return null;
     }
   }
@@ -58,20 +55,15 @@ class PetServiceClass {
 
   async createPet(petData: PetInfo): Promise<PetInfo> {
     try {
-      console.log('Creating pet with data:', petData);
       const headers = await this.getHeaders();
-      console.log('Request headers:', headers);
       
       const response = await fetch(`${this.baseUrl}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(petData),
       });
-
-      console.log('Response status:', response.status);
       
       if (response.status === 401) {
-        console.log('인증 실패 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
       }
@@ -87,22 +79,17 @@ class PetServiceClass {
         } catch (_) {
           // text가 JSON이 아닐 수 있음
         }
-        console.warn('PetService.createPet server error:', errorMessage);
-        console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
       }
 
       const result = await response.json() as PetInfo;
-      console.log('Pet created successfully:', result);
       
       // 로컬 저장소에도 저장
       await this.savePetToLocal(result);
       
       return result;
     } catch (error) {
-      console.error('Failed to create pet:', error);
-      console.log('네트워크 오류 - 로컬에만 저장합니다');
       await this.savePetToLocal(petData);
       return petData;
     }
@@ -110,20 +97,15 @@ class PetServiceClass {
 
   async updatePet(petId: number, petData: PetInfo): Promise<PetInfo> {
     try {
-      console.log('Updating pet with ID:', petId, 'Data:', petData);
       const headers = await this.getHeaders();
-      console.log('Request headers:', headers);
       
       const response = await fetch(`${this.baseUrl}/${petId}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(petData),
       });
-
-      console.log('Update response status:', response.status);
       
       if (response.status === 401) {
-        console.log('인증 실패 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
       }
@@ -139,22 +121,17 @@ class PetServiceClass {
         } catch (_) {
           // ignore parse error
         }
-        console.warn('PetService.updatePet server error:', errorMessage);
-        console.log('서버 오류 - 로컬에만 저장합니다');
         await this.savePetToLocal(petData);
         return petData;
       }
 
       const result = await response.json() as PetInfo;
-      console.log('Update successful:', result);
       
       // 로컬 저장소에도 저장
       await this.savePetToLocal(result);
       
       return result;
     } catch (error) {
-      console.error('Failed to update pet:', error);
-      console.log('네트워크 오류 - 로컬에만 저장합니다');
       await this.savePetToLocal(petData);
       return petData;
     }
@@ -175,7 +152,6 @@ class PetServiceClass {
       const data = await response.json() as PetInfo;
       return data;
     } catch (error) {
-      console.error('Failed to get pet:', error);
       throw error;
     }
   }
@@ -195,15 +171,12 @@ class PetServiceClass {
       const data = await response.json() as PetInfo[];
       return data;
     } catch (error) {
-      console.error('Failed to get pets:', error);
       throw error;
     }
   }
 
   async getPrimaryPet(): Promise<PetInfo | null> {
     try {
-      console.log('Getting primary pet...');
-
       // 1) 인증 토큰이 있으면 우선 사용자별(primary) API 호출
       const headers = await this.getHeaders();
       const hasAuth = Boolean(headers['Authorization']);
@@ -216,22 +189,16 @@ class PetServiceClass {
           });
 
           if (response.status === 404) {
-            console.log('Primary pet not found for authenticated user, falling back to local data');
             return await this.getPetFromLocal();
           }
 
           if (response.ok) {
             const data = await response.json() as PetInfo | null;
-            console.log('Primary pet data from authenticated API:', data);
             return data;
           }
-
-          console.log('Authenticated API returned non-ok status:', response.status);
         } catch (authError) {
-          console.log('Authenticated API failed:', authError);
+          // 인증 API 실패
         }
-      } else {
-        console.log('No auth token found, skipping authenticated primary pet API');
       }
 
       // 2) 인증 정보가 없거나 실패한 경우 공개(primary) API 시도 (개발용)
@@ -242,21 +209,15 @@ class PetServiceClass {
 
         if (response.ok) {
           const data = await response.json() as PetInfo | null;
-          console.log('Primary pet data from public API:', data);
           return data;
         }
-
-        console.log('Public API returned non-ok status:', response.status);
       } catch (publicError) {
-        console.log('Public API failed:', publicError);
+        // 공개 API 실패
       }
 
       // 3) 모든 API 실패 시 로컬 데이터 사용
-      console.log('All primary pet APIs failed, using local data');
       return await this.getPetFromLocal();
     } catch (error) {
-      console.error('Failed to get primary pet:', error);
-      console.log('네트워크 오류로 인해 로컬 데이터 사용');
       return await this.getPetFromLocal();
     }
   }
@@ -276,7 +237,6 @@ class PetServiceClass {
       // 로컬 저장소에서도 삭제
       await this.removePetFromLocal(petId);
     } catch (error) {
-      console.error('Failed to delete pet:', error);
       throw error;
     }
   }
@@ -293,7 +253,7 @@ class PetServiceClass {
         await AsyncStorage.setItem('temperaments', JSON.stringify(petData.temperaments));
       }
     } catch (error) {
-      console.error('Failed to save pet to local storage:', error);
+      // 로컬 저장 실패
     }
   }
 
@@ -304,7 +264,7 @@ class PetServiceClass {
       await AsyncStorage.removeItem('hasPhoto');
       await AsyncStorage.removeItem('temperaments');
     } catch (error) {
-      console.error('Failed to remove pet from local storage:', error);
+      // 로컬 삭제 실패
     }
   }
 
@@ -326,7 +286,6 @@ class PetServiceClass {
       }
       return null;
     } catch (error) {
-      console.error('Failed to get pet from local storage:', error);
       return null;
     }
   }

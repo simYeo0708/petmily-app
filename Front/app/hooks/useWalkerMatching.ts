@@ -35,7 +35,6 @@ export const useWalkerMatching = (bookingData?: BookingData) => {
         setFilterOptions(updatedFilters);
       }
     } catch (error) {
-      console.error('워커 데이터 로드 중 오류:', error);
       // 에러 시 Mock 데이터 사용
       const mockWalkers = generateMockWalkers();
       setWalkers(mockWalkers);

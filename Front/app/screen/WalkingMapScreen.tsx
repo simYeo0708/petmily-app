@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,15 @@ import {
   Animated,
   Image,
   PanResponder,
+  DeviceEventEmitter,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as TaskManager from 'expo-task-manager';
 import { IconImage } from '../components/IconImage';
-import MapService, { MapConfigResponse, LocationResponse } from '../services/MapService';
+import MapService, { MapConfigResponse, LocationResponse, WalkSessionResponse, RouteResponse } from '../services/MapService';
 import KakaoMapView, { KakaoMapViewHandle } from '../components/KakaoMapView';
 import { KAKAO_MAP_API_KEY } from '../config/api';
 
@@ -28,8 +30,43 @@ const { width, height } = Dimensions.get('window');
 // MapService 인스턴스
 const mapService = MapService.getInstance();
 
+const LOCATION_TASK_NAME = 'petmily-walking-location-updates';
+const LOCATION_EVENT_NAME = 'petmily.walking.location';
+const LIVE_ROUTE_UPDATE_INTERVAL = 90 * 1000; // 약 1.5분
+const BACKEND_UPDATE_INTERVAL = 5 * 1000; // 5초
+
+const globalAny = global as any;
+if (!globalAny.__PETMILY_LOCATION_TASK_DEFINED__) {
+  TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+    if (error) {
+      return;
+    }
+    const locationData = (data as { locations?: Location.LocationObject[] } | undefined)?.locations ?? [];
+    if (locationData.length > 0) {
+      DeviceEventEmitter.emit(LOCATION_EVENT_NAME, locationData[0]);
+    }
+    return;
+  });
+  globalAny.__PETMILY_LOCATION_TASK_DEFINED__ = true;
+}
+
 const isWithinKorea = (latitude: number, longitude: number) =>
   latitude >= 33 && latitude <= 39 && longitude >= 124 && longitude <= 132;
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const EARTH_RADIUS_METERS = 6371e3;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const deltaPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return EARTH_RADIUS_METERS * c;
+};
 
 interface WalkingMapScreenProps {
   navigation: any;
@@ -50,7 +87,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [isTracking, setIsTracking] = useState(false);
   const [walkingDistance, setWalkingDistance] = useState(0);
   const [walkingTime, setWalkingTime] = useState(0);
-  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const startTime = useRef<number | null>(null);
   const [customTime, setCustomTime] = useState('');
   const [selectedAddress, setSelectedAddress] = useState('');
@@ -60,6 +96,11 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [showGuide, setShowGuide] = useState(true);
   const [hasActiveService, setHasActiveService] = useState(false);
   const arrowAnimation = useRef(new Animated.Value(0)).current;
+  const locationHistoryRef = useRef<LocationData[]>([]);
+  const lastBackendSyncRef = useRef<number>(0);
+  const lastLiveRouteUpdateRef = useRef<number>(0);
+  const lastLocationRef = useRef<LocationData | null>(null);
+  const isTrackingRef = useRef<boolean>(false);
   
   // 현재 워킹 정보
   const [currentWalking, setCurrentWalking] = useState<any>(null);
@@ -75,6 +116,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   
   // 네이티브 지도 참조
   const kakaoMapRef = useRef<KakaoMapViewHandle>(null);
+  
+  // 산책 세션 관리
+  const walkSessionIdRef = useRef<number | null>(null);
 
   const defaultLatitude = parseFloat(mapConfig?.mapCenterLat ?? '37.5665');
   const defaultLongitude = parseFloat(mapConfig?.mapCenterLon ?? '126.9780');
@@ -93,9 +137,15 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     requestLocationPermission();
     loadCurrentWalking();
     return () => {
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-      }
+      (async () => {
+        try {
+          const started = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+          if (started) {
+            await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+          }
+        } catch (error) {
+        }
+      })();
     };
   }, []);
 
@@ -155,7 +205,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       setHasActiveService(true);
       setShowTopModal(true);
     } catch (error) {
-      console.error('현재 워킹 정보 로드 실패:', error);
     }
   };
 
@@ -175,86 +224,238 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         timestamp: Date.now(),
       };
       setCurrentLocation(newLocation);
+      setLocationHistory([newLocation]);
+      locationHistoryRef.current = [newLocation];
+      lastLocationRef.current = newLocation;
       
       // 백엔드에 위치 업데이트
       await updateUserLocation(location.coords.latitude, location.coords.longitude);
     } catch (error) {
-      console.error('위치 권한 요청 실패:', error);
     }
   };
+
+  const buildRouteCoordinates = useCallback((data: LocationData[]) => {
+    return data.map(point => ({
+      latitude: point.latitude,
+      longitude: point.longitude,
+    }));
+  }, []);
+
+  const updateLiveRouteOnMap = useCallback(() => {
+    const coordinates = buildRouteCoordinates(locationHistoryRef.current);
+    if (coordinates.length < 2) {
+      return;
+    }
+    kakaoMapRef.current?.updateRoute('liveRoute', coordinates, {
+      color: '#4A90E2',
+      strokeColor: '#FFFFFF',
+      lineWidth: 12,
+    });
+  }, [buildRouteCoordinates]);
+
+  const showFullRouteOnMap = useCallback(() => {
+    const coordinates = buildRouteCoordinates(locationHistoryRef.current);
+    if (coordinates.length < 2) {
+      return;
+    }
+    kakaoMapRef.current?.clearRoute('liveRoute');
+    kakaoMapRef.current?.updateRoute('summaryRoute', coordinates, {
+      color: '#5B8FF9',
+      strokeColor: '#FFFFFF',
+      lineWidth: 14,
+    });
+  }, [buildRouteCoordinates]);
+
+  const handleLocationEvent = useCallback(
+    (location: Location.LocationObject) => {
+      if (!isTrackingRef.current) {
+        return;
+      }
+      const newLocation: LocationData = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        timestamp: location.timestamp ?? Date.now(),
+      };
+
+      setCurrentLocation(newLocation);
+      setLocationHistory(prev => {
+        const updated = [...prev, newLocation];
+        locationHistoryRef.current = updated;
+        return updated;
+      });
+
+      if (lastLocationRef.current) {
+        const distance = calculateDistance(
+          lastLocationRef.current.latitude,
+          lastLocationRef.current.longitude,
+          newLocation.latitude,
+          newLocation.longitude
+        );
+        setWalkingDistance(prev => prev + distance);
+      }
+      lastLocationRef.current = newLocation;
+
+      if (startTime.current) {
+        setWalkingTime(Math.floor((Date.now() - startTime.current!) / 1000));
+      }
+
+      // 카메라 추적 위치 업데이트
+      kakaoMapRef.current?.updateTrackingLocation(
+        newLocation.latitude,
+        newLocation.longitude
+      );
+
+      const now = Date.now();
+      if (now - lastBackendSyncRef.current >= BACKEND_UPDATE_INTERVAL) {
+        lastBackendSyncRef.current = now;
+        updateUserLocation(
+          newLocation.latitude,
+          newLocation.longitude,
+          location.coords.accuracy,
+          location.coords.speed ? location.coords.speed * 3.6 : undefined, // m/s to km/h
+          location.coords.altitude ?? undefined
+        ).catch(() => {});
+      }
+
+      if (now - lastLiveRouteUpdateRef.current >= LIVE_ROUTE_UPDATE_INTERVAL) {
+        lastLiveRouteUpdateRef.current = now;
+        updateLiveRouteOnMap();
+      }
+    },
+    [updateLiveRouteOnMap]
+  );
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener(LOCATION_EVENT_NAME, handleLocationEvent);
+    return () => {
+      subscription.remove();
+    };
+  }, [handleLocationEvent]);
 
   const startLocationTracking = async () => {
     try {
+      isTrackingRef.current = true;
       setIsTracking(true);
       startTime.current = Date.now();
-      
-      locationSubscription.current = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 1000, // 1초마다 업데이트
-          distanceInterval: 1, // 1미터마다 업데이트
-        },
-        async (location) => {
-          const newLocation: LocationData = {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            timestamp: Date.now(),
-          };
-          
-          setCurrentLocation(newLocation);
-          setLocationHistory(prev => [...prev, newLocation]);
-          
-          // 거리 계산
-          if (locationHistory.length > 0) {
-            const lastLocation = locationHistory[locationHistory.length - 1];
-            const distance = calculateDistance(
-              lastLocation.latitude,
-              lastLocation.longitude,
-              newLocation.latitude,
-              newLocation.longitude
-            );
-            setWalkingDistance(prev => prev + distance);
-          }
-          
-          // 시간 계산
-          if (startTime.current) {
-            setWalkingTime(Math.floor((Date.now() - startTime.current) / 1000));
-          }
-          
-          // 백엔드에 위치 업데이트 (5초마다)
-          if (Date.now() % 5000 < 1000) {
-            await updateUserLocation(location.coords.latitude, location.coords.longitude);
-          }
+      setWalkingDistance(0);
+      setWalkingTime(0);
+      lastBackendSyncRef.current = 0;
+      lastLiveRouteUpdateRef.current = 0;
+
+      const initialHistory = currentLocation ? [currentLocation] : [];
+      locationHistoryRef.current = initialHistory;
+      setLocationHistory(initialHistory);
+      if (initialHistory.length > 0) {
+        lastLocationRef.current = initialHistory[initialHistory.length - 1];
+      } else {
+        lastLocationRef.current = null;
+      }
+
+      kakaoMapRef.current?.clearRoute('summaryRoute');
+      kakaoMapRef.current?.clearRoute('liveRoute');
+
+      // 카메라 추적 시작
+      kakaoMapRef.current?.startCameraTracking();
+      if (currentLocation) {
+        kakaoMapRef.current?.updateTrackingLocation(
+          currentLocation.latitude,
+          currentLocation.longitude
+        );
+      }
+
+      // 산책 세션 생성
+      if (currentLocation) {
+        try {
+          const session = await mapService.createWalkSession(
+            currentLocation.latitude,
+            currentLocation.longitude
+          );
+          walkSessionIdRef.current = session.id;
+        } catch (error) {
+          // 세션 생성 실패해도 위치 추적은 계속 진행
         }
-      );
+      }
+
+      const hasBackgroundPermission = await Location.requestBackgroundPermissionsAsync();
+      if (hasBackgroundPermission.status !== 'granted') {
+      }
+
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (!hasStarted) {
+        await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 5,
+          showsBackgroundLocationIndicator: false,
+          pausesUpdatesAutomatically: true,
+        });
+      }
     } catch (error) {
-      console.error('위치 추적 시작 실패:', error);
       Alert.alert('오류', '위치 추적을 시작할 수 없습니다.');
+      isTrackingRef.current = false;
+      setIsTracking(false);
     }
   };
 
-  const stopLocationTracking = () => {
-    if (locationSubscription.current) {
-      locationSubscription.current.remove();
-      locationSubscription.current = null;
+  const stopLocationTracking = async () => {
+    try {
+      const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (hasStarted) {
+        await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+      }
+
+      // 카메라 추적 중지
+      kakaoMapRef.current?.stopCameraTracking();
+
+      // 산책 세션 종료
+      if (walkSessionIdRef.current && currentLocation) {
+        try {
+          const totalDistanceMeters = walkingDistance;
+          const durationSeconds = startTime.current
+            ? Math.floor((Date.now() - startTime.current) / 1000)
+            : 0;
+
+          await mapService.endWalkSession(
+            walkSessionIdRef.current,
+            currentLocation.latitude,
+            currentLocation.longitude,
+            totalDistanceMeters,
+            durationSeconds
+          );
+
+          // 저장된 경로 조회 및 표시
+          try {
+            const route = await mapService.getWalkRoute(walkSessionIdRef.current);
+            if (route.points.length >= 2) {
+              const coordinates = route.points.map(point => ({
+                latitude: point.latitude,
+                longitude: point.longitude,
+              }));
+              kakaoMapRef.current?.updateRoute('summaryRoute', coordinates, {
+                color: '#5B8FF9',
+                strokeColor: '#FFFFFF',
+                lineWidth: 14,
+              });
+            }
+          } catch (error) {
+            // 경로 조회 실패 시 로컬 데이터로 표시
+            showFullRouteOnMap();
+          }
+        } catch (error) {
+        } finally {
+          walkSessionIdRef.current = null;
+        }
+      } else {
+        // 세션이 없으면 로컬 데이터로만 표시
+        showFullRouteOnMap();
+      }
+    } catch (error) {
+    } finally {
+      isTrackingRef.current = false;
+      setIsTracking(false);
+      startTime.current = null;
+      lastLocationRef.current = null;
     }
-    setIsTracking(false);
-    startTime.current = null;
-  };
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-    const R = 6371e3; // 지구 반지름 (미터)
-    const φ1 = lat1 * Math.PI / 180;
-    const φ2 = lat2 * Math.PI / 180;
-    const Δφ = (lat2 - lat1) * Math.PI / 180;
-    const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c; // 미터 단위
   };
 
   // 모달 드래그 핸들러
@@ -264,7 +465,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         return Math.abs(gestureState.dy) > 5;
       },
       onPanResponderGrant: () => {
-        console.log('드래그 시작');
         setIsDragging(true);
       },
       onPanResponderMove: (evt, gestureState) => {
@@ -272,7 +472,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         setModalPosition({ x: 0, y: newY });
       },
       onPanResponderRelease: () => {
-        console.log('드래그 종료');
         setIsDragging(false);
       },
     })
@@ -295,25 +494,27 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       const config = await mapService.getMapConfig();
       setMapConfig(config);
     } catch (error) {
-      console.error('지도 설정 로드 실패:', error);
     }
   };
 
   // 사용자 위치 업데이트
-  const updateUserLocation = async (latitude: number, longitude: number) => {
+  const updateUserLocation = async (latitude: number, longitude: number, accuracy?: number, speed?: number, altitude?: number) => {
     try {
       const userId = await mapService.getCurrentUserId();
       const locationRequest = {
         latitude,
         longitude,
         timestamp: Date.now(),
-        userId
+        userId,
+        walkSessionId: walkSessionIdRef.current ?? undefined,
+        accuracy,
+        speed,
+        altitude,
       };
       
       const response = await mapService.updateUserLocation(locationRequest);
       setUserLocation(response);
     } catch (error) {
-      console.error('위치 업데이트 실패:', error);
     }
   };
 
@@ -338,9 +539,11 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     await startLocationTracking();
   };
 
-  const handleStopWalking = () => {
+  const handleStopWalking = async () => {
     setIsWalking(false);
-    stopLocationTracking();
+    await stopLocationTracking();
+    updateLiveRouteOnMap();
+    showFullRouteOnMap();
   };
 
   const handleRequestWalker = () => {
@@ -389,7 +592,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       address: selectedAddress,
     };
 
-    console.log('예약 요청:', bookingData);
     
     // 워커 매칭 화면으로 이동
     navigation.navigate('WalkerMatching', { bookingData });

@@ -40,6 +40,7 @@ import {
   SearchResult as SearchResultType,
   PetInfo as PetInfoType,
 } from "../types/HomeScreen";
+import { searchProducts, BackendSearchResult } from "../services/SearchService";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -63,6 +64,17 @@ const MODE_ICON_SOURCE_MAP: Record<string, any> = {
 const resolveModeIconSource = (icon: string) =>
   icon.startsWith("@") ? MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"] : null;
 
+const SHOP_CATEGORY_MAP: Record<string, string> = {
+  '사료': '강아지 사료',
+  '간식': '강아지 간식',
+  '장난감': '장난감',
+  '용품': '외출 용품',
+  '패션': '의류',
+  '건강관리': '미용 용품',
+  '위생용품': '배변용품',
+  '기타': '전체',
+};
+
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { handleGuideNext: onGuideNext } = useGuide();
@@ -76,6 +88,7 @@ const HomeScreen = () => {
   const [showServiceGuide, setShowServiceGuide] = useState(false);
   const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [currentGuideStep, setCurrentGuideStep] = useState(0);
   const [showGuideOverlay, setShowGuideOverlay] = useState(false);
   const [showStepModal, setShowStepModal] = useState(false);
@@ -87,11 +100,8 @@ const HomeScreen = () => {
       const now = Date.now();
       // 마지막 갱신으로부터 5초 이상 경과한 경우에만 갱신
       if (now - lastRefreshRef.current > 5000) {
-        console.log('🔄 HomeScreen focused - refreshing pet info');
         lastRefreshRef.current = now;
         refreshPetInfo();
-      } else {
-        console.log('⏭️ HomeScreen focused - skipping refresh (too soon)');
       }
     }, [refreshPetInfo])
   );
@@ -155,13 +165,6 @@ const HomeScreen = () => {
 
   // 가이드 상태 변화 로그
   React.useEffect(() => {
-    console.log("📊 [DEBUG] Guide states changed:");
-    console.log("  - showServiceGuide:", showServiceGuide);
-    console.log("  - showGuideOverlay:", showGuideOverlay);
-    console.log("  - showStepModal:", showStepModal);
-    console.log("  - currentGuideStep:", currentGuideStep);
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
   }, [showServiceGuide, showGuideOverlay, showStepModal, currentGuideStep, isFirstTime, hasPetInfo]);
 
   const { helperStatus, becomeHelper } = useHelperStatus();
@@ -198,15 +201,12 @@ const HomeScreen = () => {
     try {
       await AsyncStorage.removeItem("hasSeenServiceIntro");
       await AsyncStorage.removeItem("petInfo");
-      console.log("🧹 [DEBUG] Cleared guide data from AsyncStorage");
     } catch (error) {
-      console.error("❌ [ERROR] Failed to clear guide data:", error);
     }
   };
 
   // 개발용: 가이드 강제 시작 함수
   const forceStartGuide = () => {
-    console.log("🔧 [DEBUG] Force starting guide");
     setShowServiceGuide(true);
     setShowGuideOverlay(true);
     setShowStepModal(true);
@@ -217,13 +217,10 @@ const HomeScreen = () => {
   const checkFirstTimeUser = useCallback(async () => {
     try {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenServiceIntro");
-      console.log("🔍 [DEBUG] hasSeenIntro from AsyncStorage:", hasSeenIntro);
       const isFirstTimeUser = !hasSeenIntro;
-      console.log("🔍 [DEBUG] isFirstTimeUser:", isFirstTimeUser);
       setIsFirstTime(isFirstTimeUser);
       return isFirstTimeUser;
     } catch (error) {
-      console.error("❌ [ERROR] Failed to check first time user:", error);
       setIsFirstTime(true);
       return true;
     }
@@ -233,22 +230,17 @@ const HomeScreen = () => {
   const checkPetInfo = useCallback(async () => {
     try {
       const savedPetInfo = await AsyncStorage.getItem("petInfo");
-      console.log("🔍 [DEBUG] savedPetInfo from AsyncStorage:", savedPetInfo);
       if (savedPetInfo) {
         const petInfo: PetInfoType = JSON.parse(savedPetInfo);
-        console.log("🔍 [DEBUG] parsed petInfo:", petInfo);
         // 필수 정보가 있는지 확인
         const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
-        console.log("🔍 [DEBUG] hasEssentialInfo:", hasEssentialInfo);
         setHasPetInfo(hasEssentialInfo);
         return hasEssentialInfo;
       } else {
-        console.log("🔍 [DEBUG] No savedPetInfo found");
         setHasPetInfo(false);
         return false;
       }
     } catch (error) {
-      console.error("❌ [ERROR] Failed to check pet info:", error);
       setHasPetInfo(false);
       return false;
     }
@@ -256,23 +248,16 @@ const HomeScreen = () => {
 
   // 서비스 가이드 표시 여부 결정
   const checkAndShowServiceGuide = useCallback(async () => {
-    console.log("🚀 [DEBUG] checkAndShowServiceGuide called");
     const isFirstTime = await checkFirstTimeUser();
     const hasPetInfo = await checkPetInfo();
     
-    console.log("🔍 [DEBUG] Final check results:");
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
-    console.log("  - Should show guide:", isFirstTime && !hasPetInfo);
     
     // 최초 실행이고 반려동물 정보가 없을 때만 가이드 표시
     if (isFirstTime && !hasPetInfo) {
-      console.log("✅ [DEBUG] Starting guide in 1.5 seconds...");
       
       // 스크롤 코드 제거 - 현재 위치에서 가이드 시작
       
       setTimeout(() => {
-        console.log("🎯 [DEBUG] Setting guide states to true");
         setShowServiceGuide(true);
         setShowGuideOverlay(true);
         setShowStepModal(true);
@@ -283,20 +268,16 @@ const HomeScreen = () => {
         setGuideStep(0);
       }, 1500); // 화면 로딩 후 충분한 시간
     } else {
-      console.log("❌ [DEBUG] Guide conditions not met - not showing guide");
     }
   }, [checkFirstTimeUser, checkPetInfo]);
 
   // 화면이 포커스될 때마다 체크 (하지만 서비스 가이드는 최초 1회만)
   useFocusEffect(
     useCallback(() => {
-      console.log("🔄 [DEBUG] useFocusEffect called, isFirstTime:", isFirstTime);
       if (isFirstTime === null) {
-        console.log("🔄 [DEBUG] First time loading - checking service guide");
         // 최초 로딩 시에만 서비스 가이드 체크
         checkAndShowServiceGuide();
       } else {
-        console.log("🔄 [DEBUG] Not first time - only checking pet info");
         // 이후에는 반려동물 정보만 체크
         checkPetInfo();
       }
@@ -304,7 +285,6 @@ const HomeScreen = () => {
   );
 
   const handleCompleteServiceGuide = () => {
-    console.log("🏁 [DEBUG] Completing service guide");
     setShowServiceGuide(false);
     setShowGuideOverlay(false);
     setShowStepModal(false);
@@ -344,10 +324,8 @@ const HomeScreen = () => {
 
   // 가이드 다음 단계로 이동
   const handleGuideNext = () => {
-    console.log("🎯 [DEBUG] handleGuideNext called, currentStep:", currentGuideStep);
     if (currentGuideStep < guideSteps.length - 1) {
       const nextStep = currentGuideStep + 1;
-      console.log("🎯 [DEBUG] Moving to next step:", nextStep);
       
       // 즉시 다음 단계로 이동 (모달 사라짐 없이)
       setCurrentGuideStep(nextStep);
@@ -361,7 +339,6 @@ const HomeScreen = () => {
                          walkRequestListRef;
         if (targetRef.current && scrollViewRef.current) {
           targetRef.current.measure((x, y, width, height, pageX, pageY) => {
-            console.log("🎯 [DEBUG] Element position:", { x, y, width, height, pageX, pageY });
             
             // 단계별 스크롤 오프셋 조정
             let scrollOffset = 0;
@@ -378,57 +355,28 @@ const HomeScreen = () => {
             }
             
             const scrollY = Math.max(0, pageY - scrollOffset);
-            console.log("🎯 [DEBUG] Scroll calculation:", { 
-              nextStep, 
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              pageY, 
-              scrollOffset, 
-              calculatedScrollY: scrollY,
-              finalScrollY: Math.max(0, pageY - scrollOffset)
-            });
-            
-            // 스크롤 실행 전 현재 위치 확인
-            console.log("🎯 [DEBUG] Before scroll - current scroll position check");
-            
-            // 모든 단계에서 계산된 scrollY 사용
-            console.log("🎯 [DEBUG] Using calculated scrollY:", { 
-              nextStep,
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              scrollToY: scrollY
-            });
             
             // 스크롤 실행 전 ScrollView 상태 확인
-            console.log("🎯 [DEBUG] ScrollView ref exists:", !!scrollViewRef.current);
             
             // 계산된 scrollY로 스크롤
             if (scrollViewRef.current) {
               scrollViewRef.current.scrollTo({ x: 0, y: scrollY, animated: true });
-              console.log("🎯 [DEBUG] Scroll executed with calculated scrollY");
             } else {
-              console.log("🎯 [ERROR] ScrollView ref is null");
             }
             
             // 스크롤 실행 후 확인
             setTimeout(() => {
-              console.log("🎯 [DEBUG] After scroll - scroll should be at:", scrollY);
             }, 500);
-          });
-        } else {
-          console.log("🎯 [DEBUG] Scroll failed - missing refs:", {
-            targetRef: !!targetRef.current,
-            scrollViewRef: !!scrollViewRef.current
           });
         }
       }, 100);
     } else {
       // Step 2 (My Pet 탭 하이라이트) - 정보 입력 화면으로 이동
       if (currentGuideStep === 2) {
-        console.log("[DEBUG] Navigating to Pet Info Input Screen");
         setShowStepModal(false); // 가이드 모달 숨김
         handleCompleteServiceGuide(); // 가이드 완료
         navigation.navigate('PetInfoInput'); // 정보 입력 화면으로 이동
       } else {
-        console.log("[DEBUG] Completing guide");
         handleCompleteServiceGuide();
       }
     }
@@ -459,81 +407,46 @@ const HomeScreen = () => {
       return;
     }
 
-    // 검색 결과 생성 (실제로는 API 호출)
-    const results = generateSearchResults(query, serviceMode);
-    setSearchResults(results);
     setShowSearchResults(true);
   };
 
-  const generateSearchResults = (query: string, mode: ServiceMode): SearchResult[] => {
+  const generateWalkerSearchResults = React.useCallback((query: string): SearchResult[] => {
     const lowerQuery = query.toLowerCase();
     
-    if (mode === "PW") {
-      // Pet Walker 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'feature',
-          title: '산책 요청하기',
-          description: '워커와 매칭하여 산책 서비스를 요청하세요',
-          iconName: 'walker',
-          action: () => navigation.navigate('WalkingRequest'),
-        },
-        {
-          id: '2',
-          type: 'feature',
-          title: '산책 지도',
-          description: '실시간 위치 추적과 산책 경로를 확인하세요',
-          iconName: 'map',
-          action: () => navigation.navigate('WalkingMap'),
-        },
-        {
-          id: '3',
-          type: 'feature',
-          title: '워커 매칭',
-          description: '나에게 맞는 워커를 찾아보세요',
-          iconName: 'paw',
-          action: () => navigation.navigate('WalkerMatching', { 
-            bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
-          }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
-    } else {
-      // Pet Mall 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'service',
-          title: '사료',
-          description: '건강한 사료를 찾아보세요',
-          iconName: 'food',
-          action: () => navigation.navigate('Shop', { category: '사료' }),
-        },
-        {
-          id: '2',
-          type: 'service',
-          title: '장난감',
-          description: '재미있는 장난감을 만나보세요',
-          iconName: 'toy',
-          action: () => navigation.navigate('Shop', { category: '장난감' }),
-        },
-        {
-          id: '3',
-          type: 'service',
-          title: '의류',
-          description: '귀여운 의류를 쇼핑하세요',
-          iconName: 'clothing',
-          action: () => navigation.navigate('Shop', { category: '의류' }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
-    }
-  };
+    const walkerResults: SearchResult[] = [
+      {
+        id: '1',
+        type: 'feature',
+        title: '산책 요청하기',
+        description: '워커와 매칭하여 산책 서비스를 요청하세요',
+        iconName: 'walker',
+        action: () => navigation.navigate('WalkingRequest'),
+      },
+      {
+        id: '2',
+        type: 'feature',
+        title: '산책 지도',
+        description: '실시간 위치 추적과 산책 경로를 확인하세요',
+        iconName: 'map',
+        action: () => navigation.navigate('WalkingMap'),
+      },
+      {
+        id: '3',
+        type: 'feature',
+        title: '워커 매칭',
+        description: '나에게 맞는 워커를 찾아보세요',
+        iconName: 'paw',
+        action: () => navigation.navigate('WalkerMatching', { 
+          bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
+        }),
+      },
+    ];
+
+    return walkerResults.filter(item => 
+      item.title.toLowerCase().includes(lowerQuery) || 
+      item.description.toLowerCase().includes(lowerQuery)
+    );
+  }, [navigation]);
 
   const handleSearchResultPress = (result: SearchResult) => {
     setShowSearchResults(false);
@@ -541,12 +454,82 @@ const HomeScreen = () => {
     result.action();
   };
 
+  const mapProductResultToSearchResult = React.useCallback((item: BackendSearchResult): SearchResult => {
+    const metadata = (item.metadata ?? {}) as Record<string, unknown>;
+    const rawPrice = metadata.price;
+    const numericPrice =
+      typeof rawPrice === 'number'
+        ? rawPrice
+        : typeof rawPrice === 'string' && !Number.isNaN(Number(rawPrice))
+        ? Number(rawPrice)
+        : undefined;
+
+    const formattedPrice = typeof numericPrice === 'number' ? `${numericPrice.toLocaleString()}원` : undefined;
+    const descriptionPieces = [
+      formattedPrice,
+      item.description ?? undefined,
+    ].filter(Boolean);
+
+    const categoryDisplay = typeof metadata.category === 'string' ? metadata.category : undefined;
+    const categoryForNavigation =
+      (categoryDisplay && SHOP_CATEGORY_MAP[categoryDisplay]) || '전체';
+
+    return {
+      id: item.id,
+      type: 'service',
+      title: item.title ?? '상품',
+      description: descriptionPieces.join(' • ') || '상품 상세 보기',
+      iconName: 'shop',
+      action: () => navigation.navigate('Shop', { category: categoryForNavigation }),
+    };
+  }, [navigation]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const runSearch = async () => {
+      const trimmed = searchQuery.trim();
+
+      if (trimmed.length === 0) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+        setIsSearching(false);
+        return;
+      }
+
+      if (serviceMode === "PW") {
+        const localResults = generateWalkerSearchResults(trimmed);
+        if (!cancelled) {
+          setSearchResults(localResults);
+          setIsSearching(false);
+        }
+        return;
+      }
+
+      setIsSearching(true);
+      const backendResults = await searchProducts(trimmed);
+      if (cancelled) {
+        return;
+      }
+
+      const mapped = backendResults.map(mapProductResultToSearchResult);
+      setSearchResults(mapped);
+      setIsSearching(false);
+    };
+
+    runSearch();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [generateWalkerSearchResults, mapProductResultToSearchResult, searchQuery, serviceMode]);
+
   return (
     <>
       {/* 메인 콘텐츠 영역 */}
       <SafeAreaView
         style={[homeScreenStyles.root]}
-        edges={['left', 'right']}>
+        edges={['top', 'left', 'right']}>
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
           {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}
@@ -627,7 +610,11 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.searchResultsList}>
-              {searchResults.length > 0 ? (
+              {isSearching ? (
+                <View style={styles.noSearchResults}>
+                  <Text style={styles.noSearchResultsText}>검색 중입니다...</Text>
+                </View>
+              ) : searchResults.length > 0 ? (
                 searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
@@ -673,7 +660,7 @@ const HomeScreen = () => {
       )}
         <View style={homeScreenStyles.section}>
           {/* 디버깅 버튼들 (임시) */}
-          <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
+          {/* <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
             <TouchableOpacity 
               style={{ backgroundColor: '#ff6b6b', padding: 8, borderRadius: 4 }}
               onPress={clearGuideData}
@@ -686,7 +673,7 @@ const HomeScreen = () => {
             >
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
           {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
             {(["PW", "PM"] as const).map((mode) => (

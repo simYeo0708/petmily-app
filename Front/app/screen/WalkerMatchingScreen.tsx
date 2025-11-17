@@ -79,7 +79,6 @@ const WalkerMatchingScreen: React.FC<WalkerMatchingScreenProps> = ({ navigation,
         setLoading(false);
       }, 1000);
     } catch (error) {
-      console.error('워커 목록 로드 실패:', error);
       setLoading(false);
     }
   };

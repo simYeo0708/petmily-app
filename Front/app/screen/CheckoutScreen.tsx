@@ -68,7 +68,6 @@ const CheckoutScreen = () => {
               paymentMethod,
             };
 
-            console.log("주문 데이터:", orderData);
 
             // 장바구니 비우기
             clearCart();

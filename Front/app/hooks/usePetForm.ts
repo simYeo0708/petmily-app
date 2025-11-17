@@ -43,7 +43,6 @@ export const usePetForm = () => {
         ]
       );
     } catch (error) {
-      console.error('이미지 선택 중 오류:', error);
       Alert.alert('오류', '이미지를 선택할 수 없습니다.');
     }
   }, []);
@@ -61,7 +60,6 @@ export const usePetForm = () => {
         triggerSuccessAnimation();
       }
     } catch (error) {
-      console.error('갤러리에서 이미지 선택 중 오류:', error);
       Alert.alert('오류', '갤러리에서 이미지를 선택할 수 없습니다.');
     }
   }, []);
@@ -79,7 +77,6 @@ export const usePetForm = () => {
         triggerSuccessAnimation();
       }
     } catch (error) {
-      console.error('카메라로 사진 촬영 중 오류:', error);
       Alert.alert('오류', '카메라로 사진을 촬영할 수 없습니다.');
     }
   }, []);
@@ -143,7 +140,6 @@ export const usePetForm = () => {
       await updatePetInfo(localPetInfo);
       Alert.alert('성공', '반려동물 정보가 저장되었습니다.');
     } catch (error) {
-      console.error('반려동물 정보 저장 중 오류:', error);
       Alert.alert('오류', '반려동물 정보를 저장할 수 없습니다.');
     }
   }, [localPetInfo, updatePetInfo]);

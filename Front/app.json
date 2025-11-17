@@ -37,11 +37,8 @@
       "resizeMode": "contain"
     },
     "icon": "./assets/images/paw.png",
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": [],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     }
   }

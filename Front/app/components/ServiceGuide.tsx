@@ -39,12 +39,14 @@ const ServiceGuide: React.FC<ServiceGuideProps> = ({
       id: "pet_walker_button",
       title: "Pet Walker 서비스",
       description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!\n\n• 전문 워커와의 매칭\n• 실시간 산책 추적\n• 안전한 산책 경로 제공",
+      nextButtonText: "다음",
       iconName: "walker",
     },
     {
       id: "pet_mall_button",
       title: "Pet Mall 서비스",
       description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!\n\n• 다양한 펫 용품 카테고리\n• 합리적인 가격\n• 빠른 배송 서비스",
+      nextButtonText: "다음",
       iconName: "shop",
     },
     {
@@ -135,7 +137,6 @@ const ServiceGuide: React.FC<ServiceGuideProps> = ({
     try {
       await AsyncStorage.setItem("hasSeenServiceIntro", "true");
     } catch (error) {
-      console.error("Failed to save service guide completion:", error);
     }
   };
 

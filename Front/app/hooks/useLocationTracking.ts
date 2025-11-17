@@ -70,14 +70,14 @@ export const useLocationTracking = () => {
     coord2: LocationCoords
   ): number => {
     const R = 6371e3; // 지구 반지름 (미터)
-    const φ1 = (coord1.latitude * Math.PI) / 180;
-    const φ2 = (coord2.latitude * Math.PI) / 180;
-    const Δφ = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
-    const Δλ = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
+    const pi1 = (coord1.latitude * Math.PI) / 180;
+    const pi2 = (coord2.latitude * Math.PI) / 180;
+    const del_pi = ((coord2.latitude - coord1.latitude) * Math.PI) / 180;
+    const del_lambda = ((coord2.longitude - coord1.longitude) * Math.PI) / 180;
 
     const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      Math.sin(del_pi / 2) * Math.sin(del_pi / 2) +
+      Math.cos(pi1) * Math.cos(pi2) * Math.sin(del_lambda / 2) * Math.sin(del_lambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c; // 미터 단위

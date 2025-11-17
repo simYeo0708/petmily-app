@@ -12,7 +12,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '반려동물 프로필 관리',
       type: 'screen',
       iconName: 'paw',
-      action: () => console.log('Navigate to My Pet'),
+      action: () => {},
     },
     {
       id: 'settings',
@@ -20,7 +20,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '앱 설정 및 계정 관리',
       type: 'screen',
       iconName: 'setting',
-      action: () => console.log('Navigate to Settings'),
+      action: () => {},
     },
   ];
 
@@ -31,7 +31,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '새로운 산책 요청하기',
       type: 'feature',
       iconName: 'walker',
-      action: () => console.log('Navigate to Walker Request'),
+      action: () => {},
     },
     {
       id: 'walker_matching',
@@ -39,7 +39,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '산책 워커 찾기',
       type: 'feature',
       iconName: 'paw',
-      action: () => console.log('Navigate to Walker Matching'),
+      action: () => {},
     },
     {
       id: 'walk_history',
@@ -47,7 +47,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '과거 산책 내역 보기',
       type: 'feature',
       iconName: 'map',
-      action: () => console.log('Navigate to Walk History'),
+      action: () => {},
     },
   ];
 
@@ -58,7 +58,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '사료 및 간식 카테고리',
       type: 'service',
       iconName: 'food',
-      action: () => console.log('Navigate to Food Category'),
+      action: () => {},
     },
     {
       id: 'toy_category',
@@ -66,7 +66,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '장난감 및 놀이용품',
       type: 'service',
       iconName: 'toy',
-      action: () => console.log('Navigate to Toy Category'),
+      action: () => {},
     },
     {
       id: 'health_category',
@@ -74,7 +74,7 @@ export const generateSearchResults = (query: string, mode: ServiceMode): SearchR
       description: '건강 관리 용품',
       type: 'service',
       iconName: 'grooming' as IconName,
-      action: () => console.log('Navigate to Health Category'),
+      action: () => {},
     },
   ];
 
