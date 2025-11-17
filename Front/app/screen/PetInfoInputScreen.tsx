@@ -91,7 +91,6 @@ const PetInfoInputScreen = () => {
       setCurrentStep(currentStep + 1);
     } else {
       // 마지막 단계 - 정보 저장 및 완료
-      console.log('반려동물 정보 저장:', petData);
       setIsSaving(true);
       
       try {
@@ -123,7 +122,6 @@ const PetInfoInputScreen = () => {
         // My Pet 탭으로 이동
         navigation.navigate('Main', { initialTab: 'MyPetTab' });
       } catch (error) {
-        console.error('반려동물 정보 저장 실패:', error);
         // 에러 처리 - 사용자에게 알림
         setErrors({ general: '정보 저장에 실패했습니다. 다시 시도해주세요.' });
       } finally {
@@ -244,7 +242,6 @@ const PetInfoInputScreen = () => {
                   errors.breed && styles.inputError
                 ]}
                 onPress={() => {
-                  console.log('품종 선택 버튼 클릭');
                   setShowBreedModal(true);
                 }}
                 activeOpacity={0.7}>

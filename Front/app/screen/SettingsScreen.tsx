@@ -31,7 +31,7 @@ const SettingsScreen = () => {
   // SettingsScreen에서는 펫 정보를 직접 수정하지 않으므로 자동 갱신 비활성화
   // useFocusEffect(
   //   useCallback(() => {
-  //     console.log('🔄 SettingsScreen focused - refreshing pet info');
+  //     
   //     refreshPetInfo();
   //   }, [refreshPetInfo])
   // );
@@ -52,17 +52,17 @@ const SettingsScreen = () => {
         {
           title: "프로필 편집",
           icon: "paw",
-          action: () => console.log("프로필 편집"),
+          action: () => {},
         },
         {
           title: "반려동물 정보",
           icon: "dog",
-          action: () => console.log("반려동물 정보"),
+          action: () => {},
         },
         {
           title: "비밀번호 변경",
           icon: "setting",
-          action: () => console.log("비밀번호 변경"),
+          action: () => {},
         },
       ],
     },
@@ -98,12 +98,12 @@ const SettingsScreen = () => {
         {
           title: "개인정보 처리방침",
           icon: "home",
-          action: () => console.log("개인정보 처리방침"),
+          action: () => {},
         },
         {
           title: "이용약관",
           icon: "paw",
-          action: () => console.log("이용약관"),
+          action: () => {},
         },
       ],
     },
@@ -113,10 +113,10 @@ const SettingsScreen = () => {
         {
           title: "고객센터",
           icon: "cart",
-          action: () => console.log("고객센터"),
+          action: () => {},
         },
-        { title: "FAQ", icon: "paw", action: () => console.log("FAQ") },
-        { title: "앱 정보", icon: "home", action: () => console.log("앱 정보") },
+        { title: "FAQ", icon: "paw", action: () => {} },
+        { title: "앱 정보", icon: "home", action: () => {} },
       ],
     },
   ];
@@ -124,9 +124,7 @@ const SettingsScreen = () => {
   const clearAsyncStorage = async () => {
     try {
       await AsyncStorage.clear();
-      console.log("AsyncStorage cleared successfully");
     } catch (error) {
-      console.error("Failed to clear AsyncStorage:", error);
       Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
     }
   };

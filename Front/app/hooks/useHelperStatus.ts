@@ -36,7 +36,6 @@ export const useHelperStatus = () => {
         setHelperStatus(JSON.parse(statusData));
       }
     } catch (error) {
-      console.error("헬퍼 상태 로드 실패:", error);
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +46,6 @@ export const useHelperStatus = () => {
       await AsyncStorage.setItem(HELPER_STATUS_KEY, JSON.stringify(status));
       setHelperStatus(status);
     } catch (error) {
-      console.error("헬퍼 상태 저장 실패:", error);
     }
   };
 

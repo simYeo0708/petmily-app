@@ -31,7 +31,6 @@ interface User {
 const AuthService = {
   async login(username: string, password: string): Promise<AuthResponse> {
     try {
-      console.log('로그인 시도:', { username });
       
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -47,7 +46,6 @@ const AuthService = {
       }
 
       const data = await response.json() as AuthResponse;
-      console.log('로그인 성공:', { userId: data.userId, username: data.username });
       
       // 토큰 저장
       await AsyncStorage.setItem('authToken', data.accessToken);
@@ -59,7 +57,6 @@ const AuthService = {
       
       return data;
     } catch (error) {
-      console.error('로그인 에러:', error);
       throw error;
     }
   },
@@ -69,7 +66,6 @@ const AuthService = {
    */
   async signup(signupData: SignupRequest): Promise<AuthResponse> {
     try {
-      console.log('회원가입 시도:', { username: signupData.username, email: signupData.email });
       
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
@@ -85,7 +81,7 @@ const AuthService = {
       }
 
       const data = await response.json() as AuthResponse;
-      console.log('회원가입 성공:', { userId: data.userId, username: data.username });
+      // 
       
       // 토큰 저장
       await AsyncStorage.setItem('authToken', data.accessToken);
@@ -97,7 +93,7 @@ const AuthService = {
       
       return data;
     } catch (error) {
-      console.error('회원가입 에러:', error);
+      // 
       throw error;
     }
   },
@@ -127,9 +123,9 @@ const AuthService = {
         'username',
       ]);
       
-      console.log('로그아웃 완료');
+      // 
     } catch (error) {
-      console.error('로그아웃 에러:', error);
+      // 
       // 에러가 발생해도 로컬 데이터는 삭제
       await AsyncStorage.multiRemove([
         'authToken',
@@ -148,7 +144,7 @@ const AuthService = {
       const token = await AsyncStorage.getItem('authToken');
       return !!token;
     } catch (error) {
-      console.error('로그인 상태 확인 에러:', error);
+      // 
       return false;
     }
   },
@@ -160,7 +156,7 @@ const AuthService = {
     try {
       return await AsyncStorage.getItem('authToken');
     } catch (error) {
-      console.error('토큰 가져오기 에러:', error);
+      // 
       return null;
     }
   },
@@ -189,7 +185,7 @@ const AuthService = {
       const user = await response.json() as User;
       return user;
     } catch (error) {
-      console.error('사용자 정보 조회 에러:', error);
+      // 
       return null;
     }
   },
@@ -226,7 +222,7 @@ const AuthService = {
       
       return data.accessToken;
     } catch (error) {
-      console.error('토큰 갱신 에러:', error);
+      // 
       return null;
     }
   },

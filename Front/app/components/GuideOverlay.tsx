@@ -23,12 +23,6 @@ const GuideOverlay: React.FC<GuideOverlayProps> = ({
     if (isVisible && highlightRef.current) {
       // 하이라이트 영역 위치 측정 (offset 조정 없이 원본 그대로)
       highlightRef.current.measure((x, y, width, height, pageX, pageY) => {
-        console.log("🎯 [DEBUG] Highlight position measured:", {
-          step: currentStep,
-          stepName: currentStep === 0 ? "Pet Walker" : currentStep === 1 ? "Pet Mall" : "Walk Booking",
-          position: { x, y, width, height, pageX, pageY }
-        });
-        
         // offset 설정 제거 - 원본 위치 그대로 사용
         setHighlightPosition({ 
           x: pageX, 

@@ -30,7 +30,6 @@ export const pickImageFromLibrary = async (): Promise<string | null> => {
     }
     return null;
   } catch (error) {
-    console.error('이미지 선택 중 오류:', error);
     throw error;
   }
 };
@@ -53,7 +52,6 @@ export const takePhotoWithCamera = async (): Promise<string | null> => {
     }
     return null;
   } catch (error) {
-    console.error('사진 촬영 중 오류:', error);
     throw error;
   }
 };

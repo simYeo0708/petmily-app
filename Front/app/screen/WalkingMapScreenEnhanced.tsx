@@ -65,7 +65,6 @@ const WalkingMapScreenEnhanced: React.FC<WalkingMapScreenEnhancedProps> = ({
       const config = await mapService.getMapConfig();
       setMapConfig({ appKey: config.kakaoMapApiKey });
     } catch (error) {
-      console.error('Failed to load map config:', error);
       Alert.alert('오류', '지도 설정을 불러올 수 없습니다.');
     }
   };

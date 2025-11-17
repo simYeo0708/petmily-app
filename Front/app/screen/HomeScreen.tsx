@@ -100,11 +100,8 @@ const HomeScreen = () => {
       const now = Date.now();
       // 마지막 갱신으로부터 5초 이상 경과한 경우에만 갱신
       if (now - lastRefreshRef.current > 5000) {
-        console.log('🔄 HomeScreen focused - refreshing pet info');
         lastRefreshRef.current = now;
         refreshPetInfo();
-      } else {
-        console.log('⏭️ HomeScreen focused - skipping refresh (too soon)');
       }
     }, [refreshPetInfo])
   );
@@ -168,13 +165,6 @@ const HomeScreen = () => {
 
   // 가이드 상태 변화 로그
   React.useEffect(() => {
-    console.log("📊 [DEBUG] Guide states changed:");
-    console.log("  - showServiceGuide:", showServiceGuide);
-    console.log("  - showGuideOverlay:", showGuideOverlay);
-    console.log("  - showStepModal:", showStepModal);
-    console.log("  - currentGuideStep:", currentGuideStep);
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
   }, [showServiceGuide, showGuideOverlay, showStepModal, currentGuideStep, isFirstTime, hasPetInfo]);
 
   const { helperStatus, becomeHelper } = useHelperStatus();
@@ -211,15 +201,12 @@ const HomeScreen = () => {
     try {
       await AsyncStorage.removeItem("hasSeenServiceIntro");
       await AsyncStorage.removeItem("petInfo");
-      console.log("🧹 [DEBUG] Cleared guide data from AsyncStorage");
     } catch (error) {
-      console.error("❌ [ERROR] Failed to clear guide data:", error);
     }
   };
 
   // 개발용: 가이드 강제 시작 함수
   const forceStartGuide = () => {
-    console.log("🔧 [DEBUG] Force starting guide");
     setShowServiceGuide(true);
     setShowGuideOverlay(true);
     setShowStepModal(true);
@@ -230,13 +217,10 @@ const HomeScreen = () => {
   const checkFirstTimeUser = useCallback(async () => {
     try {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenServiceIntro");
-      console.log("🔍 [DEBUG] hasSeenIntro from AsyncStorage:", hasSeenIntro);
       const isFirstTimeUser = !hasSeenIntro;
-      console.log("🔍 [DEBUG] isFirstTimeUser:", isFirstTimeUser);
       setIsFirstTime(isFirstTimeUser);
       return isFirstTimeUser;
     } catch (error) {
-      console.error("❌ [ERROR] Failed to check first time user:", error);
       setIsFirstTime(true);
       return true;
     }
@@ -246,22 +230,17 @@ const HomeScreen = () => {
   const checkPetInfo = useCallback(async () => {
     try {
       const savedPetInfo = await AsyncStorage.getItem("petInfo");
-      console.log("🔍 [DEBUG] savedPetInfo from AsyncStorage:", savedPetInfo);
       if (savedPetInfo) {
         const petInfo: PetInfoType = JSON.parse(savedPetInfo);
-        console.log("🔍 [DEBUG] parsed petInfo:", petInfo);
         // 필수 정보가 있는지 확인
         const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
-        console.log("🔍 [DEBUG] hasEssentialInfo:", hasEssentialInfo);
         setHasPetInfo(hasEssentialInfo);
         return hasEssentialInfo;
       } else {
-        console.log("🔍 [DEBUG] No savedPetInfo found");
         setHasPetInfo(false);
         return false;
       }
     } catch (error) {
-      console.error("❌ [ERROR] Failed to check pet info:", error);
       setHasPetInfo(false);
       return false;
     }
@@ -269,23 +248,16 @@ const HomeScreen = () => {
 
   // 서비스 가이드 표시 여부 결정
   const checkAndShowServiceGuide = useCallback(async () => {
-    console.log("🚀 [DEBUG] checkAndShowServiceGuide called");
     const isFirstTime = await checkFirstTimeUser();
     const hasPetInfo = await checkPetInfo();
     
-    console.log("🔍 [DEBUG] Final check results:");
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
-    console.log("  - Should show guide:", isFirstTime && !hasPetInfo);
     
     // 최초 실행이고 반려동물 정보가 없을 때만 가이드 표시
     if (isFirstTime && !hasPetInfo) {
-      console.log("✅ [DEBUG] Starting guide in 1.5 seconds...");
       
       // 스크롤 코드 제거 - 현재 위치에서 가이드 시작
       
       setTimeout(() => {
-        console.log("🎯 [DEBUG] Setting guide states to true");
         setShowServiceGuide(true);
         setShowGuideOverlay(true);
         setShowStepModal(true);
@@ -296,20 +268,16 @@ const HomeScreen = () => {
         setGuideStep(0);
       }, 1500); // 화면 로딩 후 충분한 시간
     } else {
-      console.log("❌ [DEBUG] Guide conditions not met - not showing guide");
     }
   }, [checkFirstTimeUser, checkPetInfo]);
 
   // 화면이 포커스될 때마다 체크 (하지만 서비스 가이드는 최초 1회만)
   useFocusEffect(
     useCallback(() => {
-      console.log("🔄 [DEBUG] useFocusEffect called, isFirstTime:", isFirstTime);
       if (isFirstTime === null) {
-        console.log("🔄 [DEBUG] First time loading - checking service guide");
         // 최초 로딩 시에만 서비스 가이드 체크
         checkAndShowServiceGuide();
       } else {
-        console.log("🔄 [DEBUG] Not first time - only checking pet info");
         // 이후에는 반려동물 정보만 체크
         checkPetInfo();
       }
@@ -317,7 +285,6 @@ const HomeScreen = () => {
   );
 
   const handleCompleteServiceGuide = () => {
-    console.log("🏁 [DEBUG] Completing service guide");
     setShowServiceGuide(false);
     setShowGuideOverlay(false);
     setShowStepModal(false);
@@ -357,10 +324,8 @@ const HomeScreen = () => {
 
   // 가이드 다음 단계로 이동
   const handleGuideNext = () => {
-    console.log("🎯 [DEBUG] handleGuideNext called, currentStep:", currentGuideStep);
     if (currentGuideStep < guideSteps.length - 1) {
       const nextStep = currentGuideStep + 1;
-      console.log("🎯 [DEBUG] Moving to next step:", nextStep);
       
       // 즉시 다음 단계로 이동 (모달 사라짐 없이)
       setCurrentGuideStep(nextStep);
@@ -374,7 +339,6 @@ const HomeScreen = () => {
                          walkRequestListRef;
         if (targetRef.current && scrollViewRef.current) {
           targetRef.current.measure((x, y, width, height, pageX, pageY) => {
-            console.log("🎯 [DEBUG] Element position:", { x, y, width, height, pageX, pageY });
             
             // 단계별 스크롤 오프셋 조정
             let scrollOffset = 0;
@@ -391,57 +355,28 @@ const HomeScreen = () => {
             }
             
             const scrollY = Math.max(0, pageY - scrollOffset);
-            console.log("🎯 [DEBUG] Scroll calculation:", { 
-              nextStep, 
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              pageY, 
-              scrollOffset, 
-              calculatedScrollY: scrollY,
-              finalScrollY: Math.max(0, pageY - scrollOffset)
-            });
-            
-            // 스크롤 실행 전 현재 위치 확인
-            console.log("🎯 [DEBUG] Before scroll - current scroll position check");
-            
-            // 모든 단계에서 계산된 scrollY 사용
-            console.log("🎯 [DEBUG] Using calculated scrollY:", { 
-              nextStep,
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              scrollToY: scrollY
-            });
             
             // 스크롤 실행 전 ScrollView 상태 확인
-            console.log("🎯 [DEBUG] ScrollView ref exists:", !!scrollViewRef.current);
             
             // 계산된 scrollY로 스크롤
             if (scrollViewRef.current) {
               scrollViewRef.current.scrollTo({ x: 0, y: scrollY, animated: true });
-              console.log("🎯 [DEBUG] Scroll executed with calculated scrollY");
             } else {
-              console.log("🎯 [ERROR] ScrollView ref is null");
             }
             
             // 스크롤 실행 후 확인
             setTimeout(() => {
-              console.log("🎯 [DEBUG] After scroll - scroll should be at:", scrollY);
             }, 500);
-          });
-        } else {
-          console.log("🎯 [DEBUG] Scroll failed - missing refs:", {
-            targetRef: !!targetRef.current,
-            scrollViewRef: !!scrollViewRef.current
           });
         }
       }, 100);
     } else {
       // Step 2 (My Pet 탭 하이라이트) - 정보 입력 화면으로 이동
       if (currentGuideStep === 2) {
-        console.log("[DEBUG] Navigating to Pet Info Input Screen");
         setShowStepModal(false); // 가이드 모달 숨김
         handleCompleteServiceGuide(); // 가이드 완료
         navigation.navigate('PetInfoInput'); // 정보 입력 화면으로 이동
       } else {
-        console.log("[DEBUG] Completing guide");
         handleCompleteServiceGuide();
       }
     }
@@ -594,7 +529,7 @@ const HomeScreen = () => {
       {/* 메인 콘텐츠 영역 */}
       <SafeAreaView
         style={[homeScreenStyles.root]}
-        edges={['left', 'right']}>
+        edges={['top', 'left', 'right']}>
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
           {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}

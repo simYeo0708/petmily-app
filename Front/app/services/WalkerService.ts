@@ -38,7 +38,7 @@ const getAuthToken = async (): Promise<string> => {
     if (token) return token;
     return 'test-token-for-user-1';
   } catch (error) {
-    console.error('토큰 가져오기 실패:', error);
+    // 
     return 'test-token-for-user-1';
   }
 };
@@ -80,7 +80,6 @@ const WalkerService = {
         specialties: walker.specialties,
       }));
     } catch (error) {
-      console.error('워커 목록 조회 에러:', error);
       
       // Fallback: 샘플 데이터
       return [
@@ -134,7 +133,7 @@ const WalkerService = {
       const data = await response.json() as Walker;
       return data;
     } catch (error) {
-      console.error('워커 조회 에러:', error);
+      // 
       return null;
     }
   },

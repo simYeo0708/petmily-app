@@ -54,7 +54,6 @@ class NotificationService {
       const dismissedIds = await this.getDismissedNotificationIds();
       return mockNotifications.filter(notification => !dismissedIds.includes(notification.id));
     } catch (error) {
-      console.error('알림 목록 조회 실패:', error);
       return [];
     }
   }
@@ -77,10 +76,8 @@ class NotificationService {
       //   body: JSON.stringify(request),
       // });
 
-      console.log(`알림 ${request.notificationId}을 ${request.dismissType}로 숨김`);
       return true;
     } catch (error) {
-      console.error('알림 숨기기 실패:', error);
       return false;
     }
   }
@@ -100,10 +97,8 @@ class NotificationService {
       //   },
       // });
 
-      console.log(`알림 ${notificationId}의 숨기기 취소`);
       return true;
     } catch (error) {
-      console.error('알림 숨기기 취소 실패:', error);
       return false;
     }
   }
@@ -134,7 +129,6 @@ class NotificationService {
 
       return validIds;
     } catch (error) {
-      console.error('숨긴 알림 ID 조회 실패:', error);
       return [];
     }
   }
@@ -167,7 +161,7 @@ class NotificationService {
         await AsyncStorage.setItem(`notification_${notificationId}_expires`, expiresAt.toISOString());
       }
     } catch (error) {
-      console.error('숨긴 알림 저장 실패:', error);
+      // 저장 실패
     }
   }
 
@@ -181,7 +175,7 @@ class NotificationService {
       await AsyncStorage.setItem('dismissedNotifications', JSON.stringify(filteredIds));
       await AsyncStorage.removeItem(`notification_${notificationId}_expires`);
     } catch (error) {
-      console.error('숨긴 알림 제거 실패:', error);
+      // 제거 실패
     }
   }
 

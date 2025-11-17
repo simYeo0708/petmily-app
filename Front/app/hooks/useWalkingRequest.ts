@@ -63,7 +63,6 @@ export const useWalkingRequest = () => {
         setPreviousWalkers(walkers);
       }
     } catch (error) {
-      console.error('저장된 데이터 로드 중 오류:', error);
     }
   }, []);
 
@@ -117,7 +116,6 @@ export const useWalkingRequest = () => {
       };
       
       const booking = await WalkerBookingService.createBooking(bookingRequest);
-      console.log('산책 예약 생성 성공:', booking);
       
       // 주소 로컬 저장
       await saveAddress(requestData.address);
@@ -146,7 +144,6 @@ export const useWalkingRequest = () => {
         ]
       );
     } catch (error) {
-      console.error('산책 요청 제출 중 오류:', error);
       Alert.alert('오류', '산책 요청을 제출할 수 없습니다.');
     } finally {
       setIsSubmitting(false);

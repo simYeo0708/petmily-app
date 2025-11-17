@@ -137,7 +137,6 @@ const ServiceGuide: React.FC<ServiceGuideProps> = ({
     try {
       await AsyncStorage.setItem("hasSeenServiceIntro", "true");
     } catch (error) {
-      console.error("Failed to save service guide completion:", error);
     }
   };
 

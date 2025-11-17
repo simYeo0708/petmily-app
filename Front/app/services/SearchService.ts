@@ -29,14 +29,14 @@ export const searchProducts = async (query: string): Promise<BackendSearchResult
     );
 
     if (!response.ok) {
-      console.warn('상품 검색 API 호출 실패', response.status);
+      // 
       return [];
     }
 
     const data = (await response.json()) as BackendSearchResult[];
     return data ?? [];
   } catch (error) {
-    console.warn('상품 검색 API 호출 중 오류', error);
+    // 
     return [];
   }
 };
@@ -57,14 +57,14 @@ export const searchAll = async (
   try {
     const response = await fetch(`${API_BASE_URL}/search?${params.toString()}`);
     if (!response.ok) {
-      console.warn('통합 검색 API 호출 실패', response.status);
+      // 
       return null;
     }
 
     const data = (await response.json()) as BackendSearchResponse;
     return data;
   } catch (error) {
-    console.warn('통합 검색 API 호출 중 오류', error);
+    
     return null;
   }
 };

@@ -26,7 +26,6 @@ const PetInfoHeader: React.FC = () => {
   
   // 디버깅용 로그
   React.useEffect(() => {
-    console.log('PetInfoHeader - petInfo 업데이트:', petInfo);
   }, [petInfo]);
 
   // 이미지 선택 핸들러
@@ -58,7 +57,6 @@ const PetInfoHeader: React.FC = () => {
         setShowImageModal(false);
       }
     } catch (error) {
-      console.error('카메라 오류:', error);
       Alert.alert('오류', '사진 촬영 중 문제가 발생했습니다.');
     }
   };
@@ -88,7 +86,6 @@ const PetInfoHeader: React.FC = () => {
         setShowImageModal(false);
       }
     } catch (error) {
-      console.error('갤러리 오류:', error);
       Alert.alert('오류', '사진 선택 중 문제가 발생했습니다.');
     }
   };
@@ -150,7 +147,6 @@ const PetInfoHeader: React.FC = () => {
                 source={{ uri: petInfo.photoUri }}
                 style={styles.petImage}
                 onError={() => {
-                  console.log('🖼️ Image load failed, showing placeholder');
                   setImageLoadError(true);
                 }}
                 onLoad={() => setImageLoadError(false)}

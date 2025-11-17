@@ -247,7 +247,7 @@ const ShopScreen = () => {
                 paddingVertical: 8,
                 borderRadius: 8,
               }}
-              onPress={() => console.log("Add to cart:", item.name)}>
+              onPress={() => {}}>
               <Text style={{ color: "white", fontSize: 12, fontWeight: "600" }}>
                 장바구니
               </Text>

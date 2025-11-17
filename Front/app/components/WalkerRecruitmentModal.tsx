@@ -50,7 +50,6 @@ const WalkerRecruitmentModal: React.FC<WalkerRecruitmentModalProps> = ({
       const activeNotifications = await notificationService.getActiveNotifications();
       setNotifications(activeNotifications);
     } catch (error) {
-      console.error('알림 로드 실패:', error);
     }
   };
 
@@ -110,7 +109,6 @@ const WalkerRecruitmentModal: React.FC<WalkerRecruitmentModalProps> = ({
         }
       }
     } catch (error) {
-      console.error('알림 숨기기 실패:', error);
     }
   };
 
@@ -134,7 +132,6 @@ const WalkerRecruitmentModal: React.FC<WalkerRecruitmentModalProps> = ({
 
   const handleAction = () => {
     // TODO: 워커 등록 화면으로 이동
-    console.log('워커 등록 화면으로 이동');
     handleClose();
   };
 
