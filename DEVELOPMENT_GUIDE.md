@@ -20,7 +20,19 @@
 ./start-dev.sh
 ```
 
-### 방법 2: 개별 시작
+### 방법 2: 백엔드 완전 재시작 (문제 발생 시)
+```bash
+# 백엔드가 자꾸 종료되거나 에러가 발생하는 경우
+cd Back
+bash restart-backend.sh
+```
+**이 방법은**:
+- 모든 Gradle/Java 프로세스 종료
+- 빌드 캐시 완전 삭제
+- 새로 빌드 및 실행
+- JWT 키 문제 해결
+
+### 방법 3: 개별 시작
 ```bash
 # 백엔드만 시작
 cd Back
@@ -31,7 +43,7 @@ cd Front
 npm run dev
 ```
 
-### 방법 3: 기존 방식
+### 방법 4: 기존 방식
 ```bash
 # IP만 업데이트
 cd Front
@@ -59,6 +71,38 @@ node scripts/auto-detect-ip.js
 
 ## 🔧 문제 해결
 
+### ⚠️ 백엔드가 자꾸 종료되는 경우 (가장 흔한 문제)
+**원인**: JWT 키 오류, 캐시 문제, 포트 충돌
+
+**해결 방법**:
+```bash
+cd Back
+bash restart-backend.sh
+```
+
+이 스크립트는:
+1. 모든 백엔드 프로세스 강제 종료
+2. 포트 8083 점유 프로세스 종료
+3. Gradle 캐시 완전 삭제
+4. 테스트 스킵하고 새로 빌드
+5. 포그라운드로 백엔드 실행
+
+**수동 방법**:
+```bash
+# 1. 모든 프로세스 종료
+pkill -9 -f "gradle"
+pkill -9 -f "java.*petmily"
+lsof -ti:8083 | xargs kill -9
+
+# 2. 캐시 삭제
+cd Back
+rm -rf build/ .gradle/
+
+# 3. 재빌드 및 실행
+./gradlew clean build -x test
+./gradlew bootRun
+```
+
 ### IP가 잘못 감지된 경우
 ```bash
 # 수동으로 IP 설정
@@ -81,6 +125,18 @@ node scripts/auto-detect-ip.js
 cd Front
 npm run update-ip
 npm start
+```
+
+### Java 관련 에러
+```bash
+# JAVA_HOME 설정 확인
+echo $JAVA_HOME
+
+# 없으면 설정
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+
+# ~/.zshrc 또는 ~/.bash_profile에 추가
+echo 'export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home' >> ~/.zshrc
 ```
 
 ---

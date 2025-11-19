@@ -34,8 +34,8 @@ spring:
 
 cors:
   allowed-origins:
-    - "http://10.50.217.86:8082"
-    - "http://10.50.217.86:19006"
+    - "http://192.168.219.163:8082"
+    - "http://192.168.219.163:19006"
     - "http://localhost:8082"
     - "http://localhost:19006"
   allowed-methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
@@ -43,7 +43,7 @@ cors:
   allow-credentials: true
 
 jwt:
-  key: ${JWT_SECRET:e2b6f5c0974a1db8e6c1f0a3b49d8e5c27f916bb8c2a519d7f4e6c1b2a3d4f6g}
+  key: ${JWT_SECRET:xemnQSkrSPJ2FPZF0gNm789LojUyNjR9SDPcsRTtQLvEYT1pCTEI1xsJmqQMXEKdMHG19cve8w8OQLIPv9p0Qg==}
   access:
     expiration: 300000
   refresh:

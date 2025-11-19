@@ -20,6 +20,7 @@ import WalkerMatchingScreen from "./screen/WalkerMatchingScreen";
 import WalkerDetailScreen from "./screen/WalkerDetailScreen";
 import BookingConfirmScreen from "./screen/BookingConfirmScreen";
 import PetInfoInputScreen from "./screen/PetInfoInputScreen";
+import AIChatScreen from "./screen/AIChatScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
@@ -49,6 +50,7 @@ export type RootStackParamList = {
   WalkerDetail: { walker: any; bookingData: { timeSlot: string; address: string } };
   BookingConfirm: { walker: any; bookingData: { timeSlot: string; address: string } };
   PetInfoInput: undefined;
+  AIChat: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -116,6 +118,7 @@ export default function App() {
                 <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
                 <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
                 <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
+                <Stack.Screen name="AIChat" component={AIChatScreen} />
                 </Stack.Navigator>
                 </CartProvider>
               </PetProvider>

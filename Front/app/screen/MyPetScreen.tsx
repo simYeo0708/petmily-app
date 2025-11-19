@@ -25,7 +25,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { IconImage } from "../components/IconImage";
 
 const MyPetScreen = () => {
-  const { petInfo, updatePetInfo } = usePet();
+  const { petInfo, allPets, updatePetInfo, selectPet, deletePet } = usePet();
+  const [showPetSelector, setShowPetSelector] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [petToDelete, setPetToDelete] = useState<number | null>(null);
 
   const localStyles = StyleSheet.create({
     testButtonContainer: {
@@ -46,6 +49,147 @@ const MyPetScreen = () => {
       color: '#fff',
       fontSize: 12,
       fontWeight: 'bold',
+    },
+    // 반려동물 선택 UI 스타일
+    petSelectorContainer: {
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#e9ecef',
+      backgroundColor: '#fff',
+    },
+    petSelectorButton: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 14,
+      backgroundColor: '#f8f9fa',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#e9ecef',
+    },
+    petSelectorLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    selectedPetName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333',
+    },
+    petDropdown: {
+      marginTop: 8,
+      backgroundColor: 'white',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: '#e9ecef',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+      overflow: 'hidden',
+    },
+    petDropdownItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: '#f0f0f0',
+    },
+    petDropdownLeft: {
+      flex: 1,
+    },
+    petDropdownName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#333',
+      marginBottom: 4,
+    },
+    petDropdownBreed: {
+      fontSize: 13,
+      color: '#666',
+    },
+    emptyPetList: {
+      padding: 32,
+      alignItems: 'center',
+    },
+    emptyPetText: {
+      fontSize: 14,
+      color: '#999',
+    },
+    addPetButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      gap: 10,
+      backgroundColor: '#fff8f3',
+      borderTopWidth: 1,
+      borderTopColor: '#f0f0f0',
+    },
+    addPetText: {
+      fontSize: 15,
+      color: '#C59172',
+      fontWeight: '600',
+    },
+    // 삭제 확인 모달 스타일
+    deleteModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    deleteModalContainer: {
+      backgroundColor: 'white',
+      borderRadius: 16,
+      padding: 24,
+      width: '100%',
+      maxWidth: 340,
+    },
+    deleteModalHeader: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    deleteModalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#333',
+      marginTop: 12,
+    },
+    deleteModalMessage: {
+      fontSize: 15,
+      color: '#666',
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 24,
+    },
+    deleteModalButtons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    deleteModalButton: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    cancelButton: {
+      backgroundColor: '#f0f0f0',
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#666',
+    },
+    confirmButton: {
+      backgroundColor: '#FF3B30',
+    },
+    confirmButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#fff',
     },
   });
   
@@ -481,6 +625,141 @@ const MyPetScreen = () => {
     "친근함", "고집스러움", "영리함", "겁쟁이", "적극적", "소심함"
   ];
 
+  // 반려동물 선택 드롭다운 렌더링
+  const renderPetSelector = () => (
+    <View style={localStyles.petSelectorContainer}>
+      <TouchableOpacity 
+        style={localStyles.petSelectorButton}
+        onPress={() => setShowPetSelector(!showPetSelector)}
+      >
+        <View style={localStyles.petSelectorLeft}>
+          <Ionicons name="paw" size={20} color="#C59172" />
+          <Text style={localStyles.selectedPetName}>
+            {petInfo?.name || '반려동물을 선택하세요'}
+          </Text>
+        </View>
+        <Ionicons name={showPetSelector ? "chevron-up" : "chevron-down"} size={20} color="#666" />
+      </TouchableOpacity>
+
+      {showPetSelector && (
+        <View style={localStyles.petDropdown}>
+          {allPets.length > 0 ? (
+            allPets.map((pet) => (
+              <TouchableOpacity
+                key={pet.id}
+                style={localStyles.petDropdownItem}
+                onPress={() => {
+                  if (pet.id) selectPet(pet.id);
+                  setShowPetSelector(false);
+                }}
+                onLongPress={() => {
+                  if (pet.id) {
+                    setPetToDelete(pet.id);
+                    setShowDeleteConfirm(true);
+                    setShowPetSelector(false);
+                  }
+                }}
+              >
+                <View style={localStyles.petDropdownLeft}>
+                  <Text style={localStyles.petDropdownName}>{pet.name}</Text>
+                  <Text style={localStyles.petDropdownBreed}>
+                    {pet.breed} • {pet.age}살
+                  </Text>
+                </View>
+                {pet.id === petInfo?.id && (
+                  <Ionicons name="checkmark-circle" size={22} color="#C59172" />
+                )}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={localStyles.emptyPetList}>
+              <Text style={localStyles.emptyPetText}>등록된 반려동물이 없습니다</Text>
+            </View>
+          )}
+          
+          <TouchableOpacity
+            style={localStyles.addPetButton}
+            onPress={() => {
+              // 새 반려동물 등록 - 현재 폼 초기화
+              const newPetData = {
+                id: Date.now(), // 임시 ID
+                name: "",
+                species: "dog",
+                breed: "",
+                age: "",
+                weight: "",
+                gender: "",
+                isNeutered: false,
+                medicalInfo: "",
+                temperament: "",
+                isVaccinated: false,
+                medicalConditions: "",
+                specialNotes: "",
+                description: "",
+              };
+              setLocalPetInfo(newPetData);
+              setSelectedImage(null);
+              setHasPhoto(false);
+              setSelectedAllergies([]);
+              setSelectedMedications([]);
+              setSelectedTemperaments(['온순함']);
+              setShowPetSelector(false);
+            }}
+          >
+            <Ionicons name="add-circle" size={22} color="#C59172" />
+            <Text style={localStyles.addPetText}>새 반려동물 추가</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  // 삭제 확인 다이얼로그
+  const renderDeleteConfirmModal = () => (
+    <Modal
+      visible={showDeleteConfirm}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowDeleteConfirm(false)}
+    >
+      <View style={localStyles.deleteModalOverlay}>
+        <View style={localStyles.deleteModalContainer}>
+          <View style={localStyles.deleteModalHeader}>
+            <Ionicons name="warning" size={40} color="#FF3B30" />
+            <Text style={localStyles.deleteModalTitle}>반려동물 삭제</Text>
+          </View>
+          <Text style={localStyles.deleteModalMessage}>
+            정말 이 반려동물을 삭제하시겠습니까?{'\n'}
+            삭제된 데이터는 복구할 수 없습니다.
+          </Text>
+          <View style={localStyles.deleteModalButtons}>
+            <TouchableOpacity
+              style={[localStyles.deleteModalButton, localStyles.cancelButton]}
+              onPress={() => {
+                setShowDeleteConfirm(false);
+                setPetToDelete(null);
+              }}
+            >
+              <Text style={localStyles.cancelButtonText}>취소</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[localStyles.deleteModalButton, localStyles.confirmButton]}
+              onPress={async () => {
+                if (petToDelete) {
+                  await deletePet(petToDelete);
+                  setShowDeleteConfirm(false);
+                  setPetToDelete(null);
+                }
+              }}
+            >
+              <Text style={localStyles.confirmButtonText}>삭제</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={[myPetScreenStyles.root, { backgroundColor: '#FFFFFF' }]}>
       <View style={myPetScreenStyles.header}>
@@ -489,6 +768,10 @@ const MyPetScreen = () => {
           <Text style={myPetScreenStyles.logoText}>My Pet</Text>
         </View>
       </View>
+
+      {/* 반려동물 선택 UI */}
+      {renderPetSelector()}
+      {renderDeleteConfirmModal()}
 
       <ScrollView contentContainerStyle={myPetScreenStyles.scrollContent}>
         {/* 프로필 사진 섹션 */}
