@@ -23,3 +23,4 @@ public class SearchResultItem {
     private Map<String, Object> metadata;
 }
 
+
