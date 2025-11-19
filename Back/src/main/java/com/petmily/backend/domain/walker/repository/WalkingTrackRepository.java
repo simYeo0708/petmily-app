@@ -88,4 +88,17 @@ public interface WalkingTrackRepository extends JpaRepository<WalkingTrack, Long
     @Query("SELECT wt FROM WalkingTrack wt WHERE wt.bookingId = :bookingId " +
            "ORDER BY wt.timestamp DESC LIMIT 5")
     List<WalkingTrack> findTop5ByBookingIdOrderByTimestampDesc(@Param("bookingId") Long bookingId);
+
+    /**
+     * 특정 산책 세션의 모든 위치 추적 데이터를 시간순으로 조회
+     */
+    List<WalkingTrack> findByWalkSessionIdOrderByTimestampAsc(Long walkSessionId);
+
+    /**
+     * 특정 산책 세션의 경로 포인트들 조회
+     */
+    @Query("SELECT wt FROM WalkingTrack wt WHERE wt.walkSessionId = :walkSessionId " +
+           "AND wt.trackType IN ('START', 'WALKING', 'END') " +
+           "ORDER BY wt.timestamp ASC")
+    List<WalkingTrack> findPathPointsByWalkSessionId(@Param("walkSessionId") Long walkSessionId);
 }

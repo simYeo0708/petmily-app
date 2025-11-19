@@ -18,8 +18,11 @@ public class WalkingTrack extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long bookingId;
+    @Column
+    private Long bookingId; // 워커와 함께하는 산책인 경우
+
+    @Column(name = "walk_session_id")
+    private Long walkSessionId; // 독립적인 산책 세션인 경우
 
     @Column(nullable = false, columnDefinition = "DECIMAL(10,7)")
     private Double latitude;
@@ -44,10 +47,11 @@ public class WalkingTrack extends BaseTimeEntity {
     private Double altitude; // 고도 (미터)
 
     @Builder
-    public WalkingTrack(Long bookingId, Double latitude, Double longitude, 
+    public WalkingTrack(Long bookingId, Long walkSessionId, Double latitude, Double longitude, 
                        LocalDateTime timestamp, Double accuracy, TrackType trackType,
                        Double speed, Double altitude) {
         this.bookingId = bookingId;
+        this.walkSessionId = walkSessionId;
         this.latitude = latitude;
         this.longitude = longitude;
         this.timestamp = timestamp;

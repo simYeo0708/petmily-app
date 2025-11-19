@@ -20,3 +20,4 @@ public class SearchResponse {
     private Integer totalCount;
 }
 
+
