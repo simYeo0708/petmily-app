@@ -4,11 +4,16 @@ import com.petmily.backend.domain.chat.entity.ChatRoom;
 import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.entity.WalkerStatus;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +22,7 @@ public class TestDataInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final WalkerRepository walkerRepository;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -47,20 +53,37 @@ public class TestDataInitializer implements ApplicationRunner {
             log.info("테스트 유저 생성: user2");
         }
 
+        // 테스트 워커 생성 (user2를 walker로)
+        User user2 = userRepository.findByUsername("user2").get();
+        if (!walkerRepository.findByUserId(user2.getId()).isPresent()) {
+            Walker testWalker = Walker.builder()
+                    .userId(user2.getId())
+                    .introduction("테스트 워커입니다")
+                    .experienceYears(1)
+                    .rating(5.0)
+                    .walksCount(0)
+                    .hourlyRate(new BigDecimal("15000"))
+                    .status(WalkerStatus.APPROVED)
+                    .build();
+            walkerRepository.save(testWalker);
+            log.info("테스트 워커 생성: user2 -> walker");
+        }
+
         // 테스트 채팅방 생성
         if (!chatRoomRepository.findByRoomId("test-room").isPresent()) {
             User user1 = userRepository.findByUsername("user1").get();
+            Walker walker2 = walkerRepository.findByUserId(user2.getId()).get();
 
             ChatRoom testRoom = ChatRoom.builder()
                     .roomId("test-room")
                     .userId(user1.getId())
-                    .walkerId(null)  // 워커 없이 테스트
+                    .walkerId(walker2.getId())  // user2(walker)를 추가
                     .bookingId(null)
                     .chatType(ChatRoom.ChatType.PRE_BOOKING)
                     .isActive(true)
                     .build();
             chatRoomRepository.save(testRoom);
-            log.info("테스트 채팅방 생성: test-room");
+            log.info("테스트 채팅방 생성: test-room (user1 <-> walker2)");
         }
 
         log.info("=== 테스트 데이터 초기화 완료 ===");

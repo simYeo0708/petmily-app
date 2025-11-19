@@ -27,6 +27,7 @@ public class ChatMessageResponse {
 
     // 발신자 정보
     private String senderName;
+    private String senderUsername;  // username 추가
     private String senderProfileImageUrl;
 
     public static ChatMessageResponse from(ChatMessage message) {

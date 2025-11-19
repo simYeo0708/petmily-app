@@ -79,7 +79,13 @@ public class ChatMessageService {
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
-        return ChatMessageResponse.from(savedMessage);
+        ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
+
+        // 발신자 정보 명시적으로 설정
+        response.setSenderName(user.getName());
+        response.setSenderUsername(user.getUsername());
+
+        return response;
     }
 
     // 예약 상세 정보가 포함된 시스템 메시지 생성
