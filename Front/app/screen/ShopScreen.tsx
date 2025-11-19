@@ -11,6 +11,7 @@ import {
   ScrollView,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getProductsByCategory, Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
@@ -259,13 +260,14 @@ const ShopScreen = () => {
   );
 
   return (
-    <View
-      style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0", paddingTop: 0 }]}>
+    <SafeAreaView
+      style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}
+      edges={['top', 'left', 'right']}>
       <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
       <View
         style={[
           headerStyles.header,
-          { backgroundColor: "rgba(255, 255, 255, 0.95)", marginTop: 0, paddingTop: 8 },
+          { backgroundColor: "rgba(255, 255, 255, 0.95)" },
         ]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -459,7 +461,7 @@ const ShopScreen = () => {
         />
       </TouchableOpacity>
 
-    </View>
+    </SafeAreaView>
   );
 };
 

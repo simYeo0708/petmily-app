@@ -10,6 +10,7 @@ import {
   StatusBar,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Order,
   ORDER_DATA,
@@ -163,7 +164,7 @@ const MyOrdersScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       {/* 헤더 */}
       <View style={styles.header}>
@@ -287,7 +288,7 @@ const MyOrdersScreen = () => {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

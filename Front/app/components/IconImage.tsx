@@ -34,10 +34,29 @@ interface IconImageProps {
 export const IconImage: React.FC<IconImageProps> = ({ name, size = 20, style }) => {
   const source = ICON_SOURCE_MAP[name] ?? ICON_SOURCE_MAP.generic;
 
+  // 디버깅: 아이콘 이름과 소스 확인
+  if (!ICON_SOURCE_MAP[name]) {
+    console.warn(`[IconImage] 아이콘 이름 "${name}"이 ICON_SOURCE_MAP에 없습니다. generic 아이콘을 사용합니다.`);
+  }
+
+  // 기본 스타일: 명시적으로 width, height 설정
+  const defaultStyle = {
+    width: size,
+    height: size,
+  };
+
   return (
     <Image
       source={source}
-      style={[{ width: size, height: size, resizeMode: "contain" }, style]}
+      style={[defaultStyle, style]}
+      resizeMode="contain"
+      onError={(error) => {
+        console.error(`[IconImage] 이미지 로드 실패 - name: ${name}, error:`, error);
+      }}
+      onLoad={() => {
+        // 이미지 로드 성공 (디버깅용, 필요시 제거)
+        // console.log(`[IconImage] 이미지 로드 성공 - name: ${name}`);
+      }}
     />
   );
 };

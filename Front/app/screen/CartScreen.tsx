@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCart } from "../contexts/CartContext";
@@ -41,14 +42,9 @@ const CartScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+    <>
+      <StatusBar backgroundColor="#000000" barStyle="dark-content" />
       
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cart</Text>
-        <Text style={styles.itemCount}>{cartItems.length}개 상품</Text>
-      </View>
 
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -161,7 +157,7 @@ const CartScreen = () => {
           </View>
         </>
       )}
-    </View>
+  </>
   );
 };
 

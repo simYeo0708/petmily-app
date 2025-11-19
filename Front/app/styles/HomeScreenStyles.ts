@@ -171,7 +171,7 @@ export const headerStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: 16,
-    marginBottom: 20,         // 마진 제거
+         // 마진 제거
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

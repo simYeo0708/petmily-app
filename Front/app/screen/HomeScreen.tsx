@@ -5,13 +5,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GuideStepModal from "../components/GuideStepModal";
@@ -40,7 +40,10 @@ import {
   SearchResult as SearchResultType,
   PetInfo as PetInfoType,
 } from "../types/HomeScreen";
-import { searchProducts, BackendSearchResult } from "../services/SearchService";
+import { guideSteps } from "../data/guideData";
+import { useHomeSearch } from "../hooks/useHomeSearch";
+import { useServiceMode } from "../hooks/useServiceMode";
+import { useHomeGuide } from "../hooks/useHomeGuide";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,19 +82,37 @@ const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { handleGuideNext: onGuideNext } = useGuide();
   const { setGuideActive, setGuideStep } = useGuideContext();
-  const { petInfo, refreshPetInfo } = usePet();  // PetContext 사용
-  const [serviceMode, setServiceMode] = useState<ServiceMode>("PW");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { petInfo, refreshPetInfo } = usePet();
+  
+  // 커스텀 훅 사용
+  const { serviceMode, setServiceMode, currentMode } = useServiceMode("PW");
+  const {
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    setSearchResults,
+    showSearchResults,
+    setShowSearchResults,
+    isSearching,
+    setIsSearching,
+  } = useHomeSearch(serviceMode);
+  const {
+    showServiceGuide,
+    showGuideOverlay,
+    showStepModal,
+    setShowStepModal,
+    currentGuideStep,
+    setCurrentGuideStep,
+    hasPetInfo,
+    isFirstTime,
+    petWalkerScale,
+    petMallScale,
+    handleCompleteServiceGuide,
+    getGuideFocusCallback,
+    forceStartGuide,
+  } = useHomeGuide();
+  
   const [showWalkerModal, setShowWalkerModal] = useState(true);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [showServiceGuide, setShowServiceGuide] = useState(false);
-  const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
-  const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [currentGuideStep, setCurrentGuideStep] = useState(0);
-  const [showGuideOverlay, setShowGuideOverlay] = useState(false);
-  const [showStepModal, setShowStepModal] = useState(false);
   
   // 화면 포커스될 때마다 펫 정보 갱신 (단, 너무 자주 호출되지 않도록 제한)
   const lastRefreshRef = useRef<number>(0);
@@ -105,10 +126,6 @@ const HomeScreen = () => {
       }
     }, [refreshPetInfo])
   );
-
-  // 애니메이션 값 (Pet Walker, Pet Mall)
-  const petWalkerScale = useRef(new Animated.Value(1)).current;
-  const petMallScale = useRef(new Animated.Value(1)).current;
 
   // Pet Walker/Mall Scale 애니메이션 (통통 튀는 효과)
   useEffect(() => {
@@ -165,6 +182,7 @@ const HomeScreen = () => {
 
   // 가이드 상태 변화 로그
   React.useEffect(() => {
+    console.log("[가이드] 상태 변화 - showServiceGuide:", showServiceGuide, "showGuideOverlay:", showGuideOverlay, "showStepModal:", showStepModal, "currentGuideStep:", currentGuideStep, "isFirstTime:", isFirstTime, "hasPetInfo:", hasPetInfo);
   }, [showServiceGuide, showGuideOverlay, showStepModal, currentGuideStep, isFirstTime, hasPetInfo]);
 
   const { helperStatus, becomeHelper } = useHelperStatus();
@@ -185,140 +203,18 @@ const HomeScreen = () => {
     navigation.navigate("Main", { initialTab: "MyPetTab" });
   };
 
-  const handleJoinHelper = async () => {
-    await becomeHelper();
-    handleNavigateToHelper();
-  };
-
-  const currentMode = SERVICE_MODE_CONFIG[serviceMode];
-
   const handleCategoryPress = (category: string) => {
     navigation.navigate("Shop", { category });
-  };
-
-  // AsyncStorage 초기화 함수 (디버깅용)
-  const clearGuideData = async () => {
-    try {
-      await AsyncStorage.removeItem("hasSeenServiceIntro");
-      await AsyncStorage.removeItem("petInfo");
-    } catch (error) {
-    }
-  };
-
-  // 개발용: 가이드 강제 시작 함수
-  const forceStartGuide = () => {
-    setShowServiceGuide(true);
-    setShowGuideOverlay(true);
-    setShowStepModal(true);
-    setCurrentGuideStep(0);
-  };
-
-  // 최초 실행 여부 확인 함수
-  const checkFirstTimeUser = useCallback(async () => {
-    try {
-      const hasSeenIntro = await AsyncStorage.getItem("hasSeenServiceIntro");
-      const isFirstTimeUser = !hasSeenIntro;
-      setIsFirstTime(isFirstTimeUser);
-      return isFirstTimeUser;
-    } catch (error) {
-      setIsFirstTime(true);
-      return true;
-    }
-  }, []);
-
-  // 반려동물 정보 확인 함수
-  const checkPetInfo = useCallback(async () => {
-    try {
-      const savedPetInfo = await AsyncStorage.getItem("petInfo");
-      if (savedPetInfo) {
-        const petInfo: PetInfoType = JSON.parse(savedPetInfo);
-        // 필수 정보가 있는지 확인
-        const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
-        setHasPetInfo(hasEssentialInfo);
-        return hasEssentialInfo;
-      } else {
-        setHasPetInfo(false);
-        return false;
-      }
-    } catch (error) {
-      setHasPetInfo(false);
-      return false;
-    }
-  }, []);
-
-  // 서비스 가이드 표시 여부 결정
-  const checkAndShowServiceGuide = useCallback(async () => {
-    const isFirstTime = await checkFirstTimeUser();
-    const hasPetInfo = await checkPetInfo();
-    
-    
-    // 최초 실행이고 반려동물 정보가 없을 때만 가이드 표시
-    if (isFirstTime && !hasPetInfo) {
-      
-      // 스크롤 코드 제거 - 현재 위치에서 가이드 시작
-      
-      setTimeout(() => {
-        setShowServiceGuide(true);
-        setShowGuideOverlay(true);
-        setShowStepModal(true);
-        setCurrentGuideStep(0);
-        
-        // GuideContext 업데이트
-        setGuideActive(true);
-        setGuideStep(0);
-      }, 1500); // 화면 로딩 후 충분한 시간
-    } else {
-    }
-  }, [checkFirstTimeUser, checkPetInfo]);
+  }; 
 
   // 화면이 포커스될 때마다 체크 (하지만 서비스 가이드는 최초 1회만)
   useFocusEffect(
     useCallback(() => {
-      if (isFirstTime === null) {
-        // 최초 로딩 시에만 서비스 가이드 체크
-        checkAndShowServiceGuide();
-      } else {
-        // 이후에는 반려동물 정보만 체크
-        checkPetInfo();
-      }
-    }, [isFirstTime, checkAndShowServiceGuide, checkPetInfo])
+      getGuideFocusCallback(setGuideActive, setGuideStep)();
+    }, [isFirstTime, getGuideFocusCallback, setGuideActive, setGuideStep])
   );
 
-  const handleCompleteServiceGuide = () => {
-    setShowServiceGuide(false);
-    setShowGuideOverlay(false);
-    setShowStepModal(false);
-    setIsFirstTime(false);
-    
-    // GuideContext 업데이트
-    setGuideActive(false);
-    setGuideStep(0);
-  };
 
-  // 가이드 단계별 설명 데이터
-  const guideSteps: Array<GuideStepType & { iconName: IconName }> = [
-    {
-      id: "pet_walker_button",
-      title: "Pet Walker 서비스",
-      description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!",
-      nextButtonText: "다음",
-      iconName: "walker",
-    },
-    {
-      id: "pet_mall_button",
-      title: "Pet Mall 서비스",
-      description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!",
-      nextButtonText: "다음",
-      iconName: "shop",
-    },
-    {
-      id: "walk_booking",
-      title: "반려동물 정보 입력",
-      description: "산책 예약을 위해 먼저 반려동물 정보를\n입력해주세요!",
-      nextButtonText: "정보 입력하기",
-      iconName: "paw",
-    },
-  ];
 
   const currentStepData = guideSteps[currentGuideStep];
 
@@ -374,17 +270,17 @@ const HomeScreen = () => {
       // Step 2 (My Pet 탭 하이라이트) - 정보 입력 화면으로 이동
       if (currentGuideStep === 2) {
         setShowStepModal(false); // 가이드 모달 숨김
-        handleCompleteServiceGuide(); // 가이드 완료
+        handleCompleteServiceGuide(setGuideActive, setGuideStep); // 가이드 완료
         navigation.navigate('PetInfoInput'); // 정보 입력 화면으로 이동
       } else {
-        handleCompleteServiceGuide();
+        handleCompleteServiceGuide(setGuideActive, setGuideStep);
       }
     }
   };
 
   // 가이드 건너뛰기
   const handleGuideSkip = () => {
-    handleCompleteServiceGuide();
+    handleCompleteServiceGuide(setGuideActive, setGuideStep);
   };
 
   // 가이드 단계별 하이라이트 결정
@@ -400,53 +296,7 @@ const HomeScreen = () => {
   // 검색 기능
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    if (query.trim().length === 0) {
-      setShowSearchResults(false);
-      setSearchResults([]);
-      return;
-    }
-
-    setShowSearchResults(true);
   };
-
-  const generateWalkerSearchResults = React.useCallback((query: string): SearchResult[] => {
-    const lowerQuery = query.toLowerCase();
-    
-    const walkerResults: SearchResult[] = [
-      {
-        id: '1',
-        type: 'feature',
-        title: '산책 요청하기',
-        description: '워커와 매칭하여 산책 서비스를 요청하세요',
-        iconName: 'walker',
-        action: () => navigation.navigate('WalkingRequest'),
-      },
-      {
-        id: '2',
-        type: 'feature',
-        title: '산책 지도',
-        description: '실시간 위치 추적과 산책 경로를 확인하세요',
-        iconName: 'map',
-        action: () => navigation.navigate('WalkingMap'),
-      },
-      {
-        id: '3',
-        type: 'feature',
-        title: '워커 매칭',
-        description: '나에게 맞는 워커를 찾아보세요',
-        iconName: 'paw',
-        action: () => navigation.navigate('WalkerMatching', { 
-          bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
-        }),
-      },
-    ];
-
-    return walkerResults.filter(item => 
-      item.title.toLowerCase().includes(lowerQuery) || 
-      item.description.toLowerCase().includes(lowerQuery)
-    );
-  }, [navigation]);
 
   const handleSearchResultPress = (result: SearchResult) => {
     setShowSearchResults(false);
@@ -454,78 +304,9 @@ const HomeScreen = () => {
     result.action();
   };
 
-  const mapProductResultToSearchResult = React.useCallback((item: BackendSearchResult): SearchResult => {
-    const metadata = (item.metadata ?? {}) as Record<string, unknown>;
-    const rawPrice = metadata.price;
-    const numericPrice =
-      typeof rawPrice === 'number'
-        ? rawPrice
-        : typeof rawPrice === 'string' && !Number.isNaN(Number(rawPrice))
-        ? Number(rawPrice)
-        : undefined;
-
-    const formattedPrice = typeof numericPrice === 'number' ? `${numericPrice.toLocaleString()}원` : undefined;
-    const descriptionPieces = [
-      formattedPrice,
-      item.description ?? undefined,
-    ].filter(Boolean);
-
-    const categoryDisplay = typeof metadata.category === 'string' ? metadata.category : undefined;
-    const categoryForNavigation =
-      (categoryDisplay && SHOP_CATEGORY_MAP[categoryDisplay]) || '전체';
-
-    return {
-      id: item.id,
-      type: 'service',
-      title: item.title ?? '상품',
-      description: descriptionPieces.join(' • ') || '상품 상세 보기',
-      iconName: 'shop',
-      action: () => navigation.navigate('Shop', { category: categoryForNavigation }),
-    };
-  }, [navigation]);
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    const runSearch = async () => {
-      const trimmed = searchQuery.trim();
-
-      if (trimmed.length === 0) {
-        setSearchResults([]);
-        setShowSearchResults(false);
-        setIsSearching(false);
-        return;
-      }
-
-      if (serviceMode === "PW") {
-        const localResults = generateWalkerSearchResults(trimmed);
-        if (!cancelled) {
-          setSearchResults(localResults);
-          setIsSearching(false);
-        }
-        return;
-      }
-
-      setIsSearching(true);
-      const backendResults = await searchProducts(trimmed);
-      if (cancelled) {
-        return;
-      }
-
-      const mapped = backendResults.map(mapProductResultToSearchResult);
-      setSearchResults(mapped);
-      setIsSearching(false);
-    };
-
-    runSearch();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [generateWalkerSearchResults, mapProductResultToSearchResult, searchQuery, serviceMode]);
-
   return (
     <>
+    <StatusBar barStyle="dark-content" backgroundColor={"#000000"}/>
       {/* 메인 콘텐츠 영역 */}
       <SafeAreaView
         style={[homeScreenStyles.root]}
@@ -678,6 +459,37 @@ const HomeScreen = () => {
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
           </View> */}
+          {/* 가이드 시작 버튼 */}
+          <View style={{ marginBottom: 12, paddingHorizontal: 20 }}>
+            <TouchableOpacity
+              onPress={() => {
+                console.log("[가이드] 가이드 시작 버튼 클릭");
+                forceStartGuide();
+                setGuideActive(true);
+                setGuideStep(0);
+              }}
+              style={{
+                backgroundColor: '#4A90E2',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#4A90E2',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <IconImage name="paw" size={18} />
+                <Text style={{ color: 'white', fontSize: rf(14), fontWeight: '600' }}>
+                  가이드 시작
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
             {(["PW", "PM"] as const).map((mode) => (
@@ -775,6 +587,23 @@ const HomeScreen = () => {
         <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
       </TouchableOpacity>
       
+      {/* 서비스 가이드 오버레이 및 하이라이트 */}
+      {/* {showServiceGuide && (
+        <ServiceGuide
+          isVisible={showServiceGuide}
+          onComplete={() => handleCompleteServiceGuide(setGuideActive, setGuideStep)}
+          serviceMode={serviceMode}
+          petWalkerButtonRef={petWalkerButtonRef}
+          petMallButtonRef={petMallButtonRef}
+          walkBookingButtonRef={walkRequestButtonRef}
+          shopButtonRef={shopButtonRef}
+          onStepChange={(step) => {
+            setCurrentGuideStep(step);
+            setGuideStep(step);
+          }}
+        />
+      )} */}
+
       {/* 단계별 가이드 모달 */}
       <GuideStepModal
         isVisible={showStepModal}
@@ -785,7 +614,7 @@ const HomeScreen = () => {
         currentStep={currentGuideStep + 1}
         totalSteps={guideSteps.length}
         nextButtonText={currentStepData?.nextButtonText}
-      iconName={currentStepData?.iconName}
+        iconName={currentStepData?.iconName}
       />
     </>
   );

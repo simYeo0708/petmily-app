@@ -1,0 +1,17 @@
+# Petmily .gitignore
+
+# 압축 파일 (GitHub 크기 제한 초과 방지)
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 백업 파일
+*.bak
+*.backup
+
+# 백업 디렉토리
+Back2/
+Front2/
+wrong-main-front/
+

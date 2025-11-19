@@ -19,13 +19,58 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { myPetScreenStyles, modalStyles } from "../styles/MyPetScreenStyles";
+import { breedOptions, speciesOptions, temperamentOptions } from "../data/petData";
 import { StyleSheet } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { IconImage } from "../components/IconImage";
+import { useMyPetForm } from "../hooks/useMyPetForm";
+import { useMyPetImage } from "../hooks/useMyPetImage";
+import { useMyPetAnimations } from "../hooks/useMyPetAnimations";
 
 const MyPetScreen = () => {
   const { petInfo, allPets, updatePetInfo, selectPet, deletePet } = usePet();
+  
+  // 커스텀 훅 사용
+  const {
+    localPetInfo,
+    setLocalPetInfo,
+    selectedAllergies,
+    setSelectedAllergies,
+    selectedMedications,
+    setSelectedMedications,
+    selectedTemperaments,
+    setSelectedTemperaments,
+    handleSave,
+  } = useMyPetForm();
+  
+  const {
+    hasPhoto,
+    selectedImage,
+    showImageModal,
+    setShowImageModal,
+    pickFromLibrary,
+    takePhoto,
+    deleteImage,
+  } = useMyPetImage(() => {
+    triggerSuccessAnimation();
+  });
+  
+  const {
+    showSuccessAnimation,
+    showDeleteMessage,
+    hasSuccessfullyAddedPhoto,
+    borderAnimation,
+    scaleAnimation,
+    confettiAnimation,
+    deleteMessageOpacity,
+    temperamentAnimations,
+    triggerSuccessAnimation,
+    triggerDeleteAnimation,
+    toggleTemperament: toggleTemperamentAnimation,
+  } = useMyPetAnimations();
+  
+  const [showBreedModal, setShowBreedModal] = useState(false);
   const [showPetSelector, setShowPetSelector] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [petToDelete, setPetToDelete] = useState<number | null>(null);
@@ -192,316 +237,20 @@ const MyPetScreen = () => {
       color: '#fff',
     },
   });
-  
-  // 로컬 상태 (Context와 동기화)
-  const [localPetInfo, setLocalPetInfo] = useState({
-    name: "",
-    species: "dog",
-    breed: "",
-    age: "",
-    weight: "",
-    gender: "",
-    isNeutered: false,
-    medicalInfo: "",
-    temperament: "",
-    
-    // 건강 및 알레르기 정보
-    isVaccinated: false,
-    medicalConditions: "",
-    specialNotes: "",
-  });
-  
-  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
-  const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
-
-  const [hasPhoto, setHasPhoto] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  // const [showSuccessMessage, setShowSuccessMessage] = useState(false); // 제거됨
-  const [showDeleteMessage, setShowDeleteMessage] = useState(false);
-  const [hasSuccessfullyAddedPhoto, setHasSuccessfullyAddedPhoto] = useState(false);
-  const [showBreedModal, setShowBreedModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);  // 프로필 이미지 변경 모달
-  const [selectedTemperaments, setSelectedTemperaments] = useState<string[]>(['온순함']);
-  
-  // 애니메이션 값들
-  const borderAnimation = useRef(new Animated.Value(0)).current;
-  const scaleAnimation = useRef(new Animated.Value(1)).current;
-  const confettiAnimation = useRef(new Animated.Value(0)).current;
-  // const messageOpacity = useRef(new Animated.Value(0)).current; // 제거됨
-  const deleteMessageOpacity = useRef(new Animated.Value(0)).current;
-  const temperamentAnimations = useRef<{[key: string]: Animated.Value}>({}).current;
-
-  // Context의 petInfo가 변경될 때마다 로컬 상태 동기화
-  useEffect(() => {
-    if (petInfo) {
-      setLocalPetInfo({
-        name: petInfo.name || "",
-        species: petInfo.species || "dog",
-        breed: petInfo.breed || "",
-        age: petInfo.age || "",
-        weight: petInfo.weight || "",
-        gender: petInfo.gender || "",
-        isNeutered: petInfo.isNeutered || false,
-        medicalInfo: petInfo.description || "",
-        temperament: petInfo.temperaments?.join(", ") || "",
-        
-        // 건강 및 알레르기 정보
-        isVaccinated: petInfo.isVaccinated || false,
-        medicalConditions: petInfo.medicalConditions || "",
-        specialNotes: petInfo.specialNotes || "",
-      });
-      
-      if (petInfo.allergies && petInfo.allergies.length > 0) {
-        setSelectedAllergies(petInfo.allergies);
-      }
-      
-      if (petInfo.medications && petInfo.medications.length > 0) {
-        setSelectedMedications(petInfo.medications);
-      }
-      
-      if (petInfo.photoUri) {
-        setSelectedImage(petInfo.photoUri);
-        setHasPhoto(petInfo.hasPhoto || false);
-        setHasSuccessfullyAddedPhoto(true);
-      }
-      
-      if (petInfo.temperaments && petInfo.temperaments.length > 0) {
-        setSelectedTemperaments(petInfo.temperaments);
-      } else {
-        setSelectedTemperaments(['온순함']);
-      }
-    }
-  }, [petInfo]); // petInfo가 변경될 때만 실행
 
   const pickImage = () => {
     setShowImageModal(true);
   };
 
-  const pickFromLibrary = async () => {
-    try {
-      // 1) 권한 요청
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('권한 필요', '앨범 접근 권한이 필요합니다.');
-        return;
-      }
-
-      // 2) 앨범 열기
-      const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', // 사진만
-      allowsEditing: true,                             // 편집 가능 여부
-      aspect: [1, 1],                                  // 정사각형 크롭
-      quality: 0.8,                                    // 품질 (0~1)
-    });
-
-      if (!result.canceled) {
-        const newImageUri = result.assets[0].uri;
-        setSelectedImage(newImageUri);
-        setHasPhoto(true);
-        setShowImageModal(false);  // 모달 닫기
-        triggerSuccessAnimation();
-        
-        // 즉시 Context 업데이트
-        if (petInfo) {
-          const updatedPetInfo = {
-            ...petInfo,
-            photoUri: newImageUri,
-            hasPhoto: true,
-          };
-          updatePetInfo(updatedPetInfo);
-        }
-      } else {
-        setShowImageModal(false);  // 취소 시에도 모달 닫기
-      }
-    } catch (error) {
-      Alert.alert('오류', '사진 선택 중 문제가 발생했습니다.');
-      setShowImageModal(false);
-    }
-  };
-
-  const takePhoto = async () => {
-    try {
-      // 1) 카메라 권한 요청
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('권한 필요', '카메라 접근 권한이 필요합니다.');
-        return;
-      }
-
-      // 2) 카메라 열기
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,  // 편집 가능 여부
-        aspect: [1, 1],       // 정사각형 크롭
-        quality: 0.8,         // 품질 (0~1)
-      });
-
-      if (!result.canceled) {
-        const newImageUri = result.assets[0].uri;
-        setSelectedImage(newImageUri);
-        setHasPhoto(true);
-        setShowImageModal(false);  // 모달 닫기
-        triggerSuccessAnimation();
-        
-        // 즉시 Context 업데이트
-        if (petInfo) {
-          const updatedPetInfo = {
-            ...petInfo,
-            photoUri: newImageUri,
-            hasPhoto: true,
-          };
-          updatePetInfo(updatedPetInfo);
-        }
-      } else {
-        setShowImageModal(false);  // 취소 시에도 모달 닫기
-      }
-    } catch (error) {
-      Alert.alert('오류', '사진 촬영 중 문제가 발생했습니다.');
-      setShowImageModal(false);
-    }
-  };
-
-  const triggerSuccessAnimation = () => {
-    // 초록색 모달 없이 간단한 애니메이션만
-    setShowSuccessAnimation(true);
-    setHasSuccessfullyAddedPhoto(true);
-    
-    // 초기값 설정
-    borderAnimation.setValue(0);
-    scaleAnimation.setValue(1);
-    confettiAnimation.setValue(0);
-    
-    // 간단한 애니메이션 (스케일 + 윤곽선만)
-    Animated.sequence([
-      Animated.timing(scaleAnimation, {
-        toValue: 1.1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnimation, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(borderAnimation, {
-        toValue: 1,
-        duration: 1500,
-        useNativeDriver: false,
-      }),
-    ]).start(() => {
-      // 애니메이션 완료 후 초기화
-      setTimeout(() => {
-        setShowSuccessAnimation(false);
-        borderAnimation.setValue(0);
-      }, 1000);
-    });
-  };
-
-  const triggerDeleteAnimation = () => {
-    // 성공 애니메이션 상태 초기화 (삭제 시에는 성공 애니메이션 표시 안함)
-    setShowSuccessAnimation(false);
-    // setShowSuccessMessage(false); // 제거됨
-    setHasSuccessfullyAddedPhoto(false);
-    borderAnimation.setValue(0);
-    confettiAnimation.setValue(0);
-    // messageOpacity.setValue(0); // 제거됨
-    
-    setShowDeleteMessage(true);
-    deleteMessageOpacity.setValue(0);
-    
-    // 삭제 메시지 애니메이션
-    Animated.timing(deleteMessageOpacity, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      // 3초 후 메시지 숨기기
-      setTimeout(() => {
-        Animated.timing(deleteMessageOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowDeleteMessage(false);
-        });
-      }, 3000);
-    });
-  };
-
   const toggleTemperament = (temperament: string) => {
-    // 애니메이션 값 초기화 (없으면 생성)
-    if (!temperamentAnimations[temperament]) {
-      temperamentAnimations[temperament] = new Animated.Value(0);
-    }
-    
-    const isCurrentlySelected = selectedTemperaments.includes(temperament);
-    
-    setSelectedTemperaments(prev => {
-      if (prev.includes(temperament)) {
-        return prev.filter(t => t !== temperament);
-      } else {
-        return [...prev, temperament];
-      }
-    });
-    
-    // 애니메이션 실행
-    Animated.sequence([
-      Animated.timing(temperamentAnimations[temperament], {
-        toValue: isCurrentlySelected ? 0 : 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    toggleTemperamentAnimation(temperament, selectedTemperaments, setSelectedTemperaments);
   };
-
-  const handleSave = async () => {
-    if (!localPetInfo.name || !localPetInfo.breed || !localPetInfo.age) {
-      Alert.alert("알림", "필수 정보를 모두 입력해주세요.");
-      return;
-    }
-
-    try {
-      // Context 형식에 맞게 데이터 변환 (기존 petInfo의 id 유지)
-      const petData: PetInfo = {
-        id: petInfo?.id,  // 기존 ID 유지 (있으면 업데이트, 없으면 생성)
-        name: localPetInfo.name,
-        species: localPetInfo.species,
-        breed: localPetInfo.breed,
-        age: localPetInfo.age,
-        weight: localPetInfo.weight,
-        gender: localPetInfo.gender,
-        isNeutered: localPetInfo.isNeutered,
-        description: localPetInfo.medicalInfo,
-        photoUri: selectedImage || undefined,
-        hasPhoto: hasPhoto,
-        temperaments: selectedTemperaments,
-        
-        // 건강 및 알레르기 정보
-        isVaccinated: localPetInfo.isVaccinated,
-        allergies: selectedAllergies,
-        medications: selectedMedications,
-        medicalConditions: localPetInfo.medicalConditions,
-        specialNotes: localPetInfo.specialNotes,
-      };
-      
-      
-      // Context를 통해 업데이트 (서버 + 로컬 저장 자동 처리)
-      await updatePetInfo(petData);
-      
-      Alert.alert("성공", "반려동물 정보가 저장되었습니다!", [
-        {
-          text: "확인",
-          onPress: () => {
-          },
-        },
-      ]);
-    } catch (error) {
-      Alert.alert(
-        "오류",
-        "정보 저장 중 문제가 발생했습니다. 다시 시도해주세요."
-      );
-    }
+  
+  const handleDeleteImage = () => {
+    deleteImage();
+    triggerDeleteAnimation();
   };
+  
 
   // 폭죽 컴포넌트
   const Confetti = () => {
@@ -591,40 +340,6 @@ const MyPetScreen = () => {
     );
   };
 
-  const speciesOptions = [
-    { key: "dog", label: "강아지", iconName: "dog" as const },
-    { key: "cat", label: "고양이", iconName: "cat" as const },
-    { key: "other", label: "기타", iconName: "paw" as const },
-  ];
-
-  const breedOptions = {
-    dog: [
-      "Abyssinian", "American Bulldog", "American Pit Bull Terrier", "Basset Hound", "Beagle",
-      "Bengal", "Border Collie", "Boxer", "British Shorthair", "Bulldog", "Chihuahua",
-      "Cocker Spaniel", "Collie", "Dalmatian", "Doberman Pinscher", "English Setter",
-      "German Shepherd", "Golden Retriever", "Great Dane", "Havanese", "Jack Russell Terrier",
-      "Keeshond", "Labrador Retriever", "Maine Coon", "Maltese", "Munchkin", "Newfoundland",
-      "Persian", "Pomeranian", "Poodle", "Pug", "Ragdoll", "Rottweiler", "Russian Blue",
-      "Saint Bernard", "Samoyed", "Scottish Fold", "Shiba Inu", "Siberian Husky", "Siamese",
-      "Staffordshire Bull Terrier", "Weimaraner", "Yorkshire Terrier", "기타"
-    ],
-    cat: [
-      "Abyssinian", "American Curl", "American Shorthair", "Bengal", "Birman", "Bombay",
-      "British Shorthair", "Burmese", "Chartreux", "Cornish Rex", "Devon Rex", "Egyptian Mau",
-      "Exotic Shorthair", "Himalayan", "Japanese Bobtail", "Maine Coon", "Manx", "Munchkin",
-      "Norwegian Forest", "Oriental Shorthair", "Persian", "Ragdoll", "Russian Blue",
-      "Scottish Fold", "Siamese", "Siberian", "Singapura", "Somali", "Sphynx", "Tonkinese",
-      "Turkish Angora", "Turkish Van", "기타"
-    ],
-    other: []
-  };
-
-  const temperamentOptions = [
-    "온순함", "활발함", "사교적", "조용함", "장난꾸러기", "차분함",
-    "호기심 많음", "독립적", "애교쟁이", "용감함", "신중함", "장난스러움",
-    "친근함", "고집스러움", "영리함", "겁쟁이", "적극적", "소심함"
-  ];
-
   // 반려동물 선택 드롭다운 렌더링
   const renderPetSelector = () => (
     <View style={localStyles.petSelectorContainer}>
@@ -698,8 +413,7 @@ const MyPetScreen = () => {
                 description: "",
               };
               setLocalPetInfo(newPetData);
-              setSelectedImage(null);
-              setHasPhoto(false);
+              deleteImage(); // 이미지 삭제는 훅의 deleteImage 함수 사용
               setSelectedAllergies([]);
               setSelectedMedications([]);
               setSelectedTemperaments(['온순함']);
@@ -761,7 +475,10 @@ const MyPetScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[myPetScreenStyles.root, { backgroundColor: '#FFFFFF' }]}>
+    // <SafeAreaView 
+    //   style={[myPetScreenStyles.root, { backgroundColor: '#FFFFFF' }]}
+    //   edges={['top', 'left', 'right']}>
+    <>
       <View style={myPetScreenStyles.header}>
         <View style={myPetScreenStyles.logoRow}>
           <IconImage name="paw" size={22} style={myPetScreenStyles.logoIcon} />
@@ -843,22 +560,7 @@ const MyPetScreen = () => {
                     />
                     <TouchableOpacity
                       style={myPetScreenStyles.photoDeleteButton}
-                      onPress={() => {
-                        setSelectedImage(null);
-                        setHasPhoto(false);
-                        // 사진 삭제 시 삭제 애니메이션 실행
-                        triggerDeleteAnimation();
-                        
-                        // 즉시 Context 업데이트
-                        if (petInfo) {
-                          const updatedPetInfo = {
-                            ...petInfo,
-                            photoUri: undefined,
-                            hasPhoto: false,
-                          };
-                          updatePetInfo(updatedPetInfo);
-                        }
-                      }}>
+                      onPress={handleDeleteImage}>
                       <Text style={myPetScreenStyles.photoDeleteText}>×</Text>
                     </TouchableOpacity>
                   </View>
@@ -1310,7 +1012,7 @@ const MyPetScreen = () => {
       
       {/* 품종 선택 모달 */}
       <BreedSelectionModal />
-    </SafeAreaView>
+    </>
   );
 };
 
