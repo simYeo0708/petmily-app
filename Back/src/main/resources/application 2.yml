@@ -85,7 +85,7 @@ naver:
   client-secret: ${NAVER_CLIENT_SECRET:dummy-naver-client-secret}
 
 server:
-  port: 8083
+  port: 8080
 
 logging:
   level:

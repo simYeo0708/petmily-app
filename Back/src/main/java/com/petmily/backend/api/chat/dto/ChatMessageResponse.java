@@ -13,9 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageResponse {
-    
+
     private Long id;
     private Long chatRoomId;
+    private String roomId;  // UUID roomId 추가
     private Long senderId;
     private ChatMessage.MessageType messageType;
     private String content;

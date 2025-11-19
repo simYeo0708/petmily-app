@@ -91,7 +91,10 @@ public class SecurityConfig {
                         request.requestMatchers(
                                 new AntPathRequestMatcher("/"),
                                 new AntPathRequestMatcher("/api/auth/**"),
-                                new AntPathRequestMatcher("/api/users/**")
+                                new AntPathRequestMatcher("/api/users/**"),
+                                new AntPathRequestMatcher("/ws-stomp/**"),
+                                new AntPathRequestMatcher("/pub/**"),
+                                new AntPathRequestMatcher("/sub/**")
                         ).permitAll().anyRequest().authenticated()
                 )
 

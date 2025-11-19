@@ -1,0 +1,244 @@
+package com.petmily.backend.api.chat.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.chat.dto.ChatMessageRequest;
+import com.petmily.backend.api.chat.dto.ChatMessageResponse;
+import com.petmily.backend.api.chat.dto.ChatRoomResponse;
+import com.petmily.backend.api.chat.redis.RedisPublisher;
+import com.petmily.backend.api.chat.service.ChatMessageService;
+import com.petmily.backend.api.chat.service.ChatRoomService;
+import com.petmily.backend.domain.chat.entity.ChatMessage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.support.GenericMessage;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ChatControllerTest {
+
+    @Mock
+    private RedisPublisher redisPublisher;
+
+    @Mock
+    private ChatRoomService chatRoomService;
+
+    @Mock
+    private ChatMessageService chatMessageService;
+
+    @InjectMocks
+    private ChatController chatController;
+
+    private SimpMessageHeaderAccessor headerAccessor;
+    private ChatMessageRequest messageRequest;
+    private ChatMessageRequest joinRequest;
+    private ChatMessageResponse messageResponse;
+    private ChatRoomResponse chatRoomResponse;
+
+    @BeforeEach
+    void setUp() {
+        // SimpMessageHeaderAccessor 설정
+        headerAccessor = SimpMessageHeaderAccessor.create();
+        Map<String, Object> sessionAttributes = new ConcurrentHashMap<>();
+        sessionAttributes.put("username", "testuser");
+        headerAccessor.setSessionAttributes(sessionAttributes);
+
+        // 일반 메시지 요청
+        messageRequest = ChatMessageRequest.builder()
+                .roomId("room-1")
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("안녕하세요!")
+                .action("SEND")
+                .build();
+
+        // 입장 메시지 요청
+        joinRequest = ChatMessageRequest.builder()
+                .roomId("room-1")
+                .messageType(ChatMessage.MessageType.JOIN)
+                .content("")
+                .action("JOIN")
+                .build();
+
+        // 메시지 응답
+        messageResponse = ChatMessageResponse.builder()
+                .id(1L)
+                .chatRoomId(1L)
+                .senderId(1L)
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("안녕하세요!")
+                .isSystemMessage(false)
+                .isRead(false)
+                .createTime(LocalDateTime.now())
+                .senderName("테스트유저")
+                .build();
+
+        // 채팅방 응답
+        chatRoomResponse = ChatRoomResponse.builder()
+                .id(1L)
+                .roomId("room-1")
+                .roomName("테스트 채팅방")
+                .isActive(true)
+                .build();
+    }
+
+    @Test
+    void sendMessage_Success() {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatMessageService.sendMessage("room-1", "testuser", messageRequest))
+                .thenReturn(messageResponse);
+        when(chatRoomService.getTopic("room-1")).thenReturn(new ChannelTopic("chat.room.room-1"));
+
+        // When
+        chatController.sendMessage("room-1", messageRequest, headerAccessor);
+
+        // Then
+        verify(chatRoomService).hasAccessToChatRoom("room-1", "testuser");
+        verify(chatMessageService).sendMessage("room-1", "testuser", messageRequest);
+        verify(redisPublisher).publish(new ChannelTopic("chat.room.room-1"), messageResponse);
+        verifyNoInteractions(chatRoomService);  // enterChatRoom should not be called for regular messages
+    }
+
+    @Test
+    void sendMessage_JoinAction_Success() {
+        // Given
+        ChatMessageResponse joinMessageResponse = ChatMessageResponse.builder()
+                .id(2L)
+                .chatRoomId(1L)
+                .senderId(1L)
+                .messageType(ChatMessage.MessageType.JOIN)
+                .content("testuser님이 입장했습니다.")
+                .isSystemMessage(true)
+                .createTime(LocalDateTime.now())
+                .build();
+
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatRoomService.findRoomById("room-1")).thenReturn(chatRoomResponse);
+        when(chatMessageService.createJoinMessage(1L, "testuser")).thenReturn(joinMessageResponse);
+        when(chatRoomService.getTopic("room-1")).thenReturn(new ChannelTopic("chat.room.room-1"));
+
+        // When
+        chatController.sendMessage("room-1", joinRequest, headerAccessor);
+
+        // Then
+        verify(chatRoomService).hasAccessToChatRoom("room-1", "testuser");
+        verify(chatRoomService).enterChatRoom("room-1");
+        verify(chatRoomService).findRoomById("room-1");
+        verify(chatMessageService).createJoinMessage(1L, "testuser");
+        verify(redisPublisher).publish(new ChannelTopic("chat.room.room-1"), joinMessageResponse);
+    }
+
+    @Test
+    void sendMessage_NoAuthentication_ShouldReturn() {
+        // Given - no username in session
+        SimpMessageHeaderAccessor noAuthHeaderAccessor = SimpMessageHeaderAccessor.create();
+        Map<String, Object> emptySessionAttributes = new ConcurrentHashMap<>();
+        noAuthHeaderAccessor.setSessionAttributes(emptySessionAttributes);
+
+        // When
+        chatController.sendMessage("room-1", messageRequest, noAuthHeaderAccessor);
+
+        // Then
+        verifyNoInteractions(chatRoomService);
+        verifyNoInteractions(chatMessageService);
+        verifyNoInteractions(redisPublisher);
+    }
+
+    @Test
+    void sendMessage_NoAccessToChatRoom_ShouldReturn() {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(false);
+
+        // When
+        chatController.sendMessage("room-1", messageRequest, headerAccessor);
+
+        // Then
+        verify(chatRoomService).hasAccessToChatRoom("room-1", "testuser");
+        verifyNoMoreInteractions(chatRoomService);
+        verifyNoInteractions(chatMessageService);
+        verifyNoInteractions(redisPublisher);
+    }
+
+    @Test
+    void sendMessage_ExceptionDuringProcessing_ShouldHandleGracefully() {
+        // Given
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatMessageService.sendMessage("room-1", "testuser", messageRequest))
+                .thenThrow(new RuntimeException("Database error"));
+
+        // When & Then - Should not throw exception
+        chatController.sendMessage("room-1", messageRequest, headerAccessor);
+
+        verify(chatRoomService).hasAccessToChatRoom("room-1", "testuser");
+        verify(chatMessageService).sendMessage("room-1", "testuser", messageRequest);
+        verifyNoInteractions(redisPublisher);
+    }
+
+    @Test
+    void sendMessage_JoinByMessageType_Success() {
+        // Given
+        ChatMessageRequest joinByTypeRequest = ChatMessageRequest.builder()
+                .roomId("room-1")
+                .messageType(ChatMessage.MessageType.JOIN)
+                .content("")
+                .action("SEND") // action is SEND but messageType is JOIN
+                .build();
+
+        ChatMessageResponse joinMessageResponse = ChatMessageResponse.builder()
+                .id(2L)
+                .chatRoomId(1L)
+                .senderId(1L)
+                .messageType(ChatMessage.MessageType.JOIN)
+                .content("testuser님이 입장했습니다.")
+                .isSystemMessage(true)
+                .createTime(LocalDateTime.now())
+                .build();
+
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatRoomService.findRoomById("room-1")).thenReturn(chatRoomResponse);
+        when(chatMessageService.createJoinMessage(1L, "testuser")).thenReturn(joinMessageResponse);
+        when(chatRoomService.getTopic("room-1")).thenReturn(new ChannelTopic("chat.room.room-1"));
+
+        // When
+        chatController.sendMessage("room-1", joinByTypeRequest, headerAccessor);
+
+        // Then
+        verify(chatRoomService).enterChatRoom("room-1");
+        verify(chatMessageService).createJoinMessage(1L, "testuser");
+        verify(redisPublisher).publish(new ChannelTopic("chat.room.room-1"), joinMessageResponse);
+    }
+
+    @Test
+    void sendMessage_RoomIdSetInRequest() {
+        // Given
+        ChatMessageRequest requestWithoutRoomId = ChatMessageRequest.builder()
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("안녕하세요!")
+                .action("SEND")
+                .build(); // roomId not set initially
+
+        when(chatRoomService.hasAccessToChatRoom("room-1", "testuser")).thenReturn(true);
+        when(chatMessageService.sendMessage("room-1", "testuser", requestWithoutRoomId))
+                .thenReturn(messageResponse);
+        when(chatRoomService.getTopic("room-1")).thenReturn(new ChannelTopic("chat.room.room-1"));
+
+        // When
+        chatController.sendMessage("room-1", requestWithoutRoomId, headerAccessor);
+
+        // Then
+        verify(chatMessageService).sendMessage("room-1", "testuser", requestWithoutRoomId);
+        // roomId should be set to "room-1" in the request
+        assert requestWithoutRoomId.getRoomId().equals("room-1");
+    }
+}

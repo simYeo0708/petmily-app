@@ -29,8 +29,8 @@ public class ChatRoom extends BaseTimeEntity {
     
     @Column(name = "user_id", nullable = false)
     private Long userId;
-    
-    @Column(name = "walker_id", nullable = false)
+
+    @Column(name = "walker_id")
     private Long walkerId;
     
     @Column(name = "booking_id")

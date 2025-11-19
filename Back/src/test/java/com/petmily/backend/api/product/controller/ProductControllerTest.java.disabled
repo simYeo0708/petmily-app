@@ -1,0 +1,522 @@
+package com.petmily.backend.api.product.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.auth.dto.model.PrincipalDetails;
+import com.petmily.backend.api.common.util.SecurityUtils;
+import com.petmily.backend.api.order.dto.ReviewListResponse;
+import com.petmily.backend.api.product.dto.*;
+import com.petmily.backend.api.product.service.ProductService;
+import com.petmily.backend.domain.user.entity.Role;
+import com.petmily.backend.domain.user.entity.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ProductController.class)
+class ProductControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ProductService productService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private User mockUser;
+    private PrincipalDetails principalDetails;
+    private ProductDetailResponse productDetailResponse;
+    private ProductListResponse productListResponse;
+    private ProductCreateRequest productCreateRequest;
+    private ProductUpdateRequest productUpdateRequest;
+    private ProductSearchRequest productSearchRequest;
+    private ReviewListResponse reviewListResponse;
+    private ProductReviewStatsResponse reviewStatsResponse;
+
+    @BeforeEach
+    void setUp() {
+        mockUser = User.builder()
+                .id(1L)
+                .username("testuser")
+                .name("테스트유저")
+                .email("test@example.com")
+                .role(Role.USER)
+                .build();
+
+        principalDetails = new PrincipalDetails(mockUser, Map.of(), "username");
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Category Info
+        ProductDetailResponse.CategoryInfo categoryInfo = new ProductDetailResponse.CategoryInfo(
+                1L, "강아지 용품", "강아지를 위한 모든 용품");
+
+        // Product Detail Response
+        productDetailResponse = new ProductDetailResponse();
+        productDetailResponse.setId(1L);
+        productDetailResponse.setName("프리미엄 강아지 사료");
+        productDetailResponse.setDescription("건강한 재료로 만든 프리미엄 강아지 사료입니다.");
+        productDetailResponse.setPrice(30000.0);
+        productDetailResponse.setImageUrl("product1.jpg");
+        productDetailResponse.setBrand("펫밀리");
+        productDetailResponse.setWeight(2.0);
+        productDetailResponse.setDimensions("30x20x10cm");
+        productDetailResponse.setStock(100);
+        productDetailResponse.setDiscountRate(10.0);
+        productDetailResponse.setRatingAverage(4.5);
+        productDetailResponse.setReviewCount(25);
+        productDetailResponse.setIsActive(true);
+        productDetailResponse.setCategory(categoryInfo);
+        productDetailResponse.setCreateTime(now);
+        productDetailResponse.setUpdateTime(now);
+
+        // Product Summary for list
+        ProductSummary productSummary = new ProductSummary();
+        productSummary.setId(1L);
+        productSummary.setName("프리미엄 강아지 사료");
+        productSummary.setPrice(30000.0);
+        productSummary.setImageUrl("product1.jpg");
+        productSummary.setBrand("펫밀리");
+        productSummary.setDiscountRate(10.0);
+        productSummary.setRatingAverage(4.5);
+        productSummary.setReviewCount(25);
+
+        // Product List Response
+        productListResponse = ProductListResponse.builder()
+                .products(Arrays.asList(productSummary))
+                .totalCount(1L)
+                .totalPages(1)
+                .currentPage(0)
+                .build();
+
+        // Product Create Request
+        productCreateRequest = new ProductCreateRequest();
+        productCreateRequest.setName("새로운 강아지 사료");
+        productCreateRequest.setDescription("신제품 강아지 사료입니다.");
+        productCreateRequest.setPrice(35000.0);
+        productCreateRequest.setBrand("펫밀리");
+        productCreateRequest.setCategoryId(1L);
+        productCreateRequest.setWeight(2.5);
+        productCreateRequest.setDimensions("35x25x15cm");
+        productCreateRequest.setStock(50);
+
+        // Product Update Request
+        productUpdateRequest = new ProductUpdateRequest();
+        productUpdateRequest.setName("수정된 강아지 사료");
+        productUpdateRequest.setDescription("수정된 설명입니다.");
+        productUpdateRequest.setPrice(32000.0);
+
+        // Product Search Request
+        productSearchRequest = new ProductSearchRequest();
+        productSearchRequest.setKeyword("강아지");
+        productSearchRequest.setCategoryId(1L);
+        productSearchRequest.setMinPrice(10000.0);
+        productSearchRequest.setMaxPrice(50000.0);
+        productSearchRequest.setBrand("펫밀리");
+
+        // Review List Response
+        reviewListResponse = ReviewListResponse.builder()
+                .reviews(Arrays.asList())
+                .totalCount(0L)
+                .totalPages(0)
+                .currentPage(0)
+                .build();
+
+        // Product Review Stats Response
+        reviewStatsResponse = ProductReviewStatsResponse.builder()
+                .totalReviews(25L)
+                .averageRating(4.5)
+                .ratingDistribution(Arrays.asList(
+                        ProductReviewStatsResponse.RatingCount.builder().rating(5).count(15L).build(),
+                        ProductReviewStatsResponse.RatingCount.builder().rating(4).count(7L).build(),
+                        ProductReviewStatsResponse.RatingCount.builder().rating(3).count(2L).build(),
+                        ProductReviewStatsResponse.RatingCount.builder().rating(2).count(1L).build(),
+                        ProductReviewStatsResponse.RatingCount.builder().rating(1).count(0L).build()
+                ))
+                .build();
+    }
+
+    @Test
+    void getProducts_Success() throws Exception {
+        // Given
+        when(productService.getProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenReturn(productListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.products[0].id").value(1L))
+                .andExpect(jsonPath("$.products[0].name").value("프리미엄 강아지 사료"))
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
+    void getProducts_WithSearchParameters_Success() throws Exception {
+        // Given
+        when(productService.getProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenReturn(productListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products")
+                        .param("keyword", "강아지")
+                        .param("categoryId", "1")
+                        .param("minPrice", "10000")
+                        .param("maxPrice", "50000")
+                        .param("brand", "펫밀리"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
+    void getProduct_Success() throws Exception {
+        // Given
+        when(productService.getProduct(1L)).thenReturn(productDetailResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.name").value("프리미엄 강아지 사료"))
+                .andExpect(jsonPath("$.price").value(30000.0))
+                .andExpect(jsonPath("$.brand").value("펫밀리"))
+                .andExpect(jsonPath("$.category.name").value("강아지 용품"))
+                .andExpect(jsonPath("$.ratingAverage").value(4.5))
+                .andExpect(jsonPath("$.reviewCount").value(25));
+    }
+
+    @Test
+    void getProduct_NotFound_ShouldReturnNotFound() throws Exception {
+        // Given
+        when(productService.getProduct(999L)).thenThrow(new RuntimeException("Product not found"));
+
+        // When & Then
+        mockMvc.perform(get("/api/products/999"))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    void getProductsByCategory_Success() throws Exception {
+        // Given
+        when(productService.getProductsByCategory(eq(1L), any(Pageable.class))).thenReturn(productListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/category/1")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
+    void searchProducts_Success() throws Exception {
+        // Given
+        when(productService.searchProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenReturn(productListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/search")
+                        .param("keyword", "강아지")
+                        .param("brand", "펫밀리"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void createProduct_Success() throws Exception {
+        // Given
+        when(productService.createProduct(any(ProductCreateRequest.class))).thenReturn(productDetailResponse);
+
+        // When & Then
+        mockMvc.perform(post("/api/products")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productCreateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("프리미엄 강아지 사료"));
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_USER")
+    void createProduct_WithoutAdminRole_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/products")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productCreateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void createProduct_WithValidationError_ShouldReturnBadRequest() throws Exception {
+        // Given - invalid request (missing required fields)
+        ProductCreateRequest invalidRequest = new ProductCreateRequest();
+        // Missing required fields like name, price, etc.
+
+        // When & Then
+        mockMvc.perform(post("/api/products")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void updateProduct_Success() throws Exception {
+        // Given
+        ProductDetailResponse updatedProduct = new ProductDetailResponse();
+        updatedProduct.setId(1L);
+        updatedProduct.setName("수정된 강아지 사료");
+        updatedProduct.setPrice(32000.0);
+
+        when(productService.updateProduct(eq(1L), any(ProductUpdateRequest.class))).thenReturn(updatedProduct);
+
+        // When & Then
+        mockMvc.perform(put("/api/products/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productUpdateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("수정된 강아지 사료"))
+                .andExpect(jsonPath("$.price").value(32000.0));
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_USER")
+    void updateProduct_WithoutAdminRole_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/products/1")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productUpdateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void deleteProduct_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/products/1")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(productService).deleteProduct(1L);
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_USER")
+    void deleteProduct_WithoutAdminRole_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(delete("/api/products/1")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getProductReviews_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(productService.getProductReviews(eq(1L), eq(1L), any(Pageable.class)))
+                    .thenReturn(reviewListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/products/1/reviews"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reviews").isArray())
+                    .andExpect(jsonPath("$.totalCount").value(0));
+        }
+    }
+
+    @Test
+    void getProductReviews_WithoutAuthentication_Success() throws Exception {
+        // Given
+        when(productService.getProductReviews(eq(1L), isNull(), any(Pageable.class)))
+                .thenReturn(reviewListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/1/reviews"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reviews").isArray());
+    }
+
+    @Test
+    void getProductReviewStats_Success() throws Exception {
+        // Given
+        when(productService.getProductReviewStats(1L)).thenReturn(reviewStatsResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/1/reviews/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalReviews").value(25))
+                .andExpect(jsonPath("$.averageRating").value(4.5))
+                .andExpect(jsonPath("$.ratingDistribution").isArray())
+                .andExpect(jsonPath("$.ratingDistribution[0].rating").value(5))
+                .andExpect(jsonPath("$.ratingDistribution[0].count").value(15));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getProductReviewsByRating_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(productService.getProductReviewsByRating(eq(1L), eq(5), eq(1L), any(Pageable.class)))
+                    .thenReturn(reviewListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/products/1/reviews/rating/5"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reviews").isArray());
+        }
+    }
+
+    @Test
+    void getProductReviewsByRating_WithoutAuthentication_Success() throws Exception {
+        // Given
+        when(productService.getProductReviewsByRating(eq(1L), eq(5), isNull(), any(Pageable.class)))
+                .thenReturn(reviewListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/1/reviews/rating/5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reviews").isArray());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getProductReviewsWithImages_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(productService.getProductReviewsWithImages(eq(1L), eq(1L), any(Pageable.class)))
+                    .thenReturn(reviewListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/products/1/reviews/with-images"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reviews").isArray());
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getProductReviewsByHelpful_Success() throws Exception {
+        try (MockedStatic<SecurityUtils> securityUtils = mockStatic(SecurityUtils.class)) {
+            // Given
+            securityUtils.when(() -> SecurityUtils.getUserId(any(org.springframework.security.core.userdetails.UserDetails.class))).thenReturn(1L);
+            when(productService.getProductReviewsByHelpful(eq(1L), eq(1L), any(Pageable.class)))
+                    .thenReturn(reviewListResponse);
+
+            // When & Then
+            mockMvc.perform(get("/api/products/1/reviews/helpful"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.reviews").isArray());
+        }
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void createProduct_WithoutCsrf_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productCreateRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getProducts_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(productService.getProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(get("/api/products"))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(authorities = "ROLE_ADMIN")
+    void createProduct_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(productService.createProduct(any(ProductCreateRequest.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(post("/api/products")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(productCreateRequest)))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    void getProducts_EmptyResult() throws Exception {
+        // Given
+        ProductListResponse emptyResponse = ProductListResponse.builder()
+                .products(Arrays.asList())
+                .totalCount(0L)
+                .totalPages(0)
+                .currentPage(0)
+                .build();
+
+        when(productService.getProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenReturn(emptyResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.products").isEmpty())
+                .andExpect(jsonPath("$.totalCount").value(0));
+    }
+
+    @Test
+    void searchProducts_WithComplexFilters_Success() throws Exception {
+        // Given
+        when(productService.searchProducts(any(ProductSearchRequest.class), any(Pageable.class)))
+                .thenReturn(productListResponse);
+
+        // When & Then
+        mockMvc.perform(get("/api/products/search")
+                        .param("keyword", "프리미엄")
+                        .param("categoryId", "1")
+                        .param("minPrice", "20000")
+                        .param("maxPrice", "40000")
+                        .param("brand", "펫밀리")
+                        .param("sortBy", "price")
+                        .param("sortDirection", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.products").isArray())
+                .andExpect(jsonPath("$.totalCount").value(1));
+    }
+}
