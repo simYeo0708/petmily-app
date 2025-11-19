@@ -20,6 +20,14 @@ import WalkerMatchingScreen from "./screen/WalkerMatchingScreen";
 import WalkerDetailScreen from "./screen/WalkerDetailScreen";
 import BookingConfirmScreen from "./screen/BookingConfirmScreen";
 import PetInfoInputScreen from "./screen/PetInfoInputScreen";
+import AIChatScreen from "./screen/AIChatScreen";
+import ProfileEditScreen from "./screen/ProfileEditScreen";
+import PasswordChangeScreen from "./screen/PasswordChangeScreen";
+import PrivacyPolicyScreen from "./screen/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "./screen/TermsOfServiceScreen";
+import CustomerServiceScreen from "./screen/CustomerServiceScreen";
+import FAQScreen from "./screen/FAQScreen";
+import AppInfoScreen from "./screen/AppInfoScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
@@ -49,6 +57,14 @@ export type RootStackParamList = {
   WalkerDetail: { walker: any; bookingData: { timeSlot: string; address: string } };
   BookingConfirm: { walker: any; bookingData: { timeSlot: string; address: string } };
   PetInfoInput: undefined;
+  AIChat: undefined;
+  ProfileEdit: undefined;
+  PasswordChange: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
+  CustomerService: undefined;
+  FAQ: undefined;
+  AppInfo: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -80,7 +96,7 @@ export default function App() {
 
   return (
     <>
-    <StatusBar barStyle="dark-content" backgroundColor={"#FFFFFF"}/>
+    <StatusBar barStyle="dark-content" backgroundColor={"#000000"}/>
       {/* 앱 메인 콘텐츠 */}
       <View style={{ flex: 1 }}>
         <NavigationContainer>
@@ -116,6 +132,14 @@ export default function App() {
                 <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
                 <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
                 <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
+                <Stack.Screen name="AIChat" component={AIChatScreen} />
+                <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+                <Stack.Screen name="PasswordChange" component={PasswordChangeScreen} />
+                <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+                <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+                <Stack.Screen name="CustomerService" component={CustomerServiceScreen} />
+                <Stack.Screen name="FAQ" component={FAQScreen} />
+                <Stack.Screen name="AppInfo" component={AppInfoScreen} />
                 </Stack.Navigator>
                 </CartProvider>
               </PetProvider>

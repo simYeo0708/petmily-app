@@ -5,7 +5,6 @@ export const myPetScreenStyles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#FFF5F0',
-    marginTop:-20,
   },
   content: {
     flex: 1,
@@ -20,7 +19,7 @@ export const myPetScreenStyles = StyleSheet.create({
   
   // 헤더 스타일
   header: {
-    backgroundColor: '#C59172',
+    // backgroundColor: '#C59172',
     paddingVertical: 15,
     paddingHorizontal: 20,
     alignItems: 'center',
