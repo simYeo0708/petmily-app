@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, USE_MOCK_DATA } from '../config/api';
 
 type AuthTokenResponse = {
   accessToken?: string;
@@ -15,9 +15,45 @@ type AuthTokenResponse = {
  */
 
 /**
+ * Mock 데이터 모드 확인
+ */
+export const isMockMode = (): boolean => {
+  return USE_MOCK_DATA;
+};
+
+/**
+ * Mock 모드용 가짜 토큰 생성
+ */
+export const setupMockAuth = async (): Promise<boolean> => {
+  try {
+    const mockToken = 'mock-jwt-token-for-development';
+    const mockUserId = '999';
+    const mockUsername = 'Mock User';
+    const mockEmail = 'mock@petmily.com';
+
+    await AsyncStorage.setItem('authToken', mockToken);
+    await AsyncStorage.setItem('userId', mockUserId);
+    await AsyncStorage.setItem('username', mockUsername);
+    await AsyncStorage.setItem('email', mockEmail);
+
+    console.log('✅ Mock 인증 설정 완료');
+    return true;
+  } catch (error) {
+    console.error('❌ Mock 인증 설정 실패:', error);
+    return false;
+  }
+};
+
+/**
  * 테스트용 JWT 토큰을 받아서 AsyncStorage에 저장
+ * Mock 모드일 경우 Mock 인증 사용
  */
 export const setupTestAuth = async (): Promise<boolean> => {
+  // Mock 모드일 경우 Mock 인증 사용
+  if (USE_MOCK_DATA) {
+    return setupMockAuth();
+  }
+
   try {
     
     // 1. 백엔드의 테스트 엔드포인트 호출
@@ -61,8 +97,15 @@ export const setupTestAuth = async (): Promise<boolean> => {
 
 /**
  * asdf 계정으로 직접 로그인하여 JWT 토큰 받기
+ * Mock 모드일 경우 Mock 인증 사용
  */
 export const loginAsAsdf = async (): Promise<boolean> => {
+  // Mock 모드일 경우 Mock 인증 사용
+  if (USE_MOCK_DATA) {
+    console.log('🎭 Mock 모드: asdf 계정으로 로그인');
+    return setupMockAuth();
+  }
+
   try {
     
     const response = await fetch(`${API_BASE_URL}/auth/login`, {

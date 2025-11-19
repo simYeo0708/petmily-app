@@ -8,6 +8,9 @@ import {
   Platform,
   ViewProps,
   processColor,
+  View,
+  Text,
+  StyleSheet,
 } from 'react-native';
 
 interface NativeKakaoMapViewProps extends ViewProps {
@@ -44,11 +47,9 @@ interface UpdateRouteOptions {
   lineWidth?: number;
 }
 
-// Expo Go에서는 커스텀 모듈을 사용할 수 없으므로 예외 처리만 추가
+// Expo Go에서는 커스텀 모듈을 사용할 수 없으므로 null 처리
 const nativeConfig = UIManager.getViewManagerConfig?.('KakaoMapView');
-if (!nativeConfig) {
-  throw new Error('KakaoMapView native module is not available. Run with npx expo run:ios (Dev Client).');
-}
+const isNativeModuleAvailable = !!nativeConfig;
 
 declare global {
   // eslint-disable-next-line no-var
@@ -57,13 +58,14 @@ declare global {
 
 let NativeKakaoMapView = global.__KakaoMapViewComponent;
 
-if (!NativeKakaoMapView) {
-  const viewConfig = UIManager.getViewManagerConfig?.('KakaoMapView');
-  if (!viewConfig) {
-    throw new Error('[KakaoMapView] Native module not found. Run `npx expo run:ios` to use the Dev Client.');
+if (!NativeKakaoMapView && isNativeModuleAvailable) {
+  try {
+    NativeKakaoMapView = requireNativeComponent<NativeKakaoMapViewProps>('KakaoMapView');
+    global.__KakaoMapViewComponent = NativeKakaoMapView;
+  } catch (e) {
+    // Native module not available
+    NativeKakaoMapView = null;
   }
-  NativeKakaoMapView = requireNativeComponent<NativeKakaoMapViewProps>('KakaoMapView');
-  global.__KakaoMapViewComponent = NativeKakaoMapView;
 }
 
 const KakaoMapView = forwardRef<KakaoMapViewHandle, KakaoMapViewProps>(
@@ -149,6 +151,21 @@ const KakaoMapView = forwardRef<KakaoMapViewHandle, KakaoMapViewProps>(
       },
     }));
 
+    // 네이티브 모듈이 없으면 폴백 UI 표시
+    if (!NativeKakaoMapView) {
+      return (
+        <View style={[styles.fallbackContainer, style]}>
+          <Text style={styles.fallbackText}>
+            🗺️ 지도를 표시하려면{'\n'}
+            Development Build가 필요합니다
+          </Text>
+          <Text style={styles.fallbackSubtext}>
+            npx expo run:ios 로 실행하세요
+          </Text>
+        </View>
+      );
+    }
+
     return (
       <NativeKakaoMapView
         ref={mapRef}
@@ -161,6 +178,28 @@ const KakaoMapView = forwardRef<KakaoMapViewHandle, KakaoMapViewProps>(
     );
   }
 );
+
+const styles = StyleSheet.create({
+  fallbackContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+  },
+  fallbackText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontWeight: '600',
+  },
+  fallbackSubtext: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
+});
 
 KakaoMapView.displayName = 'KakaoMapView';
 export default KakaoMapView;

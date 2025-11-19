@@ -591,7 +591,7 @@ const HomeScreen = () => {
             </View>
           )}
 
-      {/* 검색 결과 오버레이 */}
+      {/* 검색 결과 오버레이 (투명도 0) */}
       {showSearchResults && (
         <View style={styles.searchResultsOverlay}>
           <View style={styles.searchResultsContainer}>
@@ -606,10 +606,14 @@ const HomeScreen = () => {
                 }}
                 style={styles.closeSearchButton}
               >
-                <Text style={styles.closeSearchText}>✕</Text>
+                <Ionicons name="close" size={20} color="#666" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.searchResultsList}>
+            <ScrollView 
+              style={styles.searchResultsList}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+            >
               {isSearching ? (
                 <View style={styles.noSearchResults}>
                   <Text style={styles.noSearchResultsText}>검색 중입니다...</Text>
@@ -762,6 +766,15 @@ const HomeScreen = () => {
         </View>
       </SafeAreaView>
       
+      {/* AI 고객지원 플로팅 버튼 */}
+      <TouchableOpacity
+        style={styles.aiChatButton}
+        onPress={() => navigation.navigate('AIChat')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
+      </TouchableOpacity>
+      
       {/* 단계별 가이드 모달 */}
       <GuideStepModal
         isVisible={showStepModal}
@@ -785,58 +798,55 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
     zIndex: 1000,
   },
   searchResultsContainer: {
     position: 'absolute',
-    top: 100,
-    left: 20,
-    right: 20,
+    top: 60,
+    left: 0,
+    right: 0,
     backgroundColor: 'white',
-    borderRadius: 15,
-    maxHeight: 400,
+    maxHeight: 450,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     elevation: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
   searchResultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingBottom: 10,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   searchResultsTitle: {
-    fontSize: rf(16),
-    fontWeight: 'bold',
+    fontSize: rf(15),
+    fontWeight: '600',
     color: '#333',
   },
   closeSearchButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#f0f0f0',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f8f9fa',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeSearchText: {
-    fontSize: rf(16),
-    color: '#666',
-  },
   searchResultsList: {
-    maxHeight: 300,
+    maxHeight: 380,
   },
   searchResultItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#f8f8f8',
+    backgroundColor: '#fff',
   },
   searchResultIcon: {
     marginRight: 15,
@@ -845,17 +855,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchResultTitle: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 4,
   },
   searchResultDescription: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     color: '#666',
+    lineHeight: 18,
   },
   searchResultArrow: {
-    fontSize: rf(20),
+    fontSize: rf(18),
     color: '#ccc',
   },
   noSearchResults: {
@@ -866,6 +877,26 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: '#666',
     textAlign: 'center',
+  },
+  aiChatButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 90,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#C59172',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    zIndex: 999,
   },
 });
 

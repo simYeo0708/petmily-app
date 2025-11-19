@@ -6,7 +6,16 @@ import Constants from 'expo-constants';
  * IP 주소 업데이트 방법:
  * 1. 터미널에서: npm run update-ip
  * 2. 또는 개발 시작 시: npm run dev (IP 자동 감지 + Expo 실행)
+ * 
+ * Mock 모드:
+ * - EXPO_PUBLIC_USE_MOCK_DATA=true 설정 시 백엔드 없이 Mock 데이터 사용
  */
+
+// Mock 모드 설정
+export const USE_MOCK_DATA = 
+  process.env.EXPO_PUBLIC_USE_MOCK_DATA === 'true' || 
+  Constants.expoConfig?.extra?.useMockData === true ||
+  false;
 
 // .env.local에서 환경 변수 읽기
 const API_HOST = process.env.EXPO_PUBLIC_API_HOST || 
@@ -22,6 +31,7 @@ const API_PORT = process.env.EXPO_PUBLIC_API_PORT ||
  * 환경에 따라 자동으로 설정됩니다:
  * - 개발: .env 파일의 IP 주소 사용
  * - 프로덕션: 실제 서버 도메인 사용
+ * - Mock: USE_MOCK_DATA=true 시 API 호출 없이 Mock 데이터 반환
  */
 export const API_BASE_URL = `http://${API_HOST}:${API_PORT}/api`;
 
