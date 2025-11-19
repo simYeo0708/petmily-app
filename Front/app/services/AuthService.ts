@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, USE_MOCK_DATA } from '../config/api';
 
 interface LoginRequest {
   username: string;
@@ -30,6 +30,26 @@ interface User {
 
 const AuthService = {
   async login(username: string, password: string): Promise<AuthResponse> {
+    // Mock 모드일 경우 Mock 데이터 반환
+    if (USE_MOCK_DATA) {
+      console.log('🎭 Mock 모드: 로그인');
+      const mockData: AuthResponse = {
+        accessToken: 'mock-jwt-token-for-development',
+        refreshToken: 'mock-refresh-token',
+        userId: 999,
+        username: username || 'Mock User',
+        email: 'mock@petmily.com',
+      };
+      
+      // 토큰 저장
+      await AsyncStorage.setItem('authToken', mockData.accessToken);
+      await AsyncStorage.setItem('userId', mockData.userId.toString());
+      await AsyncStorage.setItem('username', mockData.username);
+      await AsyncStorage.setItem('refreshToken', mockData.refreshToken);
+      
+      return mockData;
+    }
+
     try {
       
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -65,6 +85,26 @@ const AuthService = {
    * 회원가입
    */
   async signup(signupData: SignupRequest): Promise<AuthResponse> {
+    // Mock 모드일 경우 Mock 데이터 반환
+    if (USE_MOCK_DATA) {
+      console.log('🎭 Mock 모드: 회원가입');
+      const mockData: AuthResponse = {
+        accessToken: 'mock-jwt-token-for-development',
+        refreshToken: 'mock-refresh-token',
+        userId: 999,
+        username: signupData.username,
+        email: signupData.email,
+      };
+      
+      // 토큰 저장
+      await AsyncStorage.setItem('authToken', mockData.accessToken);
+      await AsyncStorage.setItem('userId', mockData.userId.toString());
+      await AsyncStorage.setItem('username', mockData.username);
+      await AsyncStorage.setItem('refreshToken', mockData.refreshToken);
+      
+      return mockData;
+    }
+
     try {
       
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {

@@ -31,6 +31,7 @@ const API_PORT = process.env.EXPO_PUBLIC_API_PORT ||
  * 환경에 따라 자동으로 설정됩니다:
  * - 개발: .env 파일의 IP 주소 사용
  * - 프로덕션: 실제 서버 도메인 사용
+ * - Mock: USE_MOCK_DATA=true 시 API 호출 없이 Mock 데이터 반환
  */
 export const API_BASE_URL = `http://${API_HOST}:${API_PORT}/api`;
 

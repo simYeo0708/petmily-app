@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as TaskManager from 'expo-task-manager';
 import { IconImage } from '../components/IconImage';
 import MapService, { MapConfigResponse, LocationResponse, WalkSessionResponse, RouteResponse } from '../services/MapService';
-import KakaoMapView, { KakaoMapViewHandle } from '../components/KakaoMapView';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { KAKAO_MAP_API_KEY } from '../config/api';
 
 const { width, height } = Dimensions.get('window');
@@ -115,7 +115,8 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [activeLocations, setActiveLocations] = useState<LocationResponse[]>([]);
   
   // 네이티브 지도 참조
-  const kakaoMapRef = useRef<KakaoMapViewHandle>(null);
+  const mapViewRef = useRef<MapView>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<Array<{latitude: number, longitude: number}>>([]);
   
   // 산책 세션 관리
   const walkSessionIdRef = useRef<number | null>(null);
@@ -246,11 +247,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     if (coordinates.length < 2) {
       return;
     }
-    kakaoMapRef.current?.updateRoute('liveRoute', coordinates, {
-      color: '#4A90E2',
-      strokeColor: '#FFFFFF',
-      lineWidth: 12,
-    });
+    setRouteCoordinates(coordinates);
   }, [buildRouteCoordinates]);
 
   const showFullRouteOnMap = useCallback(() => {
@@ -258,12 +255,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     if (coordinates.length < 2) {
       return;
     }
-    kakaoMapRef.current?.clearRoute('liveRoute');
-    kakaoMapRef.current?.updateRoute('summaryRoute', coordinates, {
-      color: '#5B8FF9',
-      strokeColor: '#FFFFFF',
-      lineWidth: 14,
-    });
+    setRouteCoordinates(coordinates);
   }, [buildRouteCoordinates]);
 
   const handleLocationEvent = useCallback(
@@ -300,10 +292,15 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       }
 
       // 카메라 추적 위치 업데이트
-      kakaoMapRef.current?.updateTrackingLocation(
-        newLocation.latitude,
-        newLocation.longitude
-      );
+      if (mapViewRef.current && isTrackingRef.current) {
+        mapViewRef.current.animateCamera({
+          center: {
+            latitude: newLocation.latitude,
+            longitude: newLocation.longitude,
+          },
+          zoom: 17,
+        }, { duration: 1000 });
+      }
 
       const now = Date.now();
       if (now - lastBackendSyncRef.current >= BACKEND_UPDATE_INTERVAL) {
@@ -351,16 +348,17 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         lastLocationRef.current = null;
       }
 
-      kakaoMapRef.current?.clearRoute('summaryRoute');
-      kakaoMapRef.current?.clearRoute('liveRoute');
+      // 경로 초기화
+      setRouteCoordinates([]);
 
       // 카메라 추적 시작
-      kakaoMapRef.current?.startCameraTracking();
-      if (currentLocation) {
-        kakaoMapRef.current?.updateTrackingLocation(
-          currentLocation.latitude,
-          currentLocation.longitude
-        );
+      if (mapViewRef.current && currentLocation) {
+        mapViewRef.current.animateToRegion({
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }, 1000);
       }
 
       // 산책 세션 생성
@@ -404,9 +402,6 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
       }
 
-      // 카메라 추적 중지
-      kakaoMapRef.current?.stopCameraTracking();
-
       // 산책 세션 종료
       if (walkSessionIdRef.current && currentLocation) {
         try {
@@ -431,11 +426,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                 latitude: point.latitude,
                 longitude: point.longitude,
               }));
-              kakaoMapRef.current?.updateRoute('summaryRoute', coordinates, {
-                color: '#5B8FF9',
-                strokeColor: '#FFFFFF',
-                lineWidth: 14,
-              });
+              setRouteCoordinates(coordinates);
             }
           } catch (error) {
             // 경로 조회 실패 시 로컬 데이터로 표시
@@ -518,9 +509,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 마커 추가 함수
+  // 마커 추가 함수 (현재는 사용하지 않음)
   const addMarkerToMap = (lat: number, lng: number, title: string) => {
-    kakaoMapRef.current?.addMarker(lat, lng, title);
+    // react-native-maps에서는 Marker 컴포넌트로 직접 렌더링
   };
 
   const timeSlots = [
@@ -605,14 +596,40 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       
       {/* 지도 영역 */}
       <View style={styles.mapContainer}>
-        <KakaoMapView
-          ref={kakaoMapRef}
-          apiKey={KAKAO_MAP_API_KEY}
-          latitude={mapLatitude}
-          longitude={mapLongitude}
-          zoomLevel={mapZoomLevel}
+        <MapView
+          ref={mapViewRef}
+          provider={PROVIDER_GOOGLE}
           style={styles.map}
-        />
+          initialRegion={{
+            latitude: mapLatitude,
+            longitude: mapLongitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
+          followsUserLocation={isTracking}
+        >
+          {/* 현재 위치 마커 */}
+          {currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
+              }}
+              title="현재 위치"
+            />
+          )}
+          
+          {/* 산책 경로 */}
+          {routeCoordinates.length > 1 && (
+            <Polyline
+              coordinates={routeCoordinates}
+              strokeColor="#4A90E2"
+              strokeWidth={4}
+            />
+          )}
+        </MapView>
         
         {/* 상단 산책 정보 모달 */}
         {showTopModal && currentWalking && (
