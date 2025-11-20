@@ -16,3 +16,7 @@ wrong-main-front/
 
 # node_modules
 node_modules/
+
+# Markdown 문서 파일 (개발 가이드 등)
+*.md
+!README.md
