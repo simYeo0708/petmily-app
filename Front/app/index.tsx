@@ -15,6 +15,7 @@ import OrderCompleteScreen from "./screen/OrderCompleteScreen";
 import SplashScreen from "./screen/SplashScreen";
 import WalkingMapScreen from "./screen/WalkingMapScreen";
 import WalkingMapScreenEnhanced from "./screen/WalkingMapScreenEnhanced";
+import WalkingSimulationScreen from "./screen/WalkingSimulationScreen";
 import WalkingRequestScreen from "./screen/WalkingRequestScreen";
 import WalkerMatchingScreen from "./screen/WalkerMatchingScreen";
 import WalkerDetailScreen from "./screen/WalkerDetailScreen";
@@ -33,7 +34,6 @@ import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
 import { CartProvider } from "./contexts/CartContext";
 import { Product } from "./constants/ProductData";
-import DevTools from "./utils/DevTools";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -52,6 +52,9 @@ export type RootStackParamList = {
     petName?: string;
     petImageUrl?: string;
   } | undefined;
+  WalkingSimulation: {
+    route: import('./data/walkingRoutes').WalkingRoute;
+  };
   WalkingRequest: undefined;
   WalkerMatching: { bookingData: { timeSlot: string; address: string } };
   WalkerDetail: { walker: any; bookingData: { timeSlot: string; address: string } };
@@ -127,6 +130,7 @@ export default function App() {
                 <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
                 <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
                 <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
+                <Stack.Screen name="WalkingSimulation" component={WalkingSimulationScreen} />
                 <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
                 <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
                 <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />

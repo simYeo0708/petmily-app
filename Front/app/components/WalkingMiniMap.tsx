@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LocationCoords } from '../hooks/useLocationTracking';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { KAKAO_MAP_API_KEY } from '../config/api';
 
 interface WalkingMiniMapProps {
@@ -47,7 +47,7 @@ export const WalkingMiniMap: React.FC<WalkingMiniMapProps> = ({
     <View style={[styles.container, style]}>
       <MapView
         ref={mapViewRef}
-        provider={PROVIDER_GOOGLE}
+        provider={PROVIDER_DEFAULT}
         style={styles.map}
         initialRegion={{
           latitude: currentLocation?.latitude || 37.5665,

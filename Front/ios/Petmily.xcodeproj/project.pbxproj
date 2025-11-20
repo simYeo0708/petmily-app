@@ -9,11 +9,11 @@
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		32BC97EB2EC74AFB00DD8390 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		32BC97EC2EC74AFB00DD8390 /* Petmily/KakaoMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DB2EBB31BF00DD8390 /* Petmily/KakaoMapView.swift */; };
-		32BC97ED2EC74AFB00DD8390 /* Petmily/KakaoMapViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DC2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.m */; };
-		32BC97EE2EC74AFB00DD8390 /* Petmily/KakaoMapViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DD2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.swift */; };
+		32BC97EC2EC74AFB00DD8390 /* KakaoMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DB2EBB31BF00DD8390 /* KakaoMapView.swift */; };
+		32BC97ED2EC74AFB00DD8390 /* KakaoMapViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DC2EBB31BF00DD8390 /* KakaoMapViewManager.m */; };
+		32BC97EE2EC74AFB00DD8390 /* KakaoMapViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97DD2EBB31BF00DD8390 /* KakaoMapViewManager.swift */; };
 		32BC97EF2EC74AFB00DD8390 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E75D709A9598A4E62979C8E /* ExpoModulesProvider.swift */; };
-		32BC97F92EC768F800DD8390 /* Petmily/KakaoMapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97F82EC768F800DD8390 /* Petmily/KakaoMapTracker.swift */; };
+		32BC97F92EC768F800DD8390 /* KakaoMapTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BC97F82EC768F800DD8390 /* KakaoMapTracker.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		4C343DD1D14EA6084C60375F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4F0D5CC48B47A8FF184BC1F0 /* PrivacyInfo.xcprivacy */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
@@ -24,10 +24,10 @@
 		13B07F961A680F5B00A75B9A /* Petmily.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Petmily.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Petmily/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Petmily/Info.plist; sourceTree = "<group>"; };
-		32BC97DB2EBB31BF00DD8390 /* Petmily/KakaoMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapView.swift; sourceTree = "<group>"; };
-		32BC97DC2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Petmily/KakaoMapViewManager.m; sourceTree = "<group>"; };
-		32BC97DD2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapViewManager.swift; sourceTree = "<group>"; };
-		32BC97F82EC768F800DD8390 /* Petmily/KakaoMapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapTracker.swift; sourceTree = "<group>"; };
+		32BC97DB2EBB31BF00DD8390 /* KakaoMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapView.swift; sourceTree = "<group>"; };
+		32BC97DC2EBB31BF00DD8390 /* KakaoMapViewManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Petmily/KakaoMapViewManager.m; sourceTree = "<group>"; };
+		32BC97DD2EBB31BF00DD8390 /* KakaoMapViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapViewManager.swift; sourceTree = "<group>"; };
+		32BC97F82EC768F800DD8390 /* KakaoMapTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Petmily/KakaoMapTracker.swift; sourceTree = "<group>"; };
 		4F0D5CC48B47A8FF184BC1F0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Petmily/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		5D83CB45B99A6F73464570BE /* Pods-Petmily.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Petmily.release.xcconfig"; path = "Target Support Files/Pods-Petmily/Pods-Petmily.release.xcconfig"; sourceTree = "<group>"; };
 		5E75D709A9598A4E62979C8E /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Petmily/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
@@ -57,10 +57,10 @@
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* Petmily-Bridging-Header.h */,
-				32BC97DB2EBB31BF00DD8390 /* Petmily/KakaoMapView.swift */,
-				32BC97DC2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.m */,
-				32BC97DD2EBB31BF00DD8390 /* Petmily/KakaoMapViewManager.swift */,
-				32BC97F82EC768F800DD8390 /* Petmily/KakaoMapTracker.swift */,
+				32BC97DB2EBB31BF00DD8390 /* KakaoMapView.swift */,
+				32BC97DC2EBB31BF00DD8390 /* KakaoMapViewManager.m */,
+				32BC97DD2EBB31BF00DD8390 /* KakaoMapViewManager.swift */,
+				32BC97F82EC768F800DD8390 /* KakaoMapTracker.swift */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -286,6 +286,7 @@
 				"${PODS_ROOT}/Target Support Files/Pods-Petmily/Pods-Petmily-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXTaskManager/ExpoTaskManager_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
 				"${PODS_ROOT}/KakaoMapsSDK/KakaoMapsSDKBundle.bundle",
@@ -299,6 +300,7 @@
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoTaskManager_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/KakaoMapsSDKBundle.bundle",
@@ -345,10 +347,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				32BC97EB2EC74AFB00DD8390 /* AppDelegate.swift in Sources */,
-				32BC97F92EC768F800DD8390 /* Petmily/KakaoMapTracker.swift in Sources */,
-				32BC97EC2EC74AFB00DD8390 /* Petmily/KakaoMapView.swift in Sources */,
-				32BC97ED2EC74AFB00DD8390 /* Petmily/KakaoMapViewManager.m in Sources */,
-				32BC97EE2EC74AFB00DD8390 /* Petmily/KakaoMapViewManager.swift in Sources */,
+				32BC97F92EC768F800DD8390 /* KakaoMapTracker.swift in Sources */,
+				32BC97EC2EC74AFB00DD8390 /* KakaoMapView.swift in Sources */,
+				32BC97ED2EC74AFB00DD8390 /* KakaoMapViewManager.m in Sources */,
+				32BC97EE2EC74AFB00DD8390 /* KakaoMapViewManager.swift in Sources */,
 				32BC97EF2EC74AFB00DD8390 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
