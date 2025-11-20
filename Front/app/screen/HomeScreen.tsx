@@ -64,8 +64,15 @@ const MODE_ICON_SOURCE_MAP: Record<string, any> = {
   "@walker.png": require("../../assets/images/walker.png"),
 };
 
-const resolveModeIconSource = (icon: string) =>
-  icon.startsWith("@") ? MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"] : null;
+const resolveModeIconSource = (icon: string) => {
+  if (!icon.startsWith("@")) return null;
+  const source = MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"];
+  if (!source) {
+    console.warn(`[HomeScreen] 아이콘 소스를 찾을 수 없습니다: ${icon}, 기본값 사용`);
+    return MODE_ICON_SOURCE_MAP["@shop.png"];
+  }
+  return source;
+};
 
 const SHOP_CATEGORY_MAP: Record<string, string> = {
   '사료': '강아지 사료',
@@ -522,11 +529,29 @@ const HomeScreen = () => {
                   onPress={() => setServiceMode(mode)}>
                   <View style={modeStyles.modeIconContainer}>
                     {SERVICE_MODE_CONFIG[mode].icon.startsWith("@") ? (
-                      <Image
-                        source={resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon)}
-                        style={modeStyles.modeIconImage}
-                        resizeMode="contain"
-                      />
+                      (() => {
+                        const iconSource = resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon);
+                        if (!iconSource) {
+                          console.warn(`[HomeScreen] 아이콘 소스를 찾을 수 없습니다 - mode: ${mode}, icon: ${SERVICE_MODE_CONFIG[mode].icon}`);
+                          return (
+                            <Ionicons 
+                              name={mode === "PM" ? "storefront" : "walk"} 
+                              size={36} 
+                              color={serviceMode === mode ? "#FFF" : SERVICE_MODE_CONFIG[mode].color}
+                            />
+                          );
+                        }
+                        return (
+                          <Image
+                            source={iconSource}
+                            style={modeStyles.modeIconImage}
+                            resizeMode="contain"
+                            onError={(error) => {
+                              console.error(`[HomeScreen] 아이콘 로드 실패 - mode: ${mode}, icon: ${SERVICE_MODE_CONFIG[mode].icon}`, error);
+                            }}
+                          />
+                        );
+                      })()
                     ) : (
                       <Text style={modeStyles.modeIcon}>
                         {SERVICE_MODE_CONFIG[mode].icon}

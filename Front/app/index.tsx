@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { View, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
