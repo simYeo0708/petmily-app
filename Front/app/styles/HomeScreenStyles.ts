@@ -20,7 +20,7 @@ export const homeScreenStyles = StyleSheet.create({
   fullWidthBanner: {
     width: "100%",
     paddingHorizontal: 0,
-    marginBottom: 24,
+    marginBottom: 0,
   },
   section: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",

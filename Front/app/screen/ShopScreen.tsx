@@ -29,7 +29,7 @@ type CategoryType = '전체' | '강아지 사료' | '강아지 간식' | '고양
 const ShopScreen = () => {
   const navigation = useNavigation<ShopScreenNavigationProp>();
   const route = useRoute();
-  const { category } = route.params as RouteParams;
+  const { category } = (route.params as RouteParams) || { category: '전체' };
 
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -260,11 +260,9 @@ const ShopScreen = () => {
   );
 
   return (
-    <SafeAreaView
-      style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}
-      edges={['top', 'left', 'right']}>
-      <StatusBar backgroundColor="#C59172" barStyle="light-content" translucent={false} />
-      <View
+    <>
+      <StatusBar backgroundColor="#000000" barStyle="dark-content" translucent={false} />
+      {/* <View
         style={[
           headerStyles.header,
           { backgroundColor: "rgba(255, 255, 255, 0.95)" },
@@ -283,10 +281,11 @@ const ShopScreen = () => {
           <Text style={headerStyles.logoText}>Shop</Text>
         </View>
         <View style={{ width: 60 }} />
-      </View>
-
-      {/* 검색바 */}
-      <View
+      </View> */}
+      <SafeAreaView 
+        style={[homeScreenStyles.root]}
+        edges={['top', 'left', 'right', 'bottom']}>
+          <View
         style={{ padding: 16, backgroundColor: "rgba(255, 255, 255, 0.95)" }}>
         <View style={{
           flexDirection: "row",
@@ -433,7 +432,7 @@ const ShopScreen = () => {
           renderItem={renderProductItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           style={{ zIndex: 1 }}
           ListEmptyComponent={
             <View
@@ -460,8 +459,10 @@ const ShopScreen = () => {
           }
         />
       </TouchableOpacity>
-
-    </SafeAreaView>
+      </SafeAreaView>
+      {/* 검색바 */}
+      
+    </>
   );
 };
 
