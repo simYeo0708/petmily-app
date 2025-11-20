@@ -250,7 +250,6 @@ const MyPetScreen = () => {
     deleteImage();
     triggerDeleteAnimation();
   };
-  
 
   // 폭죽 컴포넌트
   const Confetti = () => {
