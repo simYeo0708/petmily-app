@@ -1,5 +1,5 @@
-import React from "react";
-import { Text, TouchableOpacity, View, StyleSheet, Image } from "react-native";
+import React, { useState, useRef } from "react";
+import { Text, TouchableOpacity, View, StyleSheet, Image, ScrollView, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ModeConfig } from "../constants/ServiceModes";
@@ -10,6 +10,8 @@ import { RootStackParamList } from "../index";
 import { ORDER_DATA, getOrderStatusText, getOrderStatusColor } from "../constants/OrderData";
 import { rf } from "../utils/responsive";
 import { PRODUCT_DATA, Product } from "../constants/ProductData";
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PetMallContentProps {
   currentMode: ModeConfig;
@@ -23,6 +25,8 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
   onCategoryPress,
 }) => {
   const navigation = useNavigation<NavigationProp>();
+  const [currentPage, setCurrentPage] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   // 진행중인 주문 (배송중, 준비중, 결제완료)
   const ongoingOrders = ORDER_DATA.filter((order) => 
@@ -31,10 +35,22 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
     order.status === "payment_complete"
   );
 
-  // 추천순(favoriteCount) 상위 5개 상품 가져오기
+  // 인기 상품 TOP 5 (favoriteCount 기준)
   const topProducts = [...PRODUCT_DATA]
     .sort((a, b) => b.favoriteCount - a.favoriteCount)
     .slice(0, 5);
+
+  // 추천 상품 TOP 5 (rating 기준)
+  const recommendedProducts = [...PRODUCT_DATA]
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 5);
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const page = Math.round(scrollPosition / SCREEN_WIDTH);
+    setCurrentPage(page);
+  };
 
   const formatPrice = (price: number) => {
     return `${price.toLocaleString()}원`;
@@ -54,6 +70,83 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
 
     return stars;
   };
+
+  // 상품 리스트 렌더링 함수
+  const renderProductList = (products: Product[], title: string) => (
+    <View style={styles.productSection}>
+      <View style={styles.productSectionHeader}>
+        <Text style={homeScreenStyles.sectionTitle}>{title}</Text>
+        <TouchableOpacity
+          style={styles.viewAllButton}
+          onPress={() => onCategoryPress?.("전체")}
+          activeOpacity={0.7}>
+          <Text style={styles.viewAllButtonText}>전체 보기</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {products.map((product, index) => (
+        <TouchableOpacity
+          key={product.id}
+          style={styles.productCard}
+          onPress={() => navigation.navigate("ProductDetail", { product })}
+          activeOpacity={0.7}>
+          <View style={styles.rankBadge}>
+            <Text style={styles.rankText}>{index + 1}</Text>
+          </View>
+          <View style={styles.productImage}>
+            {product.image.startsWith('@') ? (
+              <Image
+                source={
+                  product.image === '@dog_food.png' ? require('../../assets/images/dog_food.png') :
+                  product.image === '@dog_snack.png' ? require('../../assets/images/dog_snack.png') :
+                  product.image === '@cat_food.png' ? require('../../assets/images/cat_food.png') :
+                  product.image === '@cat_snack.png' ? require('../../assets/images/cat_snack.png') :
+                  product.image === '@toy.png' ? require('../../assets/images/toy.png') :
+                  product.image === '@toilet.png' ? require('../../assets/images/toilet.png') :
+                  product.image === '@grooming.png' ? require('../../assets/images/grooming.png') :
+                  product.image === '@clothing.png' ? require('../../assets/images/clothing.png') :
+                  product.image === '@outdoor.png' ? require('../../assets/images/outdoor.png') :
+                  product.image === '@house.png' ? require('../../assets/images/house.png') :
+                  product.image === '@shop.png' ? require('../../assets/images/shop.png') :
+                  product.image === '@walker.png' ? require('../../assets/images/walker.png') :
+                  require('../../assets/images/dog_food.png')
+                }
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
+              />
+            ) : (
+              <Text style={{ fontSize: 26 }}>{product.image}</Text>
+            )}
+          </View>
+          <View style={styles.productInfo}>
+            <Text style={styles.productBrand}>{product.brand}</Text>
+            <Text style={styles.productName} numberOfLines={2}>
+              {product.name}
+            </Text>
+            <View style={styles.ratingContainer}>
+              <Text style={styles.stars}>{renderStars(product.rating)}</Text>
+              <Text style={styles.ratingText}>
+                {product.rating} ({product.reviewCount.toLocaleString()})
+              </Text>
+            </View>
+            <View style={styles.priceContainer}>
+              {product.originalPrice && (
+                <Text style={styles.originalPrice}>
+                  {formatPrice(product.originalPrice)}
+                </Text>
+              )}
+              <Text style={styles.price}>{formatPrice(product.price)}</Text>
+              {product.discount && (
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountText}>{product.discount}%</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   return (
     <>
@@ -90,98 +183,42 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
         <CategoryList onCategoryPress={onCategoryPress} />
       </View>
 
+      {/* 인기 상품 & 추천 상품 슬라이더 */}
       <View style={homeScreenStyles.section}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 15,
-          }}>
-          <Text style={homeScreenStyles.sectionTitle}>인기 상품 TOP 5</Text>
-          <TouchableOpacity
-            style={{
-              backgroundColor: "rgba(197, 145, 114, 0.1)",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "rgba(197, 145, 114, 0.3)",
-            }}
-            onPress={() => onCategoryPress?.("전체")}
-            activeOpacity={0.7}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: "#C59172",
-              }}>
-              전체 보기
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.sliderWrapper}>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            decelerationRate="fast"
+            contentContainerStyle={styles.sliderContent}>
+            {/* 페이지 1: 인기 상품 TOP 5 */}
+            <View style={styles.page}>
+              {renderProductList(topProducts, "인기 상품 TOP 5")}
+            </View>
+            
+            {/* 페이지 2: 추천 상품 TOP 5 */}
+            <View style={styles.page}>
+              {renderProductList(recommendedProducts, "추천 상품 TOP 5")}
+            </View>
+          </ScrollView>
+          
+          {/* 페이지 인디케이터 */}
+          <View style={styles.pagination}>
+            {[0, 1].map((index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  currentPage === index && styles.paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
         </View>
-        
-        {topProducts.map((product, index) => (
-          <TouchableOpacity
-            key={product.id}
-            style={styles.productCard}
-            onPress={() => navigation.navigate("ProductDetail", { product })}
-            activeOpacity={0.7}>
-            <View style={styles.rankBadge}>
-              <Text style={styles.rankText}>{index + 1}</Text>
-            </View>
-            <View style={styles.productImage}>
-              {product.image.startsWith('@') ? (
-                <Image
-                  source={
-                    product.image === '@dog_food.png' ? require('../../assets/images/dog_food.png') :
-                    product.image === '@dog_snack.png' ? require('../../assets/images/dog_snack.png') :
-                    product.image === '@cat_food.png' ? require('../../assets/images/cat_food.png') :
-                    product.image === '@cat_snack.png' ? require('../../assets/images/cat_snack.png') :
-                    product.image === '@toy.png' ? require('../../assets/images/toy.png') :
-                    product.image === '@toilet.png' ? require('../../assets/images/toilet.png') :
-                    product.image === '@grooming.png' ? require('../../assets/images/grooming.png') :
-                    product.image === '@clothing.png' ? require('../../assets/images/clothing.png') :
-                    product.image === '@outdoor.png' ? require('../../assets/images/outdoor.png') :
-                    product.image === '@house.png' ? require('../../assets/images/house.png') :
-                    product.image === '@shop.png' ? require('../../assets/images/shop.png') :
-                    product.image === '@walker.png' ? require('../../assets/images/walker.png') :
-                    require('../../assets/images/dog_food.png')
-                  }
-                  style={{ width: 40, height: 40 }}
-                  resizeMode="contain"
-                />
-              ) : (
-                <Text style={{ fontSize: 26 }}>{product.image}</Text>
-              )}
-            </View>
-            <View style={styles.productInfo}>
-              <Text style={styles.productBrand}>{product.brand}</Text>
-              <Text style={styles.productName} numberOfLines={2}>
-                {product.name}
-              </Text>
-              <View style={styles.ratingContainer}>
-                <Text style={styles.stars}>{renderStars(product.rating)}</Text>
-                <Text style={styles.ratingText}>
-                  {product.rating} ({product.reviewCount.toLocaleString()})
-                </Text>
-              </View>
-              <View style={styles.priceContainer}>
-                {product.originalPrice && (
-                  <Text style={styles.originalPrice}>
-                    {formatPrice(product.originalPrice)}
-                  </Text>
-                )}
-                <Text style={styles.price}>{formatPrice(product.price)}</Text>
-                {product.discount && (
-                  <View style={styles.discountBadge}>
-                    <Text style={styles.discountText}>{product.discount}%</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
       </View>
 
       <View style={homeScreenStyles.section}>
@@ -271,6 +308,62 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
 };
 
 const styles = StyleSheet.create({
+  sliderWrapper: {
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  sliderContent: {
+    paddingVertical: 16,
+  },
+  page: {
+    width: SCREEN_WIDTH - 40, // 좌우 마진 20씩 제외
+    paddingHorizontal: 0,
+  },
+  productSection: {
+    flex: 1,
+  },
+  productSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  viewAllButton: {
+    backgroundColor: "rgba(197, 145, 114, 0.1)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(197, 145, 114, 0.3)",
+  },
+  viewAllButtonText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#C59172",
+  },
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(197, 145, 114, 0.3)",
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    width: 24,
+    backgroundColor: "#C59172",
+  },
   productCard: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 10,

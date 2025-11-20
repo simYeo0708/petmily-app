@@ -279,7 +279,7 @@ const MyOrdersScreen = () => {
             if (selectedFilter === "all" && ongoingOrders.includes(order)) {
               return null;
             }
-            return renderOrderItem(order);
+            return <View key={order.id}>{renderOrderItem(order)}</View>;
           })
         ) : (
           <View style={styles.emptyContainer}>
