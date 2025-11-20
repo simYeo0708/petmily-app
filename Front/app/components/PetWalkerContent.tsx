@@ -191,7 +191,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
         <View style={homeScreenStyles.section}>
           <View style={styles.sectionTitleRow}>
             <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
-            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 워킹</Text>
+            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 산책</Text>
           </View>
           <View style={styles.currentWalkingCard}>
             <View style={styles.walkingParticipants}>
