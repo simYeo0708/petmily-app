@@ -26,7 +26,7 @@ public class SearchService {
 
     public SearchResponse searchAll(String query, List<String> filterTypes) {
         Map<String, List<SearchResultItem>> resultsByType = new HashMap<>();
-        Set<String> allSuggestions = new HashSet<>();
+        Set<String> allSuggestions = new LinkedHashSet<>();
         int totalCount = 0;
 
         Collection<SearchStrategy> strategiesToSearch = filterTypes != null && !filterTypes.isEmpty()
@@ -36,16 +36,15 @@ public class SearchService {
                 .collect(Collectors.toList())
                 : strategies.values();
 
-        for(SearchStrategy strategy : strategiesToSearch) {
+        for (SearchStrategy strategy : strategiesToSearch) {
             try {
                 List<SearchResultItem> results = strategy.search(query);
-                if(!results.isEmpty()) {
+                if (!results.isEmpty()) {
                     resultsByType.put(strategy.getSearchType(), results);
                     totalCount += results.size();
                 }
 
-                List<String> suggestions = strategy.autocomplete(query);
-                allSuggestions.addAll(suggestions);
+                allSuggestions.addAll(strategy.autocomplete(query));
             } catch (Exception e) {
                 log.error("Search failed for type: {}", strategy.getSearchType(), e);
             }
@@ -54,14 +53,14 @@ public class SearchService {
         return SearchResponse.builder()
                 .query(query)
                 .results(resultsByType)
-                .suggestions(new ArrayList<>(allSuggestions).stream().limit(10).collect(Collectors.toList()))
+                .suggestions(allSuggestions.stream().limit(10).collect(Collectors.toList()))
                 .totalCount(totalCount)
                 .build();
     }
 
     public List<SearchResultItem> searchByType(String type, String query) {
         SearchStrategy strategy = strategies.get(type);
-        if(strategy == null) {
+        if (strategy == null) {
             log.warn("Unknown search type: {}", type);
             return List.of();
         }
@@ -70,7 +69,7 @@ public class SearchService {
 
     public List<String> autocomplete(String type, String query) {
         SearchStrategy strategy = strategies.get(type);
-        if(strategy == null) {
+        if (strategy == null) {
             return List.of();
         }
         return strategy.autocomplete(query);
@@ -79,5 +78,6 @@ public class SearchService {
     public List<String> getAvailableTypes() {
         return new ArrayList<>(strategies.keySet());
     }
-
 }
+
+

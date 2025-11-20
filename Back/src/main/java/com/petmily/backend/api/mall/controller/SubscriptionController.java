@@ -35,7 +35,7 @@ public class SubscriptionController {
     public ResponseEntity<Page<SubscriptionResponse>> getMySubscriptions(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false)SubscriptionStatus status,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)Pageable pageable ){
+            @PageableDefault(size = 10, sort = "createTime", direction = Sort.Direction.DESC)Pageable pageable ){
         Long userId = SecurityUtils.getUserId(userDetails);
         Page<SubscriptionResponse> subscriptions = subscriptionService.getMySubscriptions(userId, status, pageable);
         return ResponseEntity.ok(subscriptions);

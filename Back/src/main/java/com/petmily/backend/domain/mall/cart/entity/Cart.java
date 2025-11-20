@@ -1,6 +1,6 @@
 package com.petmily.backend.domain.mall.cart.entity;
 
-import com.petmily.backend.domain.common.BaseTimeEntity;
+import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.mall.product.entity.Product;
 import com.petmily.backend.domain.user.entity.User;
 import jakarta.persistence.*;

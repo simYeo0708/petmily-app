@@ -7,12 +7,16 @@ import com.petmily.backend.api.search.service.MenuSearchService;
 import com.petmily.backend.api.search.service.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/search")
+@RequestMapping("/search")
 @RequiredArgsConstructor
 public class SearchController {
 
@@ -22,37 +26,36 @@ public class SearchController {
     @GetMapping
     public ResponseEntity<SearchResponse> searchAll(
             @RequestParam String query,
-            @RequestParam(required = false) List<String> types) {
-        SearchResponse response = searchService.searchAll(query, types);
-        return ResponseEntity.ok(response);
+            @RequestParam(required = false) List<String> types
+    ) {
+        return ResponseEntity.ok(searchService.searchAll(query, types));
     }
 
     @GetMapping("/{type}")
     public ResponseEntity<List<SearchResultItem>> searchByType(
             @PathVariable String type,
-            @RequestParam String query) {
-        List<SearchResultItem> results = searchService.searchByType(type, query);
-        return ResponseEntity.ok(results);
+            @RequestParam String query
+    ) {
+        return ResponseEntity.ok(searchService.searchByType(type, query));
     }
 
     @GetMapping("/{type}/autocomplete")
     public ResponseEntity<List<String>> autocomplete(
             @PathVariable String type,
-            @RequestParam String query) {
-        List<String> suggestions = searchService.autocomplete(type, query);
-        return ResponseEntity.ok(suggestions);
+            @RequestParam String query
+    ) {
+        return ResponseEntity.ok(searchService.autocomplete(type, query));
     }
 
     @GetMapping("/types")
     public ResponseEntity<List<String>> getAvailableTypes() {
-        List<String> types = searchService.getAvailableTypes();
-        return ResponseEntity.ok(types);
+        return ResponseEntity.ok(searchService.getAvailableTypes());
     }
 
     @GetMapping("/menu/category/{category}")
     public ResponseEntity<List<MenuItem>> getMenusByCategory(@PathVariable String category) {
-        List<MenuItem> menus = menuSearchService.getMenusByCategory(category);
-        return ResponseEntity.ok(menus);
+        return ResponseEntity.ok(menuSearchService.getMenusByCategory(category));
     }
-
 }
+
+

@@ -145,10 +145,10 @@ public class ReviewService {
 
         Page<Review> reviews = switch(sort) {
             case "helpful" -> reviewRepository.findByProductOrderByHelpfulCountDesc(product, pageable);
-            case "rating_high" -> reviewRepository.findByProductOrderByRatingDescCreatedAtDesc(product, pageable);
-            case "rating_low" -> reviewRepository.findByProductOrderByRatingAscCreatedAtDesc(product, pageable);
+            case "rating_high" -> reviewRepository.findByProductOrderByRatingDescCreateTimeDesc(product, pageable);
+            case "rating_low" -> reviewRepository.findByProductOrderByRatingAscCreateTimeDesc(product, pageable);
             case "photo" -> reviewRepository.findPhotoReviewsByProduct(product, pageable);
-            default -> reviewRepository.findByProductOrderByCreatedAtDesc(product, pageable);
+            default -> reviewRepository.findByProductOrderByCreateTimeDesc(product, pageable);
         };
 
         return reviews.map(review -> {

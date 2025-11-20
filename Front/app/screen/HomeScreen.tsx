@@ -5,13 +5,13 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import GuideStepModal from "../components/GuideStepModal";
@@ -40,6 +40,10 @@ import {
   SearchResult as SearchResultType,
   PetInfo as PetInfoType,
 } from "../types/HomeScreen";
+import { guideSteps } from "../data/guideData";
+import { useHomeSearch } from "../hooks/useHomeSearch";
+import { useServiceMode } from "../hooks/useServiceMode";
+import { useHomeGuide } from "../hooks/useHomeGuide";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -60,25 +64,62 @@ const MODE_ICON_SOURCE_MAP: Record<string, any> = {
   "@walker.png": require("../../assets/images/walker.png"),
 };
 
-const resolveModeIconSource = (icon: string) =>
-  icon.startsWith("@") ? MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"] : null;
+const resolveModeIconSource = (icon: string) => {
+  if (!icon.startsWith("@")) return null;
+  const source = MODE_ICON_SOURCE_MAP[icon] ?? MODE_ICON_SOURCE_MAP["@shop.png"];
+  if (!source) {
+    console.warn(`[HomeScreen] 아이콘 소스를 찾을 수 없습니다: ${icon}, 기본값 사용`);
+    return MODE_ICON_SOURCE_MAP["@shop.png"];
+  }
+  return source;
+};
+
+const SHOP_CATEGORY_MAP: Record<string, string> = {
+  '사료': '강아지 사료',
+  '간식': '강아지 간식',
+  '장난감': '장난감',
+  '용품': '외출 용품',
+  '패션': '의류',
+  '건강관리': '미용 용품',
+  '위생용품': '배변용품',
+  '기타': '전체',
+};
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { handleGuideNext: onGuideNext } = useGuide();
   const { setGuideActive, setGuideStep } = useGuideContext();
-  const { petInfo, refreshPetInfo } = usePet();  // PetContext 사용
-  const [serviceMode, setServiceMode] = useState<ServiceMode>("PW");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { petInfo, refreshPetInfo } = usePet();
+  
+  // 커스텀 훅 사용
+  const { serviceMode, setServiceMode, currentMode } = useServiceMode("PW");
+  const {
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    setSearchResults,
+    showSearchResults,
+    setShowSearchResults,
+    isSearching,
+    setIsSearching,
+  } = useHomeSearch(serviceMode);
+  const {
+    showServiceGuide,
+    showGuideOverlay,
+    showStepModal,
+    setShowStepModal,
+    currentGuideStep,
+    setCurrentGuideStep,
+    hasPetInfo,
+    isFirstTime,
+    petWalkerScale,
+    petMallScale,
+    handleCompleteServiceGuide,
+    getGuideFocusCallback,
+    forceStartGuide,
+  } = useHomeGuide();
+  
   const [showWalkerModal, setShowWalkerModal] = useState(true);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [showServiceGuide, setShowServiceGuide] = useState(false);
-  const [hasPetInfo, setHasPetInfo] = useState<boolean | null>(null);
-  const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
-  const [currentGuideStep, setCurrentGuideStep] = useState(0);
-  const [showGuideOverlay, setShowGuideOverlay] = useState(false);
-  const [showStepModal, setShowStepModal] = useState(false);
   
   // 화면 포커스될 때마다 펫 정보 갱신 (단, 너무 자주 호출되지 않도록 제한)
   const lastRefreshRef = useRef<number>(0);
@@ -87,18 +128,11 @@ const HomeScreen = () => {
       const now = Date.now();
       // 마지막 갱신으로부터 5초 이상 경과한 경우에만 갱신
       if (now - lastRefreshRef.current > 5000) {
-        console.log('🔄 HomeScreen focused - refreshing pet info');
         lastRefreshRef.current = now;
         refreshPetInfo();
-      } else {
-        console.log('⏭️ HomeScreen focused - skipping refresh (too soon)');
       }
     }, [refreshPetInfo])
   );
-
-  // 애니메이션 값 (Pet Walker, Pet Mall)
-  const petWalkerScale = useRef(new Animated.Value(1)).current;
-  const petMallScale = useRef(new Animated.Value(1)).current;
 
   // Pet Walker/Mall Scale 애니메이션 (통통 튀는 효과)
   useEffect(() => {
@@ -155,13 +189,7 @@ const HomeScreen = () => {
 
   // 가이드 상태 변화 로그
   React.useEffect(() => {
-    console.log("📊 [DEBUG] Guide states changed:");
-    console.log("  - showServiceGuide:", showServiceGuide);
-    console.log("  - showGuideOverlay:", showGuideOverlay);
-    console.log("  - showStepModal:", showStepModal);
-    console.log("  - currentGuideStep:", currentGuideStep);
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
+    console.log("[가이드] 상태 변화 - showServiceGuide:", showServiceGuide, "showGuideOverlay:", showGuideOverlay, "showStepModal:", showStepModal, "currentGuideStep:", currentGuideStep, "isFirstTime:", isFirstTime, "hasPetInfo:", hasPetInfo);
   }, [showServiceGuide, showGuideOverlay, showStepModal, currentGuideStep, isFirstTime, hasPetInfo]);
 
   const { helperStatus, becomeHelper } = useHelperStatus();
@@ -182,172 +210,25 @@ const HomeScreen = () => {
     navigation.navigate("Main", { initialTab: "MyPetTab" });
   };
 
-  const handleJoinHelper = async () => {
-    await becomeHelper();
-    handleNavigateToHelper();
-  };
-
-  const currentMode = SERVICE_MODE_CONFIG[serviceMode];
-
   const handleCategoryPress = (category: string) => {
     navigation.navigate("Shop", { category });
-  };
-
-  // AsyncStorage 초기화 함수 (디버깅용)
-  const clearGuideData = async () => {
-    try {
-      await AsyncStorage.removeItem("hasSeenServiceIntro");
-      await AsyncStorage.removeItem("petInfo");
-      console.log("🧹 [DEBUG] Cleared guide data from AsyncStorage");
-    } catch (error) {
-      console.error("❌ [ERROR] Failed to clear guide data:", error);
-    }
-  };
-
-  // 개발용: 가이드 강제 시작 함수
-  const forceStartGuide = () => {
-    console.log("🔧 [DEBUG] Force starting guide");
-    setShowServiceGuide(true);
-    setShowGuideOverlay(true);
-    setShowStepModal(true);
-    setCurrentGuideStep(0);
-  };
-
-  // 최초 실행 여부 확인 함수
-  const checkFirstTimeUser = useCallback(async () => {
-    try {
-      const hasSeenIntro = await AsyncStorage.getItem("hasSeenServiceIntro");
-      console.log("🔍 [DEBUG] hasSeenIntro from AsyncStorage:", hasSeenIntro);
-      const isFirstTimeUser = !hasSeenIntro;
-      console.log("🔍 [DEBUG] isFirstTimeUser:", isFirstTimeUser);
-      setIsFirstTime(isFirstTimeUser);
-      return isFirstTimeUser;
-    } catch (error) {
-      console.error("❌ [ERROR] Failed to check first time user:", error);
-      setIsFirstTime(true);
-      return true;
-    }
-  }, []);
-
-  // 반려동물 정보 확인 함수
-  const checkPetInfo = useCallback(async () => {
-    try {
-      const savedPetInfo = await AsyncStorage.getItem("petInfo");
-      console.log("🔍 [DEBUG] savedPetInfo from AsyncStorage:", savedPetInfo);
-      if (savedPetInfo) {
-        const petInfo: PetInfoType = JSON.parse(savedPetInfo);
-        console.log("🔍 [DEBUG] parsed petInfo:", petInfo);
-        // 필수 정보가 있는지 확인
-        const hasEssentialInfo = !!(petInfo.name && petInfo.breed);
-        console.log("🔍 [DEBUG] hasEssentialInfo:", hasEssentialInfo);
-        setHasPetInfo(hasEssentialInfo);
-        return hasEssentialInfo;
-      } else {
-        console.log("🔍 [DEBUG] No savedPetInfo found");
-        setHasPetInfo(false);
-        return false;
-      }
-    } catch (error) {
-      console.error("❌ [ERROR] Failed to check pet info:", error);
-      setHasPetInfo(false);
-      return false;
-    }
-  }, []);
-
-  // 서비스 가이드 표시 여부 결정
-  const checkAndShowServiceGuide = useCallback(async () => {
-    console.log("🚀 [DEBUG] checkAndShowServiceGuide called");
-    const isFirstTime = await checkFirstTimeUser();
-    const hasPetInfo = await checkPetInfo();
-    
-    console.log("🔍 [DEBUG] Final check results:");
-    console.log("  - isFirstTime:", isFirstTime);
-    console.log("  - hasPetInfo:", hasPetInfo);
-    console.log("  - Should show guide:", isFirstTime && !hasPetInfo);
-    
-    // 최초 실행이고 반려동물 정보가 없을 때만 가이드 표시
-    if (isFirstTime && !hasPetInfo) {
-      console.log("✅ [DEBUG] Starting guide in 1.5 seconds...");
-      
-      // 스크롤 코드 제거 - 현재 위치에서 가이드 시작
-      
-      setTimeout(() => {
-        console.log("🎯 [DEBUG] Setting guide states to true");
-        setShowServiceGuide(true);
-        setShowGuideOverlay(true);
-        setShowStepModal(true);
-        setCurrentGuideStep(0);
-        
-        // GuideContext 업데이트
-        setGuideActive(true);
-        setGuideStep(0);
-      }, 1500); // 화면 로딩 후 충분한 시간
-    } else {
-      console.log("❌ [DEBUG] Guide conditions not met - not showing guide");
-    }
-  }, [checkFirstTimeUser, checkPetInfo]);
+  }; 
 
   // 화면이 포커스될 때마다 체크 (하지만 서비스 가이드는 최초 1회만)
   useFocusEffect(
     useCallback(() => {
-      console.log("🔄 [DEBUG] useFocusEffect called, isFirstTime:", isFirstTime);
-      if (isFirstTime === null) {
-        console.log("🔄 [DEBUG] First time loading - checking service guide");
-        // 최초 로딩 시에만 서비스 가이드 체크
-        checkAndShowServiceGuide();
-      } else {
-        console.log("🔄 [DEBUG] Not first time - only checking pet info");
-        // 이후에는 반려동물 정보만 체크
-        checkPetInfo();
-      }
-    }, [isFirstTime, checkAndShowServiceGuide, checkPetInfo])
+      getGuideFocusCallback(setGuideActive, setGuideStep)();
+    }, [isFirstTime, getGuideFocusCallback, setGuideActive, setGuideStep])
   );
 
-  const handleCompleteServiceGuide = () => {
-    console.log("🏁 [DEBUG] Completing service guide");
-    setShowServiceGuide(false);
-    setShowGuideOverlay(false);
-    setShowStepModal(false);
-    setIsFirstTime(false);
-    
-    // GuideContext 업데이트
-    setGuideActive(false);
-    setGuideStep(0);
-  };
 
-  // 가이드 단계별 설명 데이터
-  const guideSteps: Array<GuideStepType & { iconName: IconName }> = [
-    {
-      id: "pet_walker_button",
-      title: "Pet Walker 서비스",
-      description: "신뢰할 수 있는 워커가 반려동물과 함께\n안전하고 즐거운 산책을 도와드려요!",
-      nextButtonText: "다음",
-      iconName: "walker",
-    },
-    {
-      id: "pet_mall_button",
-      title: "Pet Mall 서비스",
-      description: "반려동물에게 필요한 모든 용품을\n한 곳에서 편리하게 쇼핑하세요!",
-      nextButtonText: "다음",
-      iconName: "shop",
-    },
-    {
-      id: "walk_booking",
-      title: "반려동물 정보 입력",
-      description: "산책 예약을 위해 먼저 반려동물 정보를\n입력해주세요!",
-      nextButtonText: "정보 입력하기",
-      iconName: "paw",
-    },
-  ];
 
   const currentStepData = guideSteps[currentGuideStep];
 
   // 가이드 다음 단계로 이동
   const handleGuideNext = () => {
-    console.log("🎯 [DEBUG] handleGuideNext called, currentStep:", currentGuideStep);
     if (currentGuideStep < guideSteps.length - 1) {
       const nextStep = currentGuideStep + 1;
-      console.log("🎯 [DEBUG] Moving to next step:", nextStep);
       
       // 즉시 다음 단계로 이동 (모달 사라짐 없이)
       setCurrentGuideStep(nextStep);
@@ -361,7 +242,6 @@ const HomeScreen = () => {
                          walkRequestListRef;
         if (targetRef.current && scrollViewRef.current) {
           targetRef.current.measure((x, y, width, height, pageX, pageY) => {
-            console.log("🎯 [DEBUG] Element position:", { x, y, width, height, pageX, pageY });
             
             // 단계별 스크롤 오프셋 조정
             let scrollOffset = 0;
@@ -378,65 +258,36 @@ const HomeScreen = () => {
             }
             
             const scrollY = Math.max(0, pageY - scrollOffset);
-            console.log("🎯 [DEBUG] Scroll calculation:", { 
-              nextStep, 
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              pageY, 
-              scrollOffset, 
-              calculatedScrollY: scrollY,
-              finalScrollY: Math.max(0, pageY - scrollOffset)
-            });
-            
-            // 스크롤 실행 전 현재 위치 확인
-            console.log("🎯 [DEBUG] Before scroll - current scroll position check");
-            
-            // 모든 단계에서 계산된 scrollY 사용
-            console.log("🎯 [DEBUG] Using calculated scrollY:", { 
-              nextStep,
-              stepName: nextStep === 0 ? "Pet Walker" : nextStep === 1 ? "Pet Mall" : "Walk Booking",
-              scrollToY: scrollY
-            });
             
             // 스크롤 실행 전 ScrollView 상태 확인
-            console.log("🎯 [DEBUG] ScrollView ref exists:", !!scrollViewRef.current);
             
             // 계산된 scrollY로 스크롤
             if (scrollViewRef.current) {
               scrollViewRef.current.scrollTo({ x: 0, y: scrollY, animated: true });
-              console.log("🎯 [DEBUG] Scroll executed with calculated scrollY");
             } else {
-              console.log("🎯 [ERROR] ScrollView ref is null");
             }
             
             // 스크롤 실행 후 확인
             setTimeout(() => {
-              console.log("🎯 [DEBUG] After scroll - scroll should be at:", scrollY);
             }, 500);
-          });
-        } else {
-          console.log("🎯 [DEBUG] Scroll failed - missing refs:", {
-            targetRef: !!targetRef.current,
-            scrollViewRef: !!scrollViewRef.current
           });
         }
       }, 100);
     } else {
       // Step 2 (My Pet 탭 하이라이트) - 정보 입력 화면으로 이동
       if (currentGuideStep === 2) {
-        console.log("[DEBUG] Navigating to Pet Info Input Screen");
         setShowStepModal(false); // 가이드 모달 숨김
-        handleCompleteServiceGuide(); // 가이드 완료
+        handleCompleteServiceGuide(setGuideActive, setGuideStep); // 가이드 완료
         navigation.navigate('PetInfoInput'); // 정보 입력 화면으로 이동
       } else {
-        console.log("[DEBUG] Completing guide");
-        handleCompleteServiceGuide();
+        handleCompleteServiceGuide(setGuideActive, setGuideStep);
       }
     }
   };
 
   // 가이드 건너뛰기
   const handleGuideSkip = () => {
-    handleCompleteServiceGuide();
+    handleCompleteServiceGuide(setGuideActive, setGuideStep);
   };
 
   // 가이드 단계별 하이라이트 결정
@@ -452,87 +303,6 @@ const HomeScreen = () => {
   // 검색 기능
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    if (query.trim().length === 0) {
-      setShowSearchResults(false);
-      setSearchResults([]);
-      return;
-    }
-
-    // 검색 결과 생성 (실제로는 API 호출)
-    const results = generateSearchResults(query, serviceMode);
-    setSearchResults(results);
-    setShowSearchResults(true);
-  };
-
-  const generateSearchResults = (query: string, mode: ServiceMode): SearchResult[] => {
-    const lowerQuery = query.toLowerCase();
-    
-    if (mode === "PW") {
-      // Pet Walker 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'feature',
-          title: '산책 요청하기',
-          description: '워커와 매칭하여 산책 서비스를 요청하세요',
-          iconName: 'walker',
-          action: () => navigation.navigate('WalkingRequest'),
-        },
-        {
-          id: '2',
-          type: 'feature',
-          title: '산책 지도',
-          description: '실시간 위치 추적과 산책 경로를 확인하세요',
-          iconName: 'map',
-          action: () => navigation.navigate('WalkingMap'),
-        },
-        {
-          id: '3',
-          type: 'feature',
-          title: '워커 매칭',
-          description: '나에게 맞는 워커를 찾아보세요',
-          iconName: 'paw',
-          action: () => navigation.navigate('WalkerMatching', { 
-            bookingData: { timeSlot: '선택된 시간', address: '선택된 주소' } 
-          }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
-    } else {
-      // Pet Mall 서비스 검색 결과
-      return [
-        {
-          id: '1',
-          type: 'service',
-          title: '사료',
-          description: '건강한 사료를 찾아보세요',
-          iconName: 'food',
-          action: () => navigation.navigate('Shop', { category: '사료' }),
-        },
-        {
-          id: '2',
-          type: 'service',
-          title: '장난감',
-          description: '재미있는 장난감을 만나보세요',
-          iconName: 'toy',
-          action: () => navigation.navigate('Shop', { category: '장난감' }),
-        },
-        {
-          id: '3',
-          type: 'service',
-          title: '의류',
-          description: '귀여운 의류를 쇼핑하세요',
-          iconName: 'clothing',
-          action: () => navigation.navigate('Shop', { category: '의류' }),
-        },
-      ].filter(item => 
-        item.title.toLowerCase().includes(lowerQuery) || 
-        item.description.toLowerCase().includes(lowerQuery)
-      );
-    }
   };
 
   const handleSearchResultPress = (result: SearchResult) => {
@@ -543,10 +313,11 @@ const HomeScreen = () => {
 
   return (
     <>
+    <StatusBar barStyle="dark-content" backgroundColor={"#000000"}/>
       {/* 메인 콘텐츠 영역 */}
       <SafeAreaView
         style={[homeScreenStyles.root]}
-        edges={['left', 'right']}>
+        edges={['top', 'left', 'right']}>
         {/* ==================== 메인 콘텐츠 영역 ==================== */}
         <View style={[homeScreenStyles.content, { backgroundColor: currentMode.lightColor }]}>
           {/* ==================== 헤더 영역 (항상 최상단 고정) ==================== */}
@@ -608,7 +379,7 @@ const HomeScreen = () => {
             </View>
           )}
 
-      {/* 검색 결과 오버레이 */}
+      {/* 검색 결과 오버레이 (투명도 0) */}
       {showSearchResults && (
         <View style={styles.searchResultsOverlay}>
           <View style={styles.searchResultsContainer}>
@@ -623,11 +394,19 @@ const HomeScreen = () => {
                 }}
                 style={styles.closeSearchButton}
               >
-                <Text style={styles.closeSearchText}>✕</Text>
+                <Ionicons name="close" size={20} color="#666" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.searchResultsList}>
-              {searchResults.length > 0 ? (
+            <ScrollView 
+              style={styles.searchResultsList}
+              nestedScrollEnabled={true}
+              keyboardShouldPersistTaps="handled"
+            >
+              {isSearching ? (
+                <View style={styles.noSearchResults}>
+                  <Text style={styles.noSearchResultsText}>검색 중입니다...</Text>
+                </View>
+              ) : searchResults.length > 0 ? (
                 searchResults.map((result) => (
                   <TouchableOpacity
                     key={result.id}
@@ -673,7 +452,7 @@ const HomeScreen = () => {
       )}
         <View style={homeScreenStyles.section}>
           {/* 디버깅 버튼들 (임시) */}
-          <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
+          {/* <View style={{ flexDirection: 'row',justifyContent:'center', marginBottom: 10, gap: 10 }}>
             <TouchableOpacity 
               style={{ backgroundColor: '#ff6b6b', padding: 8, borderRadius: 4 }}
               onPress={clearGuideData}
@@ -686,7 +465,38 @@ const HomeScreen = () => {
             >
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
+          </View> */}
+          {/* 가이드 시작 버튼 */}
+          <View style={{ marginBottom: 12, paddingHorizontal: 20 }}>
+            <TouchableOpacity
+              onPress={() => {
+                console.log("[가이드] 가이드 시작 버튼 클릭");
+                forceStartGuide();
+                setGuideActive(true);
+                setGuideStep(0);
+              }}
+              style={{
+                backgroundColor: '#4A90E2',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: '#4A90E2',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <IconImage name="paw" size={18} />
+                <Text style={{ color: 'white', fontSize: rf(14), fontWeight: '600' }}>
+                  가이드 시작
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
+
           {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
             {(["PW", "PM"] as const).map((mode) => (
@@ -719,11 +529,29 @@ const HomeScreen = () => {
                   onPress={() => setServiceMode(mode)}>
                   <View style={modeStyles.modeIconContainer}>
                     {SERVICE_MODE_CONFIG[mode].icon.startsWith("@") ? (
-                      <Image
-                        source={resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon)}
-                        style={modeStyles.modeIconImage}
-                        resizeMode="contain"
-                      />
+                      (() => {
+                        const iconSource = resolveModeIconSource(SERVICE_MODE_CONFIG[mode].icon);
+                        if (!iconSource) {
+                          console.warn(`[HomeScreen] 아이콘 소스를 찾을 수 없습니다 - mode: ${mode}, icon: ${SERVICE_MODE_CONFIG[mode].icon}`);
+                          return (
+                            <Ionicons 
+                              name={mode === "PM" ? "storefront" : "walk"} 
+                              size={36} 
+                              color={serviceMode === mode ? "#FFF" : SERVICE_MODE_CONFIG[mode].color}
+                            />
+                          );
+                        }
+                        return (
+                          <Image
+                            source={iconSource}
+                            style={modeStyles.modeIconImage}
+                            resizeMode="contain"
+                            onError={(error) => {
+                              console.error(`[HomeScreen] 아이콘 로드 실패 - mode: ${mode}, icon: ${SERVICE_MODE_CONFIG[mode].icon}`, error);
+                            }}
+                          />
+                        );
+                      })()
                     ) : (
                       <Text style={modeStyles.modeIcon}>
                         {SERVICE_MODE_CONFIG[mode].icon}
@@ -775,6 +603,32 @@ const HomeScreen = () => {
         </View>
       </SafeAreaView>
       
+      {/* AI 고객지원 플로팅 버튼 */}
+      <TouchableOpacity
+        style={styles.aiChatButton}
+        onPress={() => navigation.navigate('AIChat')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
+      </TouchableOpacity>
+      
+      {/* 서비스 가이드 오버레이 및 하이라이트 */}
+      {/* {showServiceGuide && (
+        <ServiceGuide
+          isVisible={showServiceGuide}
+          onComplete={() => handleCompleteServiceGuide(setGuideActive, setGuideStep)}
+          serviceMode={serviceMode}
+          petWalkerButtonRef={petWalkerButtonRef}
+          petMallButtonRef={petMallButtonRef}
+          walkBookingButtonRef={walkRequestButtonRef}
+          shopButtonRef={shopButtonRef}
+          onStepChange={(step) => {
+            setCurrentGuideStep(step);
+            setGuideStep(step);
+          }}
+        />
+      )} */}
+
       {/* 단계별 가이드 모달 */}
       <GuideStepModal
         isVisible={showStepModal}
@@ -785,7 +639,7 @@ const HomeScreen = () => {
         currentStep={currentGuideStep + 1}
         totalSteps={guideSteps.length}
         nextButtonText={currentStepData?.nextButtonText}
-      iconName={currentStepData?.iconName}
+        iconName={currentStepData?.iconName}
       />
     </>
   );
@@ -798,58 +652,55 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
     zIndex: 1000,
   },
   searchResultsContainer: {
     position: 'absolute',
-    top: 100,
-    left: 20,
-    right: 20,
+    top: 60,
+    left: 0,
+    right: 0,
     backgroundColor: 'white',
-    borderRadius: 15,
-    maxHeight: 400,
+    maxHeight: 450,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     elevation: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
   searchResultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingBottom: 10,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   searchResultsTitle: {
-    fontSize: rf(16),
-    fontWeight: 'bold',
+    fontSize: rf(15),
+    fontWeight: '600',
     color: '#333',
   },
   closeSearchButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#f0f0f0',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f8f9fa',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeSearchText: {
-    fontSize: rf(16),
-    color: '#666',
-  },
   searchResultsList: {
-    maxHeight: 300,
+    maxHeight: 380,
   },
   searchResultItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
+    padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#f8f8f8',
+    backgroundColor: '#fff',
   },
   searchResultIcon: {
     marginRight: 15,
@@ -858,17 +709,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   searchResultTitle: {
-    fontSize: rf(16),
+    fontSize: rf(15),
     fontWeight: '600',
     color: '#333',
     marginBottom: 4,
   },
   searchResultDescription: {
-    fontSize: rf(14),
+    fontSize: rf(13),
     color: '#666',
+    lineHeight: 18,
   },
   searchResultArrow: {
-    fontSize: rf(20),
+    fontSize: rf(18),
     color: '#ccc',
   },
   noSearchResults: {
@@ -879,6 +731,26 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: '#666',
     textAlign: 'center',
+  },
+  aiChatButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 90,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#C59172',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    zIndex: 999,
   },
 });
 

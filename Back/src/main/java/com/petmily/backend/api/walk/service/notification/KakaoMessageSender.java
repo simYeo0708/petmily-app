@@ -44,7 +44,8 @@ public class KakaoMessageSender {
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(url, request, (Class<Map<String, Object>>) (Class<?>) Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("카카오톡 메시지 발송 성공: {}", message);
@@ -78,7 +79,8 @@ public class KakaoMessageSender {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            @SuppressWarnings("unchecked")
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(url, request, (Class<Map<String, Object>>) (Class<?>) Map.class);
 
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("카카오톡 비즈니스 메시지 발송 성공 - 수신자: {}, 메시지: {}", 

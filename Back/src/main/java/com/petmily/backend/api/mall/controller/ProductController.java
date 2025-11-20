@@ -28,7 +28,7 @@ public class ProductController {
 
     // 상품 등록
     @PostMapping
-    @PreAuthorize("hasAnyRole('SELLER, 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<ProductResponse> createProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ProductCreateRequest request) {
@@ -38,7 +38,7 @@ public class ProductController {
 
     // 상품 수정
     @PutMapping("/{productId}")
-    @PreAuthorize("hasAnyRole('SELLER, 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<ProductResponse> updateProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId,
@@ -49,7 +49,7 @@ public class ProductController {
 
     // 상품 삭제
     @DeleteMapping("/{productId}")
-    @PreAuthorize("hasAnyRole('SELLER, 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<Void> deleteProduct(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long productId) {
@@ -87,7 +87,7 @@ public class ProductController {
 
     // 내 상품 목록 조회 (판매자용)
     @GetMapping("/my")
-    @PreAuthorize("hasAnyRole('SELLER, 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     public ResponseEntity<Page<ProductResponse>> getMyProducts(
             @AuthenticationPrincipal UserDetails userDetails,
             Pageable pageable) {

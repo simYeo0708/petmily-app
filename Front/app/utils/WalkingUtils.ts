@@ -41,7 +41,6 @@ export const saveAddress = async (address: string): Promise<void> => {
       await AsyncStorage.setItem(STORAGE_KEYS.SAVED_ADDRESSES, JSON.stringify(updatedAddresses));
     }
   } catch (error) {
-    console.error('주소 저장 중 오류:', error);
     throw error;
   }
 };
@@ -51,7 +50,6 @@ export const getSavedAddresses = async (): Promise<string[]> => {
     const addresses = await AsyncStorage.getItem(STORAGE_KEYS.SAVED_ADDRESSES);
     return addresses ? JSON.parse(addresses) : [];
   } catch (error) {
-    console.error('저장된 주소 조회 중 오류:', error);
     return [];
   }
 };
@@ -63,7 +61,6 @@ export const savePreviousWalker = async (walker: PreviousWalker): Promise<void> 
     updatedWalkers.unshift(walker); // 최신 순으로 정렬
     await AsyncStorage.setItem(STORAGE_KEYS.PREVIOUS_WALKERS, JSON.stringify(updatedWalkers.slice(0, 5))); // 최대 5개만 저장
   } catch (error) {
-    console.error('이전 워커 저장 중 오류:', error);
     throw error;
   }
 };
@@ -73,7 +70,6 @@ export const getPreviousWalkers = async (): Promise<PreviousWalker[]> => {
     const walkers = await AsyncStorage.getItem(STORAGE_KEYS.PREVIOUS_WALKERS);
     return walkers ? JSON.parse(walkers) : [];
   } catch (error) {
-    console.error('이전 워커 조회 중 오류:', error);
     return [];
   }
 };
@@ -89,7 +85,6 @@ export const saveWalkingRequest = async (requestData: WalkingRequestData): Promi
     const updatedRequests = [newRequest, ...existingRequests];
     await AsyncStorage.setItem(STORAGE_KEYS.WALKING_REQUESTS, JSON.stringify(updatedRequests));
   } catch (error) {
-    console.error('산책 요청 저장 중 오류:', error);
     throw error;
   }
 };
@@ -99,7 +94,6 @@ export const getWalkingRequests = async (): Promise<any[]> => {
     const requests = await AsyncStorage.getItem(STORAGE_KEYS.WALKING_REQUESTS);
     return requests ? JSON.parse(requests) : [];
   } catch (error) {
-    console.error('산책 요청 조회 중 오류:', error);
     return [];
   }
 };

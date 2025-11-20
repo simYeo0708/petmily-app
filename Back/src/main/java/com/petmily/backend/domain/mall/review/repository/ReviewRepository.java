@@ -29,16 +29,16 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     long countByProduct(Product product);
 
-    @Query("SELECT r FROM Review r WHERE r.product = :product ORDER BY r.helpfulCount DESC, r.createdAt DESC")
+    @Query("SELECT r FROM Review r WHERE r.product = :product ORDER BY r.helpfulCount DESC, r.createTime DESC")
     Page<Review> findByProductOrderByHelpfulCountDesc(@Param("product") Product product, Pageable pageable);
 
-    Page<Review> findByProductOrderByCreatedAtDesc(Product product, Pageable pageable);
+    Page<Review> findByProductOrderByCreateTimeDesc(Product product, Pageable pageable);
 
-    Page<Review> findByProductOrderByRatingDescCreatedAtDesc(Product product, Pageable pageable);
+    Page<Review> findByProductOrderByRatingDescCreateTimeDesc(Product product, Pageable pageable);
 
-    Page<Review> findByProductOrderByRatingAscCreatedAtDesc(Product product, Pageable pageable);
+    Page<Review> findByProductOrderByRatingAscCreateTimeDesc(Product product, Pageable pageable);
 
-    @Query("SELECT r FROM Review r WHERE r.product = :product AND SIZE(r.imageUrls) > 0 ORDER BY r.createdAt DESC")
+    @Query("SELECT r FROM Review r WHERE r.product = :product AND SIZE(r.imageUrls) > 0 ORDER BY r.createTime DESC")
     Page<Review> findPhotoReviewsByProduct(@Param("product") Product product, Pageable pageable);
 
 }

@@ -23,6 +23,7 @@ public class UserService {
 
     public User getUserById(long id){
         return userRepository.findById(id).orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
     }
 
     public List<User> getAllUsers(){
@@ -39,13 +40,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public User getCurrentUser(String username){
+    public User getCurrentUser(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
     }
 
     @Transactional
-    public User updateCurrentUser(String username, UserUpdateRequest request){
+    public User updateCurrentUser(String username, UserUpdateRequest request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
@@ -55,20 +56,20 @@ public class UserService {
     }
 
     @Transactional
-    public void changePassword(String username, ChangePasswordRequest request){
+    public void changePassword(String username, ChangePasswordRequest request) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if(!passwordEncoder.matches(request.getOldPassword(), user.getPassword())){
-            throw new CustomException(ErrorCode.INVALID_PASSWORD);
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new CustomException(ErrorCode.INVALID_PASSWORD); // Or a more specific error
         }
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
     }
 
-    private void update(User user, UserUpdateRequest request){
-        switch(user.getRole()){
+    private void update(User user, UserUpdateRequest request) {
+        switch(user.getRole()) {
             case ADMIN:
                 user.setUsername(request.getUsername());
                 user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -79,13 +80,19 @@ public class UserService {
                 user.setAddress(new Address(request.getRoadAddress(), request.getAddressDetail(), request.getZipCode()));
                 break;
 
-            case WALKER:
             case USER:
                 user.setEmail(request.getEmail());
                 user.setProfile(request.getProfile());
-                user.setPhone(request.getPhone() != null ? request.getPhone() : null);
                 user.setAddress(new Address(request.getRoadAddress(), request.getAddressDetail(), request.getZipCode()));
                 break;
+
+            case WALKER:
+                user.setEmail(request.getEmail());
+                user.setProfile(request.getProfile());
+                user.setAddress(new Address(request.getRoadAddress(), request.getAddressDetail(), request.getZipCode()));
+                break;
+
         }
+
     }
 }

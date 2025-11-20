@@ -1,6 +1,6 @@
 package com.petmily.backend.domain.mall.review.entity;
 
-import com.petmily.backend.domain.common.BaseTimeEntity;
+import com.petmily.backend.domain.common.entity.BaseTimeEntity;
 import com.petmily.backend.domain.mall.order.entity.Order;
 import com.petmily.backend.domain.mall.product.entity.Product;
 import com.petmily.backend.domain.user.entity.User;

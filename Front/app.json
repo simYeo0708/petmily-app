@@ -14,7 +14,10 @@
         "NSLocationWhenInUseUsageDescription": "산책 경로를 추적하기 위해 위치 권한이 필요합니다.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "백그라운드에서도 산책 경로를 추적하기 위해 위치 권한이 필요합니다.",
         "UIViewControllerBasedStatusBarAppearance": false,
-        "UIStatusBarStyle": "UIStatusBarStyleLightContent"
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
+        "UIBackgroundModes": [
+          "location"
+        ]
       }
     },
     "android": {
@@ -37,11 +40,8 @@
       "resizeMode": "contain"
     },
     "icon": "./assets/images/paw.png",
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": [],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
     }
   }

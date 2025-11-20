@@ -12,8 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MenuSearchResponse {
+
     private String query;
     private List<MenuItem> results;
     private List<String> suggestions;
     private Integer totalCount;
 }
+
+

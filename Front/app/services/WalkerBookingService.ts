@@ -34,7 +34,6 @@ const getAuthToken = async (): Promise<string> => {
     // 개발용 하드코딩된 테스트 토큰
     return 'test-token-for-user-1';
   } catch (error) {
-    console.error('토큰 가져오기 실패:', error);
     return 'test-token-for-user-1';
   }
 };
@@ -43,7 +42,7 @@ const WalkerBookingService = {
   async createBooking(bookingData: WalkingBookingRequest): Promise<WalkingBookingResponse> {
     try {
       const token = await getAuthToken();
-      console.log('산책 예약 요청:', bookingData);
+      // 
       
       const response = await fetch(`${API_BASE_URL}/walker-bookings`, {
         method: 'POST',
@@ -55,14 +54,14 @@ const WalkerBookingService = {
       });
 
       if (!response.ok) {
-        throw new Error(`산책 예약 실패: ${response.status}`);
+        // throw new Error(`산책 예약 실패: ${response.status}`);
       }
 
       const data = await response.json() as WalkingBookingResponse;
-      console.log('산책 예약 성공:', data);
+      // 
       return data;
     } catch (error) {
-      console.error('산책 예약 에러:', error);
+      // 
       
       // 로컬 저장소에 fallback
       const localBooking: WalkingBookingResponse = {
@@ -98,7 +97,7 @@ const WalkerBookingService = {
       const data = await response.json() as WalkingBookingResponse[];
       return data;
     } catch (error) {
-      console.error('예약 목록 조회 에러:', error);
+      // 
       return [];
     }
   },
@@ -121,7 +120,7 @@ const WalkerBookingService = {
       const data = await response.json() as WalkingBookingResponse;
       return data;
     } catch (error) {
-      console.error('예약 조회 에러:', error);
+      // 
       return null;
     }
   },
@@ -143,7 +142,7 @@ const WalkerBookingService = {
 
       return true;
     } catch (error) {
-      console.error('예약 취소 에러:', error);
+      // 
       return false;
     }
   },

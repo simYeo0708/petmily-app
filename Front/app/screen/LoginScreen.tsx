@@ -67,7 +67,6 @@ const LoginScreen = ({ navigation }: Props) => {
       const petInfo = await AsyncStorage.getItem("petInfo");
       return petInfo !== null && petInfo !== "";
     } catch (error) {
-      console.error("Failed to check pet info:", error);
       return false;
     }
   };
@@ -109,7 +108,6 @@ const LoginScreen = ({ navigation }: Props) => {
         );
       }
     } catch (error) {
-      console.error("[DEV] 테스트 계정 로그인 실패:", error);
       Alert.alert(
         "로그인 실패",
         "테스트 계정으로 로그인하는 중 오류가 발생했습니다."
@@ -133,12 +131,9 @@ const LoginScreen = ({ navigation }: Props) => {
       // AuthService를 통해 로그인
       const authResponse = await AuthService.login(username, password);
       
-      console.log('로그인 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
-      
       // 홈 화면으로 이동
       navigation.navigate("Main");
     } catch (error: any) {
-      console.error("로그인 에러:", error);
       setLoginError("잘못된 아이디이거나 비밀번호입니다.");
       showLoginErrorModal();
     } finally {
@@ -167,8 +162,6 @@ const LoginScreen = ({ navigation }: Props) => {
         name: username, // name 필드 추가
       });
       
-      console.log('회원가입 성공! 토큰:', authResponse.accessToken.substring(0, 20) + '...');
-      
       Alert.alert(
         "회원가입 완료",
         "환영합니다! 로그인되었습니다.",
@@ -180,7 +173,6 @@ const LoginScreen = ({ navigation }: Props) => {
         ]
       );
     } catch (error: any) {
-      console.error("회원가입 에러:", error);
       Alert.alert(
         "회원가입 실패",
         error.message || "회원가입 중 오류가 발생했습니다."
@@ -196,13 +188,11 @@ const LoginScreen = ({ navigation }: Props) => {
     try {
       const result = await DevTools.loginAsAsdf();
       if (result) {
-        console.log('✅ [DEV] 개발용 로그인 성공!');
         navigation.navigate("Main");
       } else {
         Alert.alert("개발 로그인 실패", "백엔드가 실행 중인지 확인해주세요.");
       }
     } catch (error) {
-      console.error('[DEV] 개발 로그인 에러:', error);
       Alert.alert("오류", "개발 로그인에 실패했습니다.");
     } finally {
       setIsLoading(false);

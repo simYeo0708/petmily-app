@@ -17,6 +17,7 @@ public class NaverOAuth2UserInfo implements OAuth2UserInfo {
 
     @Override
     public String getProviderId() {
+        @SuppressWarnings("unchecked")
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
         if (response == null) {
             return null;
@@ -31,6 +32,7 @@ public class NaverOAuth2UserInfo implements OAuth2UserInfo {
 
     @Override
     public String getEmail() {
+        @SuppressWarnings("unchecked")
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
         if (response == null) {
             return null;
@@ -40,6 +42,7 @@ public class NaverOAuth2UserInfo implements OAuth2UserInfo {
 
     @Override
     public String getName() {
+        @SuppressWarnings("unchecked")
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
         if (response == null) {
             return null;
@@ -49,6 +52,7 @@ public class NaverOAuth2UserInfo implements OAuth2UserInfo {
 
     @Override
     public String getProfileImage() {
+        @SuppressWarnings("unchecked")
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
         if (response == null) {
             return null;

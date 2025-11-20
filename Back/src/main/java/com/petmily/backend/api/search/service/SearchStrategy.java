@@ -12,9 +12,9 @@ public interface SearchStrategy {
 
     List<String> autocomplete(String query);
 
-    // 이 검색 타입이 활성화되어 있는지 여부
-    default boolean isEnabled(){
+    default boolean isEnabled() {
         return true;
     }
-
 }
+
+

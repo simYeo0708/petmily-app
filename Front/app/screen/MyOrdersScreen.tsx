@@ -10,6 +10,7 @@ import {
   StatusBar,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Order,
   ORDER_DATA,
@@ -53,7 +54,7 @@ const MyOrdersScreen = () => {
       <TouchableOpacity
         key={order.id}
         style={styles.orderCard}
-        onPress={() => console.log("주문 상세:", order.orderNumber)}
+        onPress={() => {}}
         activeOpacity={0.7}>
         {/* 주문 헤더 */}
         <View style={styles.orderHeader}>
@@ -152,7 +153,7 @@ const MyOrdersScreen = () => {
           )}
           <TouchableOpacity
             style={[styles.actionButton, styles.actionButtonPrimary]}
-            onPress={() => console.log("주문 상세:", order.orderNumber)}>
+            onPress={() => {}}>
             <Text style={[styles.actionButtonText, styles.actionButtonTextPrimary]}>
               주문 상세
             </Text>
@@ -163,7 +164,7 @@ const MyOrdersScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       {/* 헤더 */}
       <View style={styles.header}>
@@ -278,7 +279,7 @@ const MyOrdersScreen = () => {
             if (selectedFilter === "all" && ongoingOrders.includes(order)) {
               return null;
             }
-            return renderOrderItem(order);
+            return <View key={order.id}>{renderOrderItem(order)}</View>;
           })
         ) : (
           <View style={styles.emptyContainer}>
@@ -287,7 +288,7 @@ const MyOrdersScreen = () => {
           </View>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

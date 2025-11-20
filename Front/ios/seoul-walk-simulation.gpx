@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<gpx version="1.1" creator="Petmily">
+  <trk>
+    <name>서울 강남구 산책 경로</name>
+    <trkseg>
+      <!-- 시작점: 강남역 -->
+      <trkpt lat="37.4980" lon="127.0276">
+        <time>2024-01-01T10:00:00Z</time>
+      </trkpt>
+      <!-- 경로 포인트 1 -->
+      <trkpt lat="37.4990" lon="127.0286">
+        <time>2024-01-01T10:01:00Z</time>
+      </trkpt>
+      <!-- 경로 포인트 2 -->
+      <trkpt lat="37.5000" lon="127.0296">
+        <time>2024-01-01T10:02:00Z</time>
+      </trkpt>
+      <!-- 경로 포인트 3 -->
+      <trkpt lat="37.5010" lon="127.0306">
+        <time>2024-01-01T10:03:00Z</time>
+      </trkpt>
+      <!-- 경로 포인트 4 -->
+      <trkpt lat="37.5020" lon="127.0316">
+        <time>2024-01-01T10:04:00Z</time>
+      </trkpt>
+      <!-- 경로 포인트 5 -->
+      <trkpt lat="37.5030" lon="127.0326">
+        <time>2024-01-01T10:05:00Z</time>
+      </trkpt>
+      <!-- 종료점 -->
+      <trkpt lat="37.5040" lon="127.0336">
+        <time>2024-01-01T10:06:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>
+
+

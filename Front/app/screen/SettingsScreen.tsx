@@ -16,6 +16,7 @@ import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { IconImage, IconName } from "../components/IconImage";
 import { usePet } from "../contexts/PetContext";
+import { useSettings } from "../hooks/useSettings";
 
 type SettingsScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
@@ -23,15 +24,20 @@ type SettingsScreenNavigationProp =
 const SettingsScreen = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { refreshPetInfo } = usePet();  // PetContext 사용
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [locationServices, setLocationServices] = useState(true);
-  const [marketingEmails, setMarketingEmails] = useState(false);
+  const {
+    pushNotifications,
+    setPushNotifications,
+    locationServices,
+    setLocationServices,
+    marketingEmails,
+    setMarketingEmails,
+  } = useSettings();
   
   // 화면 포커스될 때만 펫 정보 갱신
   // SettingsScreen에서는 펫 정보를 직접 수정하지 않으므로 자동 갱신 비활성화
   // useFocusEffect(
   //   useCallback(() => {
-  //     console.log('🔄 SettingsScreen focused - refreshing pet info');
+  //     
   //     refreshPetInfo();
   //   }, [refreshPetInfo])
   // );
@@ -52,17 +58,17 @@ const SettingsScreen = () => {
         {
           title: "프로필 편집",
           icon: "paw",
-          action: () => console.log("프로필 편집"),
+          action: () => navigation.navigate("ProfileEdit"),
         },
         {
           title: "반려동물 정보",
           icon: "dog",
-          action: () => console.log("반려동물 정보"),
+          action: () => navigation.navigate("Main", { initialTab: "MyPetTab" }),
         },
         {
           title: "비밀번호 변경",
           icon: "setting",
-          action: () => console.log("비밀번호 변경"),
+          action: () => navigation.navigate("PasswordChange"),
         },
       ],
     },
@@ -98,12 +104,12 @@ const SettingsScreen = () => {
         {
           title: "개인정보 처리방침",
           icon: "home",
-          action: () => console.log("개인정보 처리방침"),
+          action: () => navigation.navigate("PrivacyPolicy"),
         },
         {
           title: "이용약관",
           icon: "paw",
-          action: () => console.log("이용약관"),
+          action: () => navigation.navigate("TermsOfService"),
         },
       ],
     },
@@ -113,10 +119,10 @@ const SettingsScreen = () => {
         {
           title: "고객센터",
           icon: "cart",
-          action: () => console.log("고객센터"),
+          action: () => navigation.navigate("CustomerService"),
         },
-        { title: "FAQ", icon: "paw", action: () => console.log("FAQ") },
-        { title: "앱 정보", icon: "home", action: () => console.log("앱 정보") },
+        { title: "FAQ", icon: "paw", action: () => navigation.navigate("FAQ") },
+        { title: "앱 정보", icon: "home", action: () => navigation.navigate("AppInfo") },
       ],
     },
   ];
@@ -124,9 +130,7 @@ const SettingsScreen = () => {
   const clearAsyncStorage = async () => {
     try {
       await AsyncStorage.clear();
-      console.log("AsyncStorage cleared successfully");
     } catch (error) {
-      console.error("Failed to clear AsyncStorage:", error);
       Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
     }
   };
@@ -146,17 +150,14 @@ const SettingsScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      style={[homeScreenStyles.root, { backgroundColor: "#FFF5F0" }]}>
-      <View
+    <>
+      <StatusBar barStyle="dark-content"/>
+      <SafeAreaView style={{backgroundColor:"#FFFFFF"}}>
+        <View
         style={[
           headerStyles.header,
           { backgroundColor: "rgba(255, 255, 255, 0.95)" },
         ]}>
-        <View style={headerStyles.logoContainer}>
-          <IconImage name="setting" size={22} style={headerStyles.logoIcon} />
-          <Text style={headerStyles.logoText}>Settings</Text>
-        </View>
       </View>
 
       <ScrollView contentContainerStyle={homeScreenStyles.scrollContent}>
@@ -255,7 +256,8 @@ const SettingsScreen = () => {
           <Text style={{ fontSize: 12, color: "#999" }}>Petmily v1.0.0</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 

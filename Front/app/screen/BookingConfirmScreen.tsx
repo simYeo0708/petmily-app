@@ -98,7 +98,6 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
         totalPrice: calculateTotalPrice(),
       };
 
-      console.log('예약 요청:', bookingRequest);
 
       // API 호출 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -117,7 +116,6 @@ const BookingConfirmScreen: React.FC<BookingConfirmScreenProps> = ({ navigation,
         ]
       );
     } catch (error) {
-      console.error('예약 요청 실패:', error);
       Alert.alert('오류', '예약 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsSubmitting(false);

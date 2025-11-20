@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class MenuItem {
+
     private String id;
     private String title;
     private String description;
@@ -19,5 +20,6 @@ public class MenuItem {
     private String route;
     private String icon;
     private List<String> keywords;
-
 }
+
+

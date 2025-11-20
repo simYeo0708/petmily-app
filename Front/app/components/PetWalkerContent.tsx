@@ -44,7 +44,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   
   // 디버깅용 로그
   React.useEffect(() => {
-    console.log('PetWalkerContent - myPetInfo 업데이트:', myPetInfo);
   }, [myPetInfo]);
   const [walkingRequests, setWalkingRequests] = useState<WalkingRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +85,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       setWalkingRequests(mockRequests);
       setIsLoading(false);
     } catch (error) {
-      console.error('산책 요청 로드 실패:', error);
       setIsLoading(false);
     }
   };
@@ -97,7 +95,6 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
       // 중앙 관리 샘플 데이터 사용
       setCurrentWalking(CURRENT_WALKING);
     } catch (error) {
-      console.error('현재 워킹 정보 로드 실패:', error);
     }
   };
 
@@ -194,7 +191,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
         <View style={homeScreenStyles.section}>
           <View style={styles.sectionTitleRow}>
             <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
-            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 워킹</Text>
+            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 산책</Text>
           </View>
           <View style={styles.currentWalkingCard}>
             <View style={styles.walkingParticipants}>

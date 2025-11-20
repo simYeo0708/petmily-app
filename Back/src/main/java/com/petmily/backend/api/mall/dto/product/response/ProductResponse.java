@@ -52,8 +52,8 @@ public class ProductResponse {
                 .salesCount(product.getSalesCount())
                 .averageRating(product.getAverageRating())
                 .reviewCount(product.getReviewCount())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
+                .createdAt(product.getCreateTime())
+                .updatedAt(product.getUpdateTime())
                 .build();
     }
 

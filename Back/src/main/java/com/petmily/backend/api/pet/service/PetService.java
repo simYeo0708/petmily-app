@@ -1,169 +1,120 @@
 package com.petmily.backend.api.pet.service;
 
-import com.petmily.backend.api.exception.CustomException;
-import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.api.pet.dto.request.PetCreateRequest;
-import com.petmily.backend.api.pet.dto.response.PetResponse;
-import com.petmily.backend.api.pet.dto.request.PetSearchRequest;
-import com.petmily.backend.api.pet.dto.request.PetUpdateRequest;
+import com.petmily.backend.api.pet.dto.PetRequest;
+import com.petmily.backend.api.pet.dto.PetResponse;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
+@Transactional
 public class PetService {
 
-    private final PetRepository petRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private PetRepository petRepository;
 
-    private User findUserById(Long userId){
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-    }
+    @Autowired
+    private UserRepository userRepository;
 
-    private Pet findPetById(Long petId){
-        return petRepository.findById(petId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "애완동물을 찾을 수 없습니다."));
-    }
+    public PetResponse createPet(Long userId, PetRequest request) {
+        System.out.println("🔍 PetService.createPet called with userId: " + userId);
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    System.err.println("❌ User not found with id: " + userId);
+                    return new RuntimeException("User not found");
+                });
 
-    @Transactional
-    public PetResponse createPet(Long userId, PetCreateRequest request) {
-        User user = findUserById(userId);
+        System.out.println("✅ User found: " + user.getUsername());
 
         Pet pet = new Pet();
+        pet.setUserId(userId);  
+        pet.setUser(user);
         pet.setName(request.getName());
         pet.setSpecies(request.getSpecies());
         pet.setBreed(request.getBreed());
         pet.setAge(request.getAge());
-        pet.setGender(request.getGender());
-        pet.setPersonality(request.getPersonality());
-        pet.setImageUrl(request.getImageUrl());
         pet.setWeight(request.getWeight());
-        pet.setSize(request.getSize());
+        pet.setGender(request.getGender());
+        pet.setIsNeutered(request.getIsNeutered());
+        pet.setDescription(request.getDescription());
+        pet.setPhotoUri(request.getPhotoUri());
+        pet.setHasPhoto(request.getHasPhoto());
+        pet.setTemperaments(request.getTemperaments());
+        
+        // 건강 및 알레르기 정보
+        pet.setIsVaccinated(request.getIsVaccinated());
+        pet.setAllergies(request.getAllergies());
+        pet.setMedications(request.getMedications());
         pet.setMedicalConditions(request.getMedicalConditions());
         pet.setSpecialNotes(request.getSpecialNotes());
-        pet.setUserId(user.getId());
+
+        System.out.println("💾 Saving pet to database...");
+        Pet savedPet = petRepository.save(pet);
+        System.out.println("✅ Pet created successfully with ID: " + savedPet.getId());
+        
+        return PetResponse.from(savedPet);
+    }
+
+    public PetResponse updatePet(Long userId, Long petId, PetRequest request) {
+        Pet pet = petRepository.findByIdAndUserId(petId, userId)
+                .orElseThrow(() -> new RuntimeException("Pet not found"));
+
+        pet.setName(request.getName());
+        pet.setSpecies(request.getSpecies());
+        pet.setBreed(request.getBreed());
+        pet.setAge(request.getAge());
+        pet.setWeight(request.getWeight());
+        pet.setGender(request.getGender());
+        pet.setIsNeutered(request.getIsNeutered());
+        pet.setDescription(request.getDescription());
+        pet.setPhotoUri(request.getPhotoUri());
+        pet.setHasPhoto(request.getHasPhoto());
+        pet.setTemperaments(request.getTemperaments());
+        
+        // 건강 및 알레르기 정보
+        pet.setIsVaccinated(request.getIsVaccinated());
+        pet.setAllergies(request.getAllergies());
+        pet.setMedications(request.getMedications());
+        pet.setMedicalConditions(request.getMedicalConditions());
+        pet.setSpecialNotes(request.getSpecialNotes());
 
         Pet savedPet = petRepository.save(pet);
         return PetResponse.from(savedPet);
     }
 
-    public List<PetResponse> getUserPets(Long userId) {
-        User user = findUserById(userId);
+    public PetResponse getPet(Long userId, Long petId) {
+        Pet pet = petRepository.findByIdAndUserId(petId, userId)
+                .orElseThrow(() -> new RuntimeException("Pet not found"));
+        return PetResponse.from(pet);
+    }
 
-        List<Pet> pets = petRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+    public List<PetResponse> getPetsByUserId(Long userId) {
+        List<Pet> pets = petRepository.findByUserId(userId);
         return pets.stream()
                 .map(PetResponse::from)
                 .collect(Collectors.toList());
     }
 
-    public PetResponse getPet(Long petId, Long userId) {
-        User user = findUserById(userId);
-        Pet pet = findPetById(petId);
-
-        if (!pet.getUserId().equals(user.getId())) {
-            throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물만 조회 가능합니다.");
+    public PetResponse getPrimaryPet(Long userId) {
+        List<Pet> pets = petRepository.findByUserId(userId);
+        if (pets.isEmpty()) {
+            return null;
         }
-
-        return PetResponse.from(pet);
+        // 첫 번째 펫을 기본 펫으로 사용
+        return PetResponse.from(pets.get(0));
     }
 
-    @Transactional
-    public PetResponse updatePet(Long petId, Long userId, PetUpdateRequest request) {
-        User user = findUserById(userId);
-        Pet pet = findPetById(petId);
-
-        if (!pet.getUserId().equals(user.getId())) {
-            throw new CustomException(ErrorCode.NO_ACCESS, "자신의 애완동물의 정보만 수정 가능합니다.");
-        }
-
-        if (request.getName() != null) pet.setName(request.getName());
-        if (request.getSpecies() != null) pet.setSpecies(request.getSpecies());
-        if (request.getBreed() != null) pet.setBreed(request.getBreed());
-        if (request.getAge() != null) pet.setAge(request.getAge());
-        if (request.getGender() != null) pet.setGender(request.getGender());
-        if (request.getPersonality() != null) pet.setPersonality(request.getPersonality());
-        if (request.getImageUrl() != null) pet.setImageUrl(request.getImageUrl());
-        if (request.getWeight() != null) pet.setWeight(request.getWeight());
-        if (request.getSize() != null) pet.setSize(request.getSize());
-        if (request.getMedicalConditions() != null) pet.setMedicalConditions(request.getMedicalConditions());
-        if (request.getSpecialNotes() != null) pet.setSpecialNotes(request.getSpecialNotes());
-
-        Pet updatedPet = petRepository.save(pet);
-        return PetResponse.from(updatedPet);
-    }
-
-    @Transactional
-    public void deletePet(Long petId, Long userId) {
-        User user = findUserById(userId);
-        Pet pet = findPetById(petId);
-
-        if (!pet.getUserId().equals(user.getId())) {
-            throw new CustomException(ErrorCode.NO_ACCESS, "당신의 애완동물만 지울 수 있습니다.");
-        }
-
+    public void deletePet(Long userId, Long petId) {
+        Pet pet = petRepository.findByIdAndUserId(petId, userId)
+                .orElseThrow(() -> new RuntimeException("Pet not found"));
         petRepository.delete(pet);
     }
-
-    public List<PetResponse> searchPets(PetSearchRequest request, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        Page<Pet> pets;
-
-        if (request.getSpecies() != null) {
-            pets = petRepository.findBySpeciesContainingIgnoreCase(request.getSpecies(), pageable);
-        } else {
-            pets = petRepository.findAll(pageable);
-        }
-
-        return pets.getContent().stream()
-                .filter(pet -> matchesSearchCriteria(pet, request))
-                .map(PetResponse::from)
-                .collect(Collectors.toList());
-    }
-
-    private boolean matchesSearchCriteria(Pet pet, PetSearchRequest request) {
-        if (request.getBreed() != null &&
-            (pet.getBreed() == null || !pet.getBreed().toLowerCase().contains(request.getBreed().toLowerCase()))) {
-            return false;
-        }
-        
-        if (request.getSize() != null && !request.getSize().equals(pet.getSize())) {
-            return false;
-        }
-
-        if (request.getMinAge() != null && (pet.getAge() == null || pet.getAge() < request.getMinAge())) {
-            return false;
-        }
-        
-        if (request.getMaxAge() != null && (pet.getAge() == null || pet.getAge() > request.getMaxAge())) {
-            return false;
-        }
-        
-        return true;
-    }
-
-    public List<PetResponse> getAllPets(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Pet> pets = petRepository.findAll(pageable);
-
-        return pets.getContent().stream()
-                .map(PetResponse::from)
-                .collect(Collectors.toList());
-    }
-
 }

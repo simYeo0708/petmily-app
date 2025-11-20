@@ -56,13 +56,14 @@ public class ProductSearchStrategy implements SearchStrategy {
                 .route("/products/" + product.getId())
                 .imageUrl(product.getImageUrls().isEmpty() ? null : product.getImageUrls().get(0))
                 .metadata(Map.of(
-                        "price", product.getPrice().toString(),
-                        "category", product.getCategory().name(),
+                        "price", product.getPrice(),
+                        "category", product.getCategory().getDisplayName(),
+                        "categoryCode", product.getCategory().name(),
                         "seller", product.getSeller().getName(),
-                        "likeCount", product.getLikeCount().toString(),
-                        "rating", product.getAverageRating().toString()
+                        "likeCount", product.getLikeCount(),
+                        "rating", product.getAverageRating()
                 ))
                 .build();
     }
-
 }
+

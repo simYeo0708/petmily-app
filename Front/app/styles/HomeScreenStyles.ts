@@ -20,7 +20,7 @@ export const homeScreenStyles = StyleSheet.create({
   fullWidthBanner: {
     width: "100%",
     paddingHorizontal: 0,
-    marginBottom: 24,
+    marginBottom: 0,
   },
   section: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -171,7 +171,7 @@ export const headerStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingBottom: 16,
-    marginBottom: 20,         // 마진 제거
+         // 마진 제거
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -403,7 +403,7 @@ export const navigationStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingBottom: 8,
+    paddingBottom: 6,
   },
   navBtn: {
     alignItems: "center",

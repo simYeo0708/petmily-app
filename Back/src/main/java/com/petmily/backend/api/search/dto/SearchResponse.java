@@ -13,8 +13,11 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class SearchResponse {
-    private String query;   // 검색어
+
+    private String query;
     private Map<String, List<SearchResultItem>> results;
     private List<String> suggestions;
     private Integer totalCount;
 }
+
+

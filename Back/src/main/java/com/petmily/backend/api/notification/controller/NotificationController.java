@@ -1,190 +1,112 @@
 package com.petmily.backend.api.notification.controller;
 
-import com.petmily.backend.api.common.dto.ApiResponse;
-import com.petmily.backend.api.common.util.SecurityUtils;
-import com.petmily.backend.api.notification.dto.NotificationSettingsRequest;
-import com.petmily.backend.api.notification.dto.NotificationSettingsResponse;
-import com.petmily.backend.api.notification.dto.PushNotificationRequest;
-import com.petmily.backend.api.notification.dto.PushTokenRequest;
+import com.petmily.backend.api.notification.dto.DismissNotificationRequest;
+import com.petmily.backend.api.notification.dto.NotificationResponse;
 import com.petmily.backend.api.notification.service.NotificationService;
-import jakarta.validation.Valid;
+import com.petmily.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/notifications")
+@RequestMapping("/notifications")
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationController {
-
+    
     private final NotificationService notificationService;
-
-    /**
-     * 알림 설정 조회
-     */
-    @GetMapping("/settings")
-    public ResponseEntity<ApiResponse<NotificationSettingsResponse>> getNotificationSettings(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        NotificationSettingsResponse settings = notificationService.getNotificationSettings(userId);
-        return ResponseEntity.ok(ApiResponse.success(settings, "알림 설정을 조회했습니다."));
+    private final UserRepository userRepository;
+    
+    // SecurityContext에서 현재 사용자 ID 가져오기
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getName() != null) {
+            try {
+                // 먼저 숫자로 파싱 시도 (userId인 경우)
+                return Long.parseLong(authentication.getName());
+            } catch (NumberFormatException e) {
+                // 파싱 실패 시 username이므로 데이터베이스에서 조회
+                String username = authentication.getName();
+                log.debug("Getting userId for username: {}", username);
+                return userRepository.findByUsername(username)
+                    .map(user -> user.getId())
+                    .orElse(null);
+            }
+        }
+        return null;
     }
-
+    
     /**
-     * 알림 설정 업데이트
+     * 사용자에게 표시할 알림 목록 조회
      */
-    @PutMapping("/settings")
-    public ResponseEntity<ApiResponse<NotificationSettingsResponse>> updateNotificationSettings(
-            @Valid @RequestBody NotificationSettingsRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        NotificationSettingsResponse settings = notificationService.updateNotificationSettings(userId, request);
-        return ResponseEntity.ok(ApiResponse.success(settings, "알림 설정을 업데이트했습니다."));
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> getActiveNotifications() {
+        try {
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                // 인증되지 않은 사용자도 공개 알림은 볼 수 있도록 기본 userId 사용
+                userId = 0L;
+            }
+            List<NotificationResponse> notifications = notificationService.getActiveNotificationsForUser(userId);
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            log.error("알림 목록 조회 중 오류 발생", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
-
+    
     /**
-     * 푸시 토큰 등록
+     * 알림 숨기기 처리
      */
-    @PostMapping("/push-token")
-    public ResponseEntity<ApiResponse<Void>> registerPushToken(
-            @Valid @RequestBody PushTokenRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        notificationService.registerPushToken(userId, request);
-        return ResponseEntity.ok(ApiResponse.success(null, "푸시 토큰을 등록했습니다."));
+    @PostMapping("/dismiss")
+    public ResponseEntity<Void> dismissNotification(@RequestBody DismissNotificationRequest request) {
+        try {
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(401).build();
+            }
+            notificationService.dismissNotification(userId, request);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("알림 숨기기 처리 중 오류 발생", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
-
+    
     /**
-     * 푸시 토큰 해제
+     * 알림 숨기기 취소
      */
-    @DeleteMapping("/push-token")
-    public ResponseEntity<ApiResponse<Void>> unregisterPushToken(
-            @Valid @RequestBody PushTokenRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        notificationService.unregisterPushToken(userId, request);
-        return ResponseEntity.ok(ApiResponse.success(null, "푸시 토큰을 해제했습니다."));
+    @DeleteMapping("/dismiss/{notificationId}")
+    public ResponseEntity<Void> cancelDismissNotification(@PathVariable Long notificationId) {
+        try {
+            Long userId = getCurrentUserId();
+            if (userId == null) {
+                return ResponseEntity.status(401).build();
+            }
+            notificationService.cancelDismissNotification(userId, notificationId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("알림 숨기기 취소 중 오류 발생", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
-
+    
     /**
-     * 푸시 알림 전송 (관리자 전용)
+     * 만료된 숨기기 설정 정리 (관리자용)
      */
-    @PostMapping("/push/send")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendPushNotification(
-            @Valid @RequestBody PushNotificationRequest request) {
-        notificationService.sendPushNotification(request);
-        return ResponseEntity.ok(ApiResponse.success(null, "푸시 알림을 전송했습니다."));
-    }
-
-    /**
-     * 알림 기록 조회
-     */
-    @GetMapping("/history")
-    public ResponseEntity<ApiResponse<List<Object>>> getNotificationHistory(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        // 사용자 ID 조회 로직 필요
-        List<Object> history = notificationService.getNotificationHistory(1L); // TODO: 실제 사용자 ID
-        return ResponseEntity.ok(ApiResponse.success(history, "알림 기록을 조회했습니다."));
-    }
-
-    /**
-     * 산책 알림 기록 조회
-     */
-    @GetMapping("/history/{bookingId}")
-    public ResponseEntity<ApiResponse<List<Object>>> getWalkNotificationHistory(
-            @PathVariable Long bookingId) {
-        List<Object> history = notificationService.getWalkNotificationHistory(bookingId);
-        return ResponseEntity.ok(ApiResponse.success(history, "산책 알림 기록을 조회했습니다."));
-    }
-
-    /**
-     * 전체 사용자 공지사항 전송 (관리자 전용)
-     */
-    @PostMapping("/announcement/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendAnnouncementToAll(
-            @RequestParam String title,
-            @RequestParam String body) {
-        notificationService.sendAnnouncementToAll(title, body);
-        return ResponseEntity.ok(ApiResponse.success(null, "전체 사용자에게 공지사항을 전송했습니다."));
-    }
-
-    /**
-     * 워커 공지사항 전송 (관리자 전용)
-     */
-    @PostMapping("/announcement/walkers")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendAnnouncementToWalkers(
-            @RequestParam String title,
-            @RequestParam String body) {
-        notificationService.sendAnnouncementToWalkers(title, body);
-        return ResponseEntity.ok(ApiResponse.success(null, "워커들에게 공지사항을 전송했습니다."));
-    }
-
-    /**
-     * 사용자별 맞춤 알림 전송 (관리자 전용)
-     */
-    @PostMapping("/custom/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendCustomNotification(
-            @PathVariable Long userId,
-            @RequestParam String title,
-            @RequestParam String body,
-            @RequestParam(defaultValue = "custom") String type) {
-        notificationService.sendCustomNotificationToUser(userId, title, body, type);
-        return ResponseEntity.ok(ApiResponse.success(null, "맞춤 알림을 전송했습니다."));
-    }
-
-    /**
-     * 긴급 알림 전송 (관리자 전용)
-     */
-    @PostMapping("/emergency/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> sendEmergencyNotification(
-            @PathVariable Long userId,
-            @RequestParam String title,
-            @RequestParam String body) {
-        notificationService.sendEmergencyNotification(userId, title, body);
-        return ResponseEntity.ok(ApiResponse.success(null, "긴급 알림을 전송했습니다."));
-    }
-
-    /**
-     * 테스트 알림 전송 (개발용)
-     */
-    @PostMapping("/test")
-    public ResponseEntity<ApiResponse<Void>> sendTestNotification(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = SecurityUtils.getUserId(userDetails);
-        log.info("Test notification requested by: {}", userId);
-
-        // 간단한 테스트 알림
-        PushNotificationRequest request = PushNotificationRequest.builder()
-                .title("테스트 알림")
-                .body("알림 시스템이 정상적으로 작동합니다.")
-                .build();
-
-        notificationService.sendPushNotification(request);
-        return ResponseEntity.ok(ApiResponse.success(null, "테스트 알림을 전송했습니다."));
-    }
-
-    /**
-     * 서버 동기화용 더미 엔드포인트
-     */
-    @GetMapping("/sync")
-    public ResponseEntity<ApiResponse<List<Object>>> syncNotifications(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        // 실제로는 서버에 저장된 미확인 알림들을 반환해야 함
-        // 현재는 빈 리스트 반환
-        return ResponseEntity.ok(ApiResponse.success(List.of(), "알림을 동기화했습니다."));
+    @PostMapping("/cleanup")
+    public ResponseEntity<Void> cleanupExpiredDismissals() {
+        try {
+            notificationService.cleanupExpiredDismissals();
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("만료된 숨기기 설정 정리 중 오류 발생", e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

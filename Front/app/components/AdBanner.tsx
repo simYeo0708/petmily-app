@@ -83,7 +83,7 @@ const AdBanner: React.FC = () => {
           <View key={ad.id} style={styles.slideContainer}>
             <TouchableOpacity
               activeOpacity={0.9}
-              onPress={() => console.log('Ad clicked:', ad.title)}>
+              onPress={() => {}}>
               <LinearGradient
                 colors={ad.colors}
                 start={{ x: 0, y: 0 }}

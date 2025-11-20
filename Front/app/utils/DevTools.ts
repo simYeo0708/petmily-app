@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, USE_MOCK_DATA } from '../config/api';
 
 type AuthTokenResponse = {
   accessToken?: string;
@@ -15,11 +15,46 @@ type AuthTokenResponse = {
  */
 
 /**
+ * Mock 데이터 모드 확인
+ */
+export const isMockMode = (): boolean => {
+  return USE_MOCK_DATA;
+};
+
+/**
+ * Mock 모드용 가짜 토큰 생성
+ */
+export const setupMockAuth = async (): Promise<boolean> => {
+  try {
+    const mockToken = 'mock-jwt-token-for-development';
+    const mockUserId = '999';
+    const mockUsername = 'Mock User';
+    const mockEmail = 'mock@petmily.com';
+
+    await AsyncStorage.setItem('authToken', mockToken);
+    await AsyncStorage.setItem('userId', mockUserId);
+    await AsyncStorage.setItem('username', mockUsername);
+    await AsyncStorage.setItem('email', mockEmail);
+
+    console.log('✅ Mock 인증 설정 완료');
+    return true;
+  } catch (error) {
+    console.error('❌ Mock 인증 설정 실패:', error);
+    return false;
+  }
+};
+
+/**
  * 테스트용 JWT 토큰을 받아서 AsyncStorage에 저장
+ * Mock 모드일 경우 Mock 인증 사용
  */
 export const setupTestAuth = async (): Promise<boolean> => {
+  // Mock 모드일 경우 Mock 인증 사용
+  if (USE_MOCK_DATA) {
+    return setupMockAuth();
+  }
+
   try {
-    console.log('[DEV] 테스트 인증 설정 시작...');
     
     // 1. 백엔드의 테스트 엔드포인트 호출
     const response = await fetch(`${API_BASE_URL}/auth/test/setup`, {
@@ -39,11 +74,6 @@ export const setupTestAuth = async (): Promise<boolean> => {
       throw new Error('액세스 토큰을 발급받지 못했습니다.');
     }
 
-    console.log(
-      '[DEV] 테스트 토큰 받음:',
-      (data.username ?? 'unknown') + ' / ' + data.accessToken.substring(0, 30) + '...'
-    );
-    
     // 2. 토큰을 AsyncStorage에 저장
     await AsyncStorage.setItem('authToken', data.accessToken);
     if (data.refreshToken) {
@@ -59,25 +89,24 @@ export const setupTestAuth = async (): Promise<boolean> => {
       await AsyncStorage.setItem('userEmail', data.email);
     }
     
-    console.log('[DEV] ✅ 테스트 인증 설정 완료!');
-    console.log('[DEV] Username:', data.username ?? 'unknown');
-    console.log('[DEV] Password:', 'asdf (기본값)');
-    console.log('[DEV] JWT 토큰이 AsyncStorage에 저장되었습니다.');
-    
     return true;
   } catch (error) {
-    console.error('[DEV] ❌ 테스트 인증 설정 실패:', error);
     return false;
   }
 };
 
 /**
  * asdf 계정으로 직접 로그인하여 JWT 토큰 받기
+ * Mock 모드일 경우 Mock 인증 사용
  */
 export const loginAsAsdf = async (): Promise<boolean> => {
+  // Mock 모드일 경우 Mock 인증 사용
+  if (USE_MOCK_DATA) {
+    console.log('🎭 Mock 모드: asdf 계정으로 로그인');
+    return setupMockAuth();
+  }
+
   try {
-    console.log('[DEV] asdf 계정으로 로그인 시도...');
-    console.log('[DEV] API URL:', `${API_BASE_URL}/auth/login`);
     
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
@@ -90,17 +119,13 @@ export const loginAsAsdf = async (): Promise<boolean> => {
       }),
     });
 
-    console.log('[DEV] 응답 상태:', response.status);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DEV] 로그인 실패 응답:', errorText);
       throw new Error(`로그인 실패: ${response.status}`);
     }
 
     const data = await response.json() as any;
-    console.log('[DEV] asdf 계정 로그인 성공!');
-    console.log('[DEV] 응답 데이터:', data);
     
     // 토큰을 AsyncStorage에 저장
     await AsyncStorage.setItem('authToken', data.accessToken);
@@ -110,12 +135,8 @@ export const loginAsAsdf = async (): Promise<boolean> => {
     await AsyncStorage.setItem('userId', data.userId?.toString() || '1');
     await AsyncStorage.setItem('username', data.username || 'asdf');
     
-    console.log('[DEV] ✅ JWT 토큰이 저장되었습니다.');
-    console.log('[DEV] 토큰:', data.accessToken.substring(0, 30) + '...');
-    
     return true;
   } catch (error) {
-    console.error('[DEV] ❌ asdf 로그인 실패:', error);
     return false;
   }
 };
@@ -128,14 +149,7 @@ export const checkAuthStatus = async (): Promise<void> => {
     const token = await AsyncStorage.getItem('authToken');
     const userId = await AsyncStorage.getItem('userId');
     const username = await AsyncStorage.getItem('username');
-    
-    console.log('[DEV] === 현재 인증 상태 ===');
-    console.log('[DEV] Token:', token ? token.substring(0, 30) + '...' : 'None');
-    console.log('[DEV] User ID:', userId || 'None');
-    console.log('[DEV] Username:', username || 'None');
-    console.log('[DEV] =====================');
   } catch (error) {
-    console.error('[DEV] 인증 상태 확인 실패:', error);
   }
 };
 
@@ -150,9 +164,7 @@ export const clearAuth = async (): Promise<void> => {
       'userId',
       'username',
     ]);
-    console.log('[DEV] ✅ 인증 정보가 삭제되었습니다.');
   } catch (error) {
-    console.error('[DEV] 인증 정보 삭제 실패:', error);
   }
 };
 

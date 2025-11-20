@@ -6,9 +6,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -22,7 +22,6 @@ public class MenuSearchService {
         allMenuItems = new ArrayList<>();
 
         // ==== 산책 관련 ====
-        // 직접 예약
         allMenuItems.add(MenuItem.builder()
                 .id("walk_direct_booking")
                 .title("직접 예약")
@@ -41,7 +40,6 @@ public class MenuSearchService {
                 .keywords(List.of("직접", "예약", "내역", "목록", "산책"))
                 .build());
 
-        // 오픈 예약
         allMenuItems.add(MenuItem.builder()
                 .id("walk_open_booking")
                 .title("오픈 예약")
@@ -109,7 +107,7 @@ public class MenuSearchService {
         allMenuItems.add(MenuItem.builder()
                 .id("walker_register")
                 .title("워커 등록")
-                .description("워커로 동록하고 서비스 시작하기")
+                .description("워커로 등록하고 서비스 시작하기")
                 .category("워커")
                 .route("/walkers/register")
                 .keywords(List.of("워커", "등록", "신청", "가입", "register"))
@@ -253,7 +251,6 @@ public class MenuSearchService {
                 .keywords(List.of("반려동물", "펫", "등록", "관리", "pet"))
                 .build());
 
-        // ==== 사용자 관리
         allMenuItems.add(MenuItem.builder()
                 .id("profile")
                 .title("프로필 수정")
@@ -265,14 +262,14 @@ public class MenuSearchService {
 
         allMenuItems.add(MenuItem.builder()
                 .id("password_change")
-                .title("프로필 수정")
-                .description("내 프로필 정보 수정")
+                .title("비밀번호 변경")
+                .description("계정 비밀번호 변경")
                 .category("마이페이지")
-                .route("/users/me")
-                .keywords(List.of("프로필", "정보", "수정", "profile"))
+                .route("/users/password")
+                .keywords(List.of("비밀번호", "변경", "계정", "password"))
                 .build());
 
-        // ==== 대시 보드 ====
+        // ==== 대시보드 ====
         allMenuItems.add(MenuItem.builder()
                 .id("dashboard")
                 .title("대시보드")
@@ -360,7 +357,7 @@ public class MenuSearchService {
                     .build();
         }
 
-        String normalizeQuery = query.toLowerCase().trim();
+        String normalizeQuery = query.toLowerCase(Locale.ROOT).trim();
 
         List<MenuItem> results = allMenuItems.stream()
                 .filter(menu -> matchesQuery(menu, normalizeQuery))
@@ -381,7 +378,7 @@ public class MenuSearchService {
             return getPopularKeywords();
         }
 
-        String normalizedQuery = query.trim().toLowerCase();
+        String normalizedQuery = query.trim().toLowerCase(Locale.ROOT);
 
         return allMenuItems.stream()
                 .flatMap(menu -> menu.getKeywords().stream())
@@ -398,30 +395,28 @@ public class MenuSearchService {
     }
 
     private boolean matchesQuery(MenuItem menu, String query) {
-        if (menu.getTitle().toLowerCase().contains(query)) {
-            return true;
-        }
+        return containsIgnoreCase(menu.getTitle(), query)
+                || containsIgnoreCase(menu.getDescription(), query)
+                || menu.getRoute().toLowerCase(Locale.ROOT).contains(query)
+                || menu.getKeywords().stream().anyMatch(keyword -> keyword.contains(query));
+    }
 
-        if (menu.getDescription() != null && menu.getDescription().toLowerCase().contains(query)) {
-            return true;
-        }
-
-        return menu.getKeywords().stream()
-                .anyMatch(keyword -> keyword.toLowerCase().contains(query));
+    private boolean containsIgnoreCase(String value, String query) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
     }
 
     private List<String> generateSuggestions(String query) {
         return allMenuItems.stream()
-                .filter(menu -> matchesQuery(menu, query))
                 .flatMap(menu -> menu.getKeywords().stream())
+                .filter(keyword -> keyword.contains(query))
                 .distinct()
-                .filter(keyword -> !keyword.equalsIgnoreCase(query))
                 .limit(5)
                 .collect(Collectors.toList());
     }
 
     private List<String> getPopularKeywords() {
-        return List.of("산책 예약", "워커 찾기", "쇼핑몰", "반려동물 관리", "채팅");
+        return List.of("산책", "예약", "워커", "쇼핑", "상품", "장바구니", "알림", "대시보드");
     }
-
 }
+
+

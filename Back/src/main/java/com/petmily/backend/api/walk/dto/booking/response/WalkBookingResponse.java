@@ -1,8 +1,7 @@
-package com.petmily.backend.api.walk.dto.booking.response;
+package com.petmily.backend.api.walker.dto.walkerBooking;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.petmily.backend.domain.walk.entity.WalkBooking;
-import com.petmily.backend.domain.walk.entity.WalkDetail;
+import com.petmily.backend.domain.walker.entity.WalkerBooking;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,19 +13,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonDeserialize(builder = WalkBookingResponse.WalkBookingResponseBuilder.class)
-public class WalkBookingResponse {
+@JsonDeserialize(builder = WalkerBookingResponse.WalkerBookingResponseBuilder.class)
+public class WalkerBookingResponse {
     private Long id;
     private Long userId;
     private Long walkerId;
     private Long petId;
     private LocalDateTime date;
     private Integer duration;
-    private WalkBooking.BookingStatus status;
+    private WalkerBooking.BookingStatus status;
     private Double totalPrice;
     private String notes;
     
     // Location and tracking
+    private String walkerLocation;
+    private String walkStartLocation;
+    private String walkEndLocation;
     
     // Photo verification
     private String startPhotoUrl;
@@ -46,7 +48,7 @@ public class WalkBookingResponse {
     private String packageFrequency;
     
     // Booking method and locations
-    private WalkBooking.BookingMethod bookingMethod;
+    private WalkerBooking.BookingMethod bookingMethod;
     private String pickupLocation;
     private String pickupAddress;
     private String dropoffLocation;
@@ -58,14 +60,9 @@ public class WalkBookingResponse {
     
     // User info
     private String username;
-    private String userName;
     
-    public static WalkBookingResponse from(WalkBooking booking) {
-        return from(booking, null);
-    }
-
-    public static WalkBookingResponse from(WalkBooking booking, WalkDetail detail) {
-        var builder = WalkBookingResponse.builder()
+    public static WalkerBookingResponse from(WalkerBooking booking) {
+        return WalkerBookingResponse.builder()
                 .id(booking.getId())
                 .userId(booking.getUserId())
                 .walkerId(booking.getWalkerId())
@@ -75,8 +72,16 @@ public class WalkBookingResponse {
                 .status(booking.getStatus())
                 .totalPrice(booking.getTotalPrice())
                 .notes(booking.getNotes())
+                .walkerLocation(booking.getWalkerLocation())
+                .walkStartLocation(booking.getWalkStartLocation())
+                .walkEndLocation(booking.getWalkEndLocation())
+                .startPhotoUrl(booking.getStartPhotoUrl())
+                .middlePhotoUrl(booking.getMiddlePhotoUrl())
+                .endPhotoUrl(booking.getEndPhotoUrl())
+                .actualStartTime(booking.getActualStartTime())
+                .actualEndTime(booking.getActualEndTime())
                 .insuranceCovered(booking.getInsuranceCovered())
-                .emergencyContact(booking.getUser() != null ? booking.getUser().getEmergencyContactPhone() : null)
+                .emergencyContact(booking.getEmergencyContact())
                 .isRegularPackage(booking.getIsRegularPackage())
                 .packageFrequency(booking.getPackageFrequency())
                 .bookingMethod(booking.getBookingMethod())
@@ -84,21 +89,11 @@ public class WalkBookingResponse {
                 .pickupAddress(booking.getPickupAddress())
                 .dropoffLocation(booking.getDropoffLocation())
                 .dropoffAddress(booking.getDropoffAddress())
-                .walkerUsername(booking.getWalker() != null && booking.getWalker().getUser() != null ?
+                .walkerUsername(booking.getWalker() != null && booking.getWalker().getUser() != null ? 
                     booking.getWalker().getUser().getUsername() : null)
-                .walkerName(booking.getWalker() != null && booking.getWalker().getUser() != null ?
+                .walkerName(booking.getWalker() != null && booking.getWalker().getUser() != null ? 
                     booking.getWalker().getUser().getName() : null)
                 .username(booking.getUser() != null ? booking.getUser().getUsername() : null)
-                .userName(booking.getUser() != null ? booking.getUser().getName() : null);
-
-        // Add WalkDetail fields if present
-        if (detail != null) {
-            builder
-                   .actualStartTime(detail.getActualStartTime())
-                   .actualEndTime(detail.getActualEndTime());
-        }
-
-
-        return builder.build();
+                .build();
     }
 }

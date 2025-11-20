@@ -12,7 +12,8 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class SearchResultItem {
-    private String type;        // 검색 타입 (menu, product, walker, pet, booking 등 자유롭게)
+
+    private String type;
     private String id;
     private String title;
     private String subtitle;
@@ -20,5 +21,6 @@ public class SearchResultItem {
     private String imageUrl;
     private String route;
     private Map<String, Object> metadata;
-
 }
+
+

@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LocationCoords } from '../hooks/useLocationTracking';
-import KakaoMapView, { KakaoMapViewHandle } from './KakaoMapView';
+import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { KAKAO_MAP_API_KEY } from '../config/api';
 
 interface WalkingMiniMapProps {
@@ -21,43 +21,78 @@ export const WalkingMiniMap: React.FC<WalkingMiniMapProps> = ({
   mapApiKey, // 파라미터는 유지하되 사용하지 않음
   style,
 }) => {
-  const kakaoMapRef = useRef<KakaoMapViewHandle>(null);
+  const mapViewRef = useRef<MapView>(null);
 
-  // 경로 마커 추가
+  // 경로가 변경되면 지도 영역 조정
   useEffect(() => {
-    if (path.length > 0 && kakaoMapRef.current) {
-      // 경로의 각 지점에 마커 추가 (시작점과 끝점만)
-      if (path.length >= 2) {
-        const startPoint = path[0];
-        const endPoint = path[path.length - 1];
-        
-        kakaoMapRef.current.addMarker(
-          startPoint.latitude,
-          startPoint.longitude,
-          '시작'
-        );
-        
-        if (path.length > 1) {
-          kakaoMapRef.current.addMarker(
-            endPoint.latitude,
-            endPoint.longitude,
-            '현재 위치'
-          );
-        }
+    if (path.length > 0 && mapViewRef.current) {
+      const coordinates = path.map(p => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+      }));
+      
+      if (coordinates.length >= 2) {
+        mapViewRef.current.fitToCoordinates(coordinates, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
       }
     }
   }, [path]);
 
+  const startPoint = path.length > 0 ? path[0] : null;
+  const endPoint = path.length > 1 ? path[path.length - 1] : null;
+
   return (
     <View style={[styles.container, style]}>
-      <KakaoMapView
-        ref={kakaoMapRef}
-        apiKey={KAKAO_MAP_API_KEY}
-        latitude={currentLocation?.latitude || 37.5665}
-        longitude={currentLocation?.longitude || 126.9780}
-        zoomLevel={15}
+      <MapView
+        ref={mapViewRef}
+        provider={PROVIDER_DEFAULT}
         style={styles.map}
-      />
+        initialRegion={{
+          latitude: currentLocation?.latitude || 37.5665,
+          longitude: currentLocation?.longitude || 126.9780,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        showsUserLocation={true}
+      >
+        {/* 시작 지점 마커 */}
+        {startPoint && (
+          <Marker
+            coordinate={{
+              latitude: startPoint.latitude,
+              longitude: startPoint.longitude,
+            }}
+            title="시작"
+            pinColor="green"
+          />
+        )}
+        
+        {/* 현재 위치 마커 */}
+        {endPoint && path.length > 1 && (
+          <Marker
+            coordinate={{
+              latitude: endPoint.latitude,
+              longitude: endPoint.longitude,
+            }}
+            title="현재 위치"
+            pinColor="red"
+          />
+        )}
+        
+        {/* 경로 선 */}
+        {path.length > 1 && (
+          <Polyline
+            coordinates={path.map(p => ({
+              latitude: p.latitude,
+              longitude: p.longitude,
+            }))}
+            strokeColor="#4A90E2"
+            strokeWidth={3}
+          />
+        )}
+      </MapView>
     </View>
   );
 };

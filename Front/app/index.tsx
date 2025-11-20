@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { View, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,17 +15,25 @@ import OrderCompleteScreen from "./screen/OrderCompleteScreen";
 import SplashScreen from "./screen/SplashScreen";
 import WalkingMapScreen from "./screen/WalkingMapScreen";
 import WalkingMapScreenEnhanced from "./screen/WalkingMapScreenEnhanced";
+import WalkingSimulationScreen from "./screen/WalkingSimulationScreen";
 import WalkingRequestScreen from "./screen/WalkingRequestScreen";
 import WalkerMatchingScreen from "./screen/WalkerMatchingScreen";
 import WalkerDetailScreen from "./screen/WalkerDetailScreen";
 import BookingConfirmScreen from "./screen/BookingConfirmScreen";
 import PetInfoInputScreen from "./screen/PetInfoInputScreen";
+import AIChatScreen from "./screen/AIChatScreen";
+import ProfileEditScreen from "./screen/ProfileEditScreen";
+import PasswordChangeScreen from "./screen/PasswordChangeScreen";
+import PrivacyPolicyScreen from "./screen/PrivacyPolicyScreen";
+import TermsOfServiceScreen from "./screen/TermsOfServiceScreen";
+import CustomerServiceScreen from "./screen/CustomerServiceScreen";
+import FAQScreen from "./screen/FAQScreen";
+import AppInfoScreen from "./screen/AppInfoScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
 import { CartProvider } from "./contexts/CartContext";
 import { Product } from "./constants/ProductData";
-import DevTools from "./utils/DevTools";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -43,11 +52,22 @@ export type RootStackParamList = {
     petName?: string;
     petImageUrl?: string;
   } | undefined;
+  WalkingSimulation: {
+    route: import('./data/walkingRoutes').WalkingRoute;
+  };
   WalkingRequest: undefined;
   WalkerMatching: { bookingData: { timeSlot: string; address: string } };
   WalkerDetail: { walker: any; bookingData: { timeSlot: string; address: string } };
   BookingConfirm: { walker: any; bookingData: { timeSlot: string; address: string } };
   PetInfoInput: undefined;
+  AIChat: undefined;
+  ProfileEdit: undefined;
+  PasswordChange: undefined;
+  PrivacyPolicy: undefined;
+  TermsOfService: undefined;
+  CustomerService: undefined;
+  FAQ: undefined;
+  AppInfo: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,12 +79,10 @@ export default function App() {
     // 앱 초기화 (자동 로그인 비활성화)
     const initApp = async () => {
       try {
-        console.log('[DEV] 앱 초기화 중...');
         // 자동 로그인 비활성화 - 수동으로 로그인하도록 함
         // await DevTools.loginAsAsdf();
-        console.log('[DEV] 앱 초기화 완료');
       } catch (error) {
-        console.error('[DEV] 앱 초기화 실패:', error);
+        // 에러 처리
       } finally {
         setTimeout(() => {
           setIsLoading(false);
@@ -81,46 +99,57 @@ export default function App() {
 
   return (
     <>
-    <StatusBar barStyle="dark-content" backgroundColor={"#FFFFFF"}/>
+    <StatusBar barStyle="dark-content" backgroundColor={"#000000"}/>
       {/* 앱 메인 콘텐츠 */}
       <View style={{ flex: 1 }}>
-        <PortalProvider>
-          <GuideProvider>
-            <PetProvider>
-              <CartProvider>
-              <Stack.Navigator
-              id={undefined}
-              initialRouteName="Login" // 로그인 스크린부터 시작
-              screenOptions={{
-                headerShown: false,
-              }}>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Main">
-                {({ route }) => (
-                  <TabNavigator
-                    initialTab={route.params?.initialTab as keyof TabParamList}
-                  />
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="Shop" component={ShopScreen}/>
-              <Stack.Screen name="ProductDetail" component={ProductDetailScreen}/>
-              <Stack.Screen name="MyOrders" component={MyOrdersScreen}/>
-              <Stack.Screen name="Checkout" component={CheckoutScreen}/>
-              <Stack.Screen name="OrderComplete" component={OrderCompleteScreen}/>
-              <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
-              <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
-              <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
-              <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
-              <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
-              <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
-              <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
-              <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
-              <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
-              </Stack.Navigator>
-              </CartProvider>
-            </PetProvider>
-          </GuideProvider>
-        </PortalProvider>
+        <NavigationContainer>
+          <PortalProvider>
+            <GuideProvider>
+              <PetProvider>
+                <CartProvider>
+                <Stack.Navigator
+                id={undefined}
+                initialRouteName="Login" // 로그인 스크린부터 시작
+                screenOptions={{
+                  headerShown: false,
+                }}>
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="Main">
+                  {({ route }) => (
+                    <TabNavigator
+                      initialTab={route.params?.initialTab as keyof TabParamList}
+                    />
+                  )}
+                </Stack.Screen>
+                <Stack.Screen name="Shop" component={ShopScreen}/>
+                <Stack.Screen name="ProductDetail" component={ProductDetailScreen}/>
+                <Stack.Screen name="MyOrders" component={MyOrdersScreen}/>
+                <Stack.Screen name="Checkout" component={CheckoutScreen}/>
+                <Stack.Screen name="OrderComplete" component={OrderCompleteScreen}/>
+                <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
+                <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
+                <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
+                <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
+                <Stack.Screen name="WalkingSimulation" component={WalkingSimulationScreen} />
+                <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
+                <Stack.Screen name="WalkerMatching" component={WalkerMatchingScreen} />
+                <Stack.Screen name="WalkerDetail" component={WalkerDetailScreen} />
+                <Stack.Screen name="BookingConfirm" component={BookingConfirmScreen} />
+                <Stack.Screen name="PetInfoInput" component={PetInfoInputScreen} />
+                <Stack.Screen name="AIChat" component={AIChatScreen} />
+                <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+                <Stack.Screen name="PasswordChange" component={PasswordChangeScreen} />
+                <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+                <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+                <Stack.Screen name="CustomerService" component={CustomerServiceScreen} />
+                <Stack.Screen name="FAQ" component={FAQScreen} />
+                <Stack.Screen name="AppInfo" component={AppInfoScreen} />
+                </Stack.Navigator>
+                </CartProvider>
+              </PetProvider>
+            </GuideProvider>
+          </PortalProvider>
+        </NavigationContainer>
       </View>
     </>
   );
