@@ -403,7 +403,7 @@ export const navigationStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingBottom: 8,
+    paddingBottom: 6,
   },
   navBtn: {
     alignItems: "center",

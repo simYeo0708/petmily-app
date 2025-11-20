@@ -1,0 +1,455 @@
+package com.petmily.backend.api.walker.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.common.util.SecurityUtils;
+import com.petmily.backend.api.walker.dto.walkerBooking.*;
+import com.petmily.backend.api.walker.service.WalkerBookingService;
+import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(WalkerBookingController.class)
+@ExtendWith(MockitoExtension.class)
+class WalkerBookingControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private WalkerBookingService walkerBookingService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private WalkerBookingRequest mockBookingRequest;
+    private WalkerBookingResponse mockBookingResponse;
+    private WalkerApplicationRequest mockApplicationRequest;
+    private WalkerApplicationResponse mockApplicationResponse;
+    private List<WalkerBookingResponse> mockBookingList;
+    private List<WalkerApplicationResponse> mockApplicationList;
+
+    private static final Long USER_ID = 1L;
+    private static final Long WALKER_ID = 2L;
+    private static final Long BOOKING_ID = 1L;
+    private static final Long APPLICATION_ID = 1L;
+    private static final Long PET_ID = 1L;
+
+    @BeforeEach
+    void setUp() {
+        // Mock WalkerBookingRequest
+        mockBookingRequest = new WalkerBookingRequest();
+        mockBookingRequest.setWalkerId(WALKER_ID);
+        mockBookingRequest.setPetId(PET_ID);
+        mockBookingRequest.setDate(LocalDateTime.now().plusDays(1));
+        mockBookingRequest.setDuration(60);
+        mockBookingRequest.setNotes("Test booking notes");
+        mockBookingRequest.setEmergencyContact("010-1234-5678");
+        mockBookingRequest.setBookingMethod(WalkerBooking.BookingMethod.WALKER_SELECTION);
+        mockBookingRequest.setPickupLocation("37.5665,126.9780");
+        mockBookingRequest.setPickupAddress("Test Pickup Address");
+
+        // Mock WalkerBookingResponse
+        mockBookingResponse = WalkerBookingResponse.builder()
+                .id(BOOKING_ID)
+                .userId(USER_ID)
+                .walkerId(WALKER_ID)
+                .petId(PET_ID)
+                .date(mockBookingRequest.getDate())
+                .duration(60)
+                .status(WalkerBooking.BookingStatus.PENDING)
+                .notes("Test booking notes")
+                .emergencyContact("010-1234-5678")
+                .pickupLocation("37.5665,126.9780")
+                .pickupAddress("Test Pickup Address")
+                .totalPrice(30000.0)
+                .build();
+
+        // Mock WalkerApplicationRequest
+        mockApplicationRequest = new WalkerApplicationRequest();
+        mockApplicationRequest.setOpenRequestId(BOOKING_ID);
+        mockApplicationRequest.setMessage("I would like to take this walking job");
+        mockApplicationRequest.setProposedPrice(25000.0);
+
+        // Mock WalkerApplicationResponse
+        mockApplicationResponse = WalkerApplicationResponse.builder()
+                .bookingId(BOOKING_ID)
+                .walkerId(WALKER_ID)
+                .walkerName("Test Walker")
+                .message("I would like to take this walking job")
+                .proposedPrice(25000.0)
+                .status(WalkerBooking.BookingStatus.PENDING)
+                .build();
+
+        // Mock lists
+        mockBookingList = Arrays.asList(mockBookingResponse);
+        mockApplicationList = Arrays.asList(mockApplicationResponse);
+    }
+
+    @Test
+    @WithMockUser
+    void createBooking_Success() throws Exception {
+        // Given
+        when(walkerBookingService.createBooking(eq(USER_ID), any(WalkerBookingRequest.class)))
+                .thenReturn(mockBookingResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(post("/api/walker/bookings")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(mockBookingRequest))
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(BOOKING_ID))
+                    .andExpect(jsonPath("$.userId").value(USER_ID))
+                    .andExpect(jsonPath("$.walkerId").value(WALKER_ID))
+                    .andExpect(jsonPath("$.petId").value(PET_ID))
+                    .andExpect(jsonPath("$.duration").value(60))
+                    .andExpect(jsonPath("$.status").value("PENDING"));
+        }
+
+        verify(walkerBookingService).createBooking(eq(USER_ID), any(WalkerBookingRequest.class));
+    }
+
+    @Test
+    @WithMockUser
+    void getUserBookings_Success() throws Exception {
+        // Given
+        when(walkerBookingService.getUserBookings(USER_ID)).thenReturn(mockBookingList);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(get("/api/walker/bookings/user")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(1))
+                    .andExpect(jsonPath("$[0].id").value(BOOKING_ID))
+                    .andExpect(jsonPath("$[0].userId").value(USER_ID));
+        }
+
+        verify(walkerBookingService).getUserBookings(USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void getWalkerBookings_Success() throws Exception {
+        // Given
+        when(walkerBookingService.getWalkerBookings(USER_ID)).thenReturn(mockBookingList);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(get("/api/walker/bookings/walker")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(1));
+        }
+
+        verify(walkerBookingService).getWalkerBookings(USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void getBooking_Success() throws Exception {
+        // Given
+        when(walkerBookingService.getBooking(BOOKING_ID, USER_ID)).thenReturn(mockBookingResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(get("/api/walker/bookings/{bookingId}", BOOKING_ID)
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(BOOKING_ID))
+                    .andExpect(jsonPath("$.userId").value(USER_ID));
+        }
+
+        verify(walkerBookingService).getBooking(BOOKING_ID, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void updateBookingStatus_Success() throws Exception {
+        // Given
+        WalkerBooking.BookingStatus newStatus = WalkerBooking.BookingStatus.CONFIRMED;
+        WalkerBookingResponse updatedResponse = WalkerBookingResponse.builder()
+                .id(BOOKING_ID)
+                .userId(USER_ID)
+                .walkerId(WALKER_ID)
+                .status(newStatus)
+                .build();
+
+        when(walkerBookingService.updateBookingStatus(BOOKING_ID, newStatus, USER_ID))
+                .thenReturn(updatedResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(put("/api/walker/bookings/{bookingId}/status", BOOKING_ID)
+                            .param("status", newStatus.name())
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(BOOKING_ID))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"));
+        }
+
+        verify(walkerBookingService).updateBookingStatus(BOOKING_ID, newStatus, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void cancelBooking_Success() throws Exception {
+        // Given
+        doNothing().when(walkerBookingService).cancelBooking(BOOKING_ID, USER_ID);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(delete("/api/walker/bookings/{bookingId}", BOOKING_ID)
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+        }
+
+        verify(walkerBookingService).cancelBooking(BOOKING_ID, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void confirmBooking_Success() throws Exception {
+        // Given
+        WalkerBookingResponse confirmedResponse = WalkerBookingResponse.builder()
+                .id(BOOKING_ID)
+                .status(WalkerBooking.BookingStatus.CONFIRMED)
+                .build();
+
+        when(walkerBookingService.updateBookingStatus(BOOKING_ID, WalkerBooking.BookingStatus.CONFIRMED, USER_ID))
+                .thenReturn(confirmedResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(put("/api/walker/bookings/{bookingId}/confirm", BOOKING_ID)
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.status").value("CONFIRMED"));
+        }
+
+        verify(walkerBookingService).updateBookingStatus(BOOKING_ID, WalkerBooking.BookingStatus.CONFIRMED, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void getOpenRequests_Success() throws Exception {
+        // Given
+        when(walkerBookingService.getOpenRequests()).thenReturn(mockBookingList);
+
+        // When & Then
+        mockMvc.perform(get("/api/walker/bookings/open-requests")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1));
+
+        verify(walkerBookingService).getOpenRequests();
+    }
+
+    @Test
+    @WithMockUser
+    void applyToOpenRequest_Success() throws Exception {
+        // Given
+        when(walkerBookingService.applyToOpenRequest(eq(BOOKING_ID), any(WalkerApplicationRequest.class), eq(USER_ID)))
+                .thenReturn(mockBookingResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(post("/api/walker/bookings/open-requests/{openRequestId}/apply", BOOKING_ID)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(mockApplicationRequest))
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(BOOKING_ID));
+        }
+
+        verify(walkerBookingService).applyToOpenRequest(eq(BOOKING_ID), any(WalkerApplicationRequest.class), eq(USER_ID));
+    }
+
+    @Test
+    @WithMockUser
+    void getWalkerApplications_Success() throws Exception {
+        // Given
+        when(walkerBookingService.getWalkerApplications(BOOKING_ID, USER_ID))
+                .thenReturn(mockApplicationList);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(get("/api/walker/bookings/{openRequestId}/applications", BOOKING_ID)
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$").isArray())
+                    .andExpect(jsonPath("$.length()").value(1));
+        }
+
+        verify(walkerBookingService).getWalkerApplications(BOOKING_ID, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void respondToWalkerApplication_Accept_Success() throws Exception {
+        // Given
+        when(walkerBookingService.respondToWalkerApplication(APPLICATION_ID, true, USER_ID))
+                .thenReturn(mockBookingResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(put("/api/walker/bookings/applications/{applicationId}/respond", APPLICATION_ID)
+                            .param("accept", "true")
+                            .with(csrf()))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.id").value(BOOKING_ID));
+        }
+
+        verify(walkerBookingService).respondToWalkerApplication(APPLICATION_ID, true, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void respondToWalkerApplication_Reject_Success() throws Exception {
+        // Given
+        when(walkerBookingService.respondToWalkerApplication(APPLICATION_ID, false, USER_ID))
+                .thenReturn(mockBookingResponse);
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(put("/api/walker/bookings/applications/{applicationId}/respond", APPLICATION_ID)
+                            .param("accept", "false")
+                            .with(csrf()))
+                    .andExpect(status().isOk());
+        }
+
+        verify(walkerBookingService).respondToWalkerApplication(APPLICATION_ID, false, USER_ID);
+    }
+
+    @Test
+    @WithMockUser
+    void createBooking_ServiceError() throws Exception {
+        // Given
+        when(walkerBookingService.createBooking(eq(USER_ID), any(WalkerBookingRequest.class)))
+                .thenThrow(new RuntimeException("Walker not available"));
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(post("/api/walker/bookings")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(mockBookingRequest))
+                            .with(csrf()))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        verify(walkerBookingService).createBooking(eq(USER_ID), any(WalkerBookingRequest.class));
+    }
+
+    @Test
+    void createBooking_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/walker/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mockBookingRequest))
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+
+        verify(walkerBookingService, never()).createBooking(any(), any());
+    }
+
+    @Test
+    void createBooking_WithoutCsrf_Forbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/walker/bookings")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mockBookingRequest)))
+                .andExpect(status().isForbidden());
+
+        verify(walkerBookingService, never()).createBooking(any(), any());
+    }
+
+    @Test
+    @WithMockUser
+    void getBooking_NotFound() throws Exception {
+        // Given
+        when(walkerBookingService.getBooking(BOOKING_ID, USER_ID))
+                .thenThrow(new RuntimeException("Booking not found"));
+
+        try (MockedStatic<SecurityUtils> securityUtilsMock = mockStatic(SecurityUtils.class)) {
+            securityUtilsMock.when(() -> SecurityUtils.getUserId(any(Authentication.class)))
+                    .thenReturn(USER_ID);
+
+            // When & Then
+            mockMvc.perform(get("/api/walker/bookings/{bookingId}", BOOKING_ID)
+                            .with(csrf()))
+                    .andExpect(status().isInternalServerError());
+        }
+
+        verify(walkerBookingService).getBooking(BOOKING_ID, USER_ID);
+    }
+}

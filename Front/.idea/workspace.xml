@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="6ec6ee06-93e6-4243-b529-1bdbb46e27ad" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/../Back/src/main/java/com/petmily/backend/config/ChatClientConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../Back/src/main/java/com/petmily/backend/config/ChatClientConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Back/src/main/java/com/petmily/backend/config/RestTemplateConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/../Back/src/main/java/com/petmily/backend/config/RestTemplateConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/components/BottomNavigation.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/BottomNavigation.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/screen/HomeScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/screen/HomeScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/screen/LoginScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/screen/LoginScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/screen/PetInfoInputScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/screen/PetInfoInputScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/AuthService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/AuthService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/services/PetService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/services/PetService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/apiConfig.ts" beforeDir="false" afterPath="$PROJECT_DIR$/services/apiConfig.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/services/authService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/services/authService.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand />
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="33C6CnYR5LWGWJ7wD0VeQuPw1f6" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/simyeo/Desktop/Petmily/Front&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;모듈&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settingsdialog.project.gradle&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/simyeo/Desktop/Petmily/Front/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26199.169" />
+        <option value="bundled-js-predefined-d6986cc7102b-9c94529fcfe0-JavaScript-IU-252.26199.169" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="디폴트 작업">
+      <changelist id="6ec6ee06-93e6-4243-b529-1bdbb46e27ad" name="변경" comment="" />
+      <created>1758808581870</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1758808581870</updated>
+      <workItem from="1758808583071" duration="10461000" />
+      <workItem from="1758950409469" duration="2000" />
+      <workItem from="1759139583723" duration="2267000" />
+      <workItem from="1759391232840" duration="32000" />
+      <workItem from="1759392418183" duration="292000" />
+      <workItem from="1762076672797" duration="2843000" />
+      <workItem from="1762157308572" duration="1637000" />
+      <workItem from="1762158979542" duration="24000" />
+      <workItem from="1762159097238" duration="3550000" />
+      <workItem from="1762168163361" duration="482000" />
+      <workItem from="1762231562750" duration="98000" />
+      <workItem from="1762409657288" duration="849000" />
+      <workItem from="1762943911101" duration="123000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

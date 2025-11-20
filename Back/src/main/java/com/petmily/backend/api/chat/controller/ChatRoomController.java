@@ -3,9 +3,12 @@ package com.petmily.backend.api.chat.controller;
 import com.petmily.backend.api.chat.dto.ChatRoomResponse;
 import com.petmily.backend.api.chat.dto.CreateChatRoomRequest;
 import com.petmily.backend.api.chat.service.ChatRoomService;
+import com.petmily.backend.api.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,9 +24,9 @@ public class ChatRoomController {
      * 사용자의 채팅방 목록 조회
      */
     @GetMapping("/rooms")
-    public ResponseEntity<List<ChatRoomResponse>> getUserChatRooms(Authentication authentication) {
-        String username = authentication.getName();
-        List<ChatRoomResponse> chatRooms = chatRoomService.getUserChatRooms(username);
+    public ResponseEntity<List<ChatRoomResponse>> getUserChatRooms(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        List<ChatRoomResponse> chatRooms = chatRoomService.getUserChatRooms(userId);
         return ResponseEntity.ok(chatRooms);
     }
 
@@ -31,11 +34,13 @@ public class ChatRoomController {
      * 채팅방 상세 정보 조회
      */
     @GetMapping("/room/{roomId}")
-    public ResponseEntity<ChatRoomResponse> getChatRoom(@PathVariable String roomId, Authentication authentication) {
-        String username = authentication.getName();
+    public ResponseEntity<ChatRoomResponse> getChatRoom(
+            @PathVariable String roomId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
         
         // 접근 권한 확인
-        if (!chatRoomService.hasAccessToChatRoom(roomId, username)) {
+        if (!chatRoomService.hasAccessToChatRoom(roomId, userId)) {
             return ResponseEntity.status(403).build();
         }
         
@@ -49,9 +54,9 @@ public class ChatRoomController {
     @PostMapping("/room/inquiry")
     public ResponseEntity<ChatRoomResponse> createInquiryChatRoom(
             @RequestBody CreateChatRoomRequest request,
-            Authentication authentication) {
-        String username = authentication.getName();
-        ChatRoomResponse chatRoom = chatRoomService.createPreBookingChatRoom(username, request);
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        ChatRoomResponse chatRoom = chatRoomService.createPreBookingChatRoom(userId, request);
         return ResponseEntity.ok(chatRoom);
     }
 }

@@ -5,7 +5,7 @@ import com.petmily.backend.api.auth.oauth.CustomOAuth2UserService;
 import com.petmily.backend.api.auth.handler.OAuth2SuccessHandler;
 import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.dashboard.service.DashboardService;
-import com.petmily.backend.api.pet.dto.PetSummaryResponse;
+import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
 import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;

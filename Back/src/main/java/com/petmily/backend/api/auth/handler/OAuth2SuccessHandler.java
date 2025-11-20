@@ -1,10 +1,11 @@
 package com.petmily.backend.api.auth.handler;
 
+import com.petmily.backend.api.auth.cookie.CookieUtils;
 import com.petmily.backend.api.auth.jwt.JwtTokenProvider;
 import com.petmily.backend.api.auth.oauth.CustomOAuth2User;
 
-import com.petmily.backend.domain.auth.token.AuthRefreshToken;
-import com.petmily.backend.domain.auth.token.AuthRefreshTokenRepository;
+import com.petmily.backend.domain.auth.entity.AuthRefreshToken;
+import com.petmily.backend.domain.auth.repository.AuthRefreshTokenRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,9 +51,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                         }
                 );
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect") // Frontend redirect URL
+        // RefreshToken은 HttpOnly 쿠키로 설정
+        CookieUtils.setRefreshTokenCookie(response, refreshToken);
+
+        // AccessToken만 URL 파라미터로 전달 (프론트에서 받아서 저장)
+        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8081/oauth2/redirect")
                 .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

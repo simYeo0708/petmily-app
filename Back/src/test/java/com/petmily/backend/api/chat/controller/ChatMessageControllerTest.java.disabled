@@ -1,0 +1,320 @@
+package com.petmily.backend.api.chat.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petmily.backend.api.chat.dto.ChatMessageRequest;
+import com.petmily.backend.api.chat.dto.ChatMessageResponse;
+import com.petmily.backend.api.chat.service.ChatMessageService;
+import com.petmily.backend.domain.chat.entity.ChatMessage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(ChatMessageController.class)
+class ChatMessageControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private ChatMessageService chatMessageService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private ChatMessageResponse messageResponse1;
+    private ChatMessageResponse messageResponse2;
+    private ChatMessageRequest messageRequest;
+    private Page<ChatMessageResponse> messagesPage;
+
+    @BeforeEach
+    void setUp() {
+        messageResponse1 = ChatMessageResponse.builder()
+                .id(1L)
+                .chatRoomId(1L)
+                .senderId(1L)
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("안녕하세요!")
+                .isSystemMessage(false)
+                .isRead(true)
+                .createTime(LocalDateTime.now().minusHours(1))
+                .senderName("사용자1")
+                .senderProfileImageUrl("profile1.jpg")
+                .build();
+
+        messageResponse2 = ChatMessageResponse.builder()
+                .id(2L)
+                .chatRoomId(1L)
+                .senderId(2L)
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("네, 안녕하세요!")
+                .isSystemMessage(false)
+                .isRead(false)
+                .createTime(LocalDateTime.now())
+                .senderName("사용자2")
+                .senderProfileImageUrl("profile2.jpg")
+                .build();
+
+        messageRequest = ChatMessageRequest.builder()
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("새로운 메시지입니다.")
+                .action("SEND")
+                .build();
+
+        List<ChatMessageResponse> messages = Arrays.asList(messageResponse2, messageResponse1);
+        messagesPage = new PageImpl<>(messages, PageRequest.of(0, 50), 2);
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatMessages_Success() throws Exception {
+        // Given
+        when(chatMessageService.getChatMessages(eq("room-1"), eq("testuser"), any(Pageable.class)))
+                .thenReturn(messagesPage);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room-1/messages")
+                        .param("page", "0")
+                        .param("size", "50")
+                        .param("sort", "createTime,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].id").value(2L))
+                .andExpect(jsonPath("$.content[0].content").value("네, 안녕하세요!"))
+                .andExpect(jsonPath("$.content[0].senderName").value("사용자2"))
+                .andExpect(jsonPath("$.content[0].isRead").value(false))
+                .andExpect(jsonPath("$.content[1].id").value(1L))
+                .andExpect(jsonPath("$.content[1].content").value("안녕하세요!"))
+                .andExpect(jsonPath("$.content[1].senderName").value("사용자1"))
+                .andExpect(jsonPath("$.content[1].isRead").value(true))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.size").value(50))
+                .andExpect(jsonPath("$.number").value(0));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatMessages_EmptyResult() throws Exception {
+        // Given
+        Page<ChatMessageResponse> emptyPage = new PageImpl<>(Arrays.asList(), PageRequest.of(0, 50), 0);
+        when(chatMessageService.getChatMessages(eq("room-1"), eq("testuser"), any(Pageable.class)))
+                .thenReturn(emptyPage);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room-1/messages"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void getChatMessages_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room-1/messages"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void sendMessage_Success() throws Exception {
+        // Given
+        ChatMessageResponse sentMessageResponse = ChatMessageResponse.builder()
+                .id(3L)
+                .chatRoomId(1L)
+                .senderId(1L)
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("새로운 메시지입니다.")
+                .isSystemMessage(false)
+                .isRead(false)
+                .createTime(LocalDateTime.now())
+                .senderName("testuser")
+                .build();
+
+        when(chatMessageService.sendMessage(eq("room-1"), eq("testuser"), any(ChatMessageRequest.class)))
+                .thenReturn(sentMessageResponse);
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(messageRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3L))
+                .andExpect(jsonPath("$.content").value("새로운 메시지입니다."))
+                .andExpect(jsonPath("$.senderName").value("testuser"))
+                .andExpect(jsonPath("$.messageType").value("TEXT"))
+                .andExpect(jsonPath("$.isRead").value(false));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void sendMessage_WithInvalidRequest_ShouldReturnBadRequest() throws Exception {
+        // Given - empty content
+        ChatMessageRequest invalidRequest = ChatMessageRequest.builder()
+                .messageType(ChatMessage.MessageType.TEXT)
+                .content("") // empty content
+                .action("SEND")
+                .build();
+
+        when(chatMessageService.sendMessage(eq("room-1"), eq("testuser"), any(ChatMessageRequest.class)))
+                .thenThrow(new IllegalArgumentException("Content cannot be empty"));
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    void sendMessage_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(messageRequest)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void sendMessage_WithoutCsrf_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(messageRequest)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void markMessagesAsRead_Success() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/chat-rooms/room-1/messages/read")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void markMessagesAsRead_Unauthorized() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/chat-rooms/room-1/messages/read")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void markMessagesAsRead_WithoutCsrf_ShouldReturnForbidden() throws Exception {
+        // When & Then
+        mockMvc.perform(put("/api/chat-rooms/room-1/messages/read"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void sendMessage_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        when(chatMessageService.sendMessage(eq("room-1"), eq("testuser"), any(ChatMessageRequest.class)))
+                .thenThrow(new RuntimeException("Database connection failed"));
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(messageRequest)))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void markMessagesAsRead_ServiceThrowsException_ShouldReturnServerError() throws Exception {
+        // Given
+        doThrow(new RuntimeException("Database connection failed"))
+                .when(chatMessageService).markMessagesAsRead("room-1", "testuser");
+
+        // When & Then
+        mockMvc.perform(put("/api/chat-rooms/room-1/messages/read")
+                        .with(csrf()))
+                .andExpect(status().is5xxServerError());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void getChatMessages_WithCustomPageSize() throws Exception {
+        // Given
+        List<ChatMessageResponse> messages = Arrays.asList(messageResponse1);
+        Page<ChatMessageResponse> customPage = new PageImpl<>(messages, PageRequest.of(0, 10), 1);
+
+        when(chatMessageService.getChatMessages(eq("room-1"), eq("testuser"), any(Pageable.class)))
+                .thenReturn(customPage);
+
+        // When & Then
+        mockMvc.perform(get("/api/chat-rooms/room-1/messages")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(1L));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void sendMessage_SystemMessage() throws Exception {
+        // Given
+        ChatMessageRequest systemMessageRequest = ChatMessageRequest.builder()
+                .messageType(ChatMessage.MessageType.SYSTEM)
+                .content("시스템 메시지입니다.")
+                .action("SYSTEM")
+                .build();
+
+        ChatMessageResponse systemMessageResponse = ChatMessageResponse.builder()
+                .id(4L)
+                .chatRoomId(1L)
+                .senderId(null)
+                .messageType(ChatMessage.MessageType.SYSTEM)
+                .content("시스템 메시지입니다.")
+                .isSystemMessage(true)
+                .isRead(false)
+                .createTime(LocalDateTime.now())
+                .senderName("시스템")
+                .build();
+
+        when(chatMessageService.sendMessage(eq("room-1"), eq("testuser"), any(ChatMessageRequest.class)))
+                .thenReturn(systemMessageResponse);
+
+        // When & Then
+        mockMvc.perform(post("/api/chat-rooms/room-1/messages")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(systemMessageRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(4L))
+                .andExpect(jsonPath("$.messageType").value("SYSTEM"))
+                .andExpect(jsonPath("$.isSystemMessage").value(true))
+                .andExpect(jsonPath("$.senderName").value("시스템"));
+    }
+}

@@ -163,3 +163,7 @@ images/
 # Cache
 .cache/
 *.cache
+
+# Firebase credentials
+**/firebase/*-firebase-adminsdk-*.json
+src/main/resources/firebase/

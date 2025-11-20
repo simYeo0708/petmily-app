@@ -1,7 +1,7 @@
 package com.petmily.backend.api.walker.dto;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,23 +20,21 @@ public class WalkerSummaryResponse {
     private String profileImageUrl;
     private String location;
     private Double rating;
-    private Integer totalWalks;
+    private Integer walksCount;
     private Double pricePerHour;
     private WalkerStatus status;
-    private Boolean isAvailable;
-    
-    public static WalkerSummaryResponse from(WalkerProfile walker) {
+
+    public static WalkerSummaryResponse from(Walker walker) {
         return WalkerSummaryResponse.builder()
                 .id(walker.getId())
                 .username(walker.getUser() != null ? walker.getUser().getUsername() : null)
                 .name(walker.getUser() != null ? walker.getUser().getName() : null)
                 .profileImageUrl(walker.getProfileImageUrl())
-                .location(walker.getLocation())
+                .location(walker.getCoordinates())
                 .rating(walker.getRating())
-                .totalWalks(walker.getTotalWalks())
-                .pricePerHour(walker.getHourlyRate())
+                .walksCount(walker.getWalksCount())
+                .pricePerHour(walker.getHourlyRate() != null ? walker.getHourlyRate().doubleValue() : null)
                 .status(walker.getStatus())
-                .isAvailable(walker.getIsAvailable())
                 .build();
     }
 }
