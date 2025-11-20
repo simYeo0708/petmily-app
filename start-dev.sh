@@ -25,8 +25,19 @@ echo "   - 빌드 캐시 삭제 중..."
 rm -rf build/ .gradle/
 sleep 1
 
-# JAVA_HOME 설정
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
+# JAVA_HOME 설정 (동적으로 찾기)
+if [ -z "$JAVA_HOME" ]; then
+    JAVA_HOME_PATH=$(/usr/libexec/java_home -v 17 2>/dev/null)
+    if [ -n "$JAVA_HOME_PATH" ]; then
+        export JAVA_HOME="$JAVA_HOME_PATH"
+        echo "   - JAVA_HOME 자동 설정: $JAVA_HOME"
+    else
+        echo "   ⚠️  Java 17을 찾을 수 없습니다. JAVA_HOME을 수동으로 설정하세요."
+        exit 1
+    fi
+else
+    echo "   - JAVA_HOME 사용: $JAVA_HOME"
+fi
 
 # 백엔드 재빌드
 echo "   - 백엔드 재빌드 중... (20초 소요)"
@@ -37,15 +48,40 @@ echo "   - 백엔드 서버 시작 중..."
 ./gradlew bootRun --no-daemon > backend.log 2>&1 &
 BACKEND_PID=$!
 
-# 백엔드 시작 대기 (15초)
-echo "   - 백엔드 시작 대기 중... (15초)"
-sleep 15
+# 백엔드 시작 대기 및 확인 (최대 30초, 2초마다 체크)
+echo "   - 백엔드 시작 대기 중..."
+MAX_WAIT=30
+WAIT_COUNT=0
+BACKEND_READY=false
 
-# 백엔드 상태 확인
-if lsof -i :8083 > /dev/null 2>&1; then
-    echo "   ✅ 백엔드가 포트 8083에서 실행 중입니다"
-else
-    echo "   ⚠️  백엔드 시작 확인 실패. 로그를 확인하세요: Back/backend.log"
+while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
+    sleep 2
+    WAIT_COUNT=$((WAIT_COUNT + 2))
+    
+    # 포트 확인
+    if lsof -i :8083 > /dev/null 2>&1; then
+        # API 엔드포인트 확인 (에러 응답이어도 서버가 실행 중임을 의미)
+        if curl -s -f -o /dev/null http://localhost:8083/api/health 2>/dev/null || \
+           curl -s http://localhost:8083/api/health 2>/dev/null | grep -q "status\|error\|Unauthorized" 2>/dev/null; then
+            echo "   ✅ 백엔드가 정상적으로 시작되었습니다 (${WAIT_COUNT}초 소요)"
+            BACKEND_READY=true
+            break
+        fi
+    fi
+    
+    # 프로세스가 종료되었는지 확인
+    if ! kill -0 $BACKEND_PID 2>/dev/null; then
+        echo "   ❌ 백엔드 프로세스가 예기치 않게 종료되었습니다"
+        echo "   📋 로그 확인: tail -50 Back/backend.log"
+        BACKEND_READY=false
+        break
+    fi
+done
+
+if [ "$BACKEND_READY" = false ]; then
+    echo "   ⚠️  백엔드 시작 확인 실패 (${MAX_WAIT}초 타임아웃)"
+    echo "   📋 로그 확인: tail -50 Back/backend.log"
+    echo "   💡 백엔드는 백그라운드에서 계속 실행 중일 수 있습니다. 로그를 확인하세요."
 fi
 
 # 2. 프론트엔드 시작
