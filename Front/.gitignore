@@ -41,5 +41,26 @@ yarn-error.*
 app-example
 
 # generated native folders
-/ios
-/android
+# iOS: 빌드 산출물은 무시하되 소스 파일은 추적 (커스텀 네이티브 모듈 사용 시)
+/ios/build/
+/ios/Pods/
+/ios/*.xcworkspace/xcuserdata/
+/ios/*.xcodeproj/xcuserdata/
+/ios/*.xcodeproj/project.xcworkspace/
+/ios/DerivedData/
+/ios/.xcode.env.local
+
+# Android: 빌드 산출물만 무시
+/android/build/
+/android/.gradle/
+/android/app/build/
+/android/local.properties
+/android/.idea/
+
+# 소스 파일은 추적: ios/Petmily/*.swift, ios/Petmily/*.m, ios/Petmily/*.h 등
+!ios/Petmily/**/*.swift
+!ios/Petmily/**/*.m
+!ios/Petmily/**/*.h
+!ios/**/*.pbxproj
+!ios/Podfile
+!ios/Podfile.lock
