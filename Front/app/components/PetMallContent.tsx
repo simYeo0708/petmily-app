@@ -76,75 +76,75 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
     <View style={styles.productSection}>
       <View style={styles.productSectionHeader}>
         <Text style={homeScreenStyles.sectionTitle}>{title}</Text>
-        <TouchableOpacity
+          <TouchableOpacity
           style={styles.viewAllButton}
-          onPress={() => onCategoryPress?.("전체")}
-          activeOpacity={0.7}>
+            onPress={() => onCategoryPress?.("전체")}
+            activeOpacity={0.7}>
           <Text style={styles.viewAllButtonText}>전체 보기</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
       </View>
-      
+
       {products.map((product, index) => (
-        <TouchableOpacity
-          key={product.id}
-          style={styles.productCard}
-          onPress={() => navigation.navigate("ProductDetail", { product })}
-          activeOpacity={0.7}>
-          <View style={styles.rankBadge}>
-            <Text style={styles.rankText}>{index + 1}</Text>
-          </View>
-          <View style={styles.productImage}>
-            {product.image.startsWith('@') ? (
-              <Image
-                source={
-                  product.image === '@dog_food.png' ? require('../../assets/images/dog_food.png') :
-                  product.image === '@dog_snack.png' ? require('../../assets/images/dog_snack.png') :
-                  product.image === '@cat_food.png' ? require('../../assets/images/cat_food.png') :
-                  product.image === '@cat_snack.png' ? require('../../assets/images/cat_snack.png') :
-                  product.image === '@toy.png' ? require('../../assets/images/toy.png') :
-                  product.image === '@toilet.png' ? require('../../assets/images/toilet.png') :
-                  product.image === '@grooming.png' ? require('../../assets/images/grooming.png') :
-                  product.image === '@clothing.png' ? require('../../assets/images/clothing.png') :
-                  product.image === '@outdoor.png' ? require('../../assets/images/outdoor.png') :
-                  product.image === '@house.png' ? require('../../assets/images/house.png') :
-                  product.image === '@shop.png' ? require('../../assets/images/shop.png') :
-                  product.image === '@walker.png' ? require('../../assets/images/walker.png') :
-                  require('../../assets/images/dog_food.png')
-                }
-                style={{ width: 40, height: 40 }}
-                resizeMode="contain"
-              />
-            ) : (
-              <Text style={{ fontSize: 26 }}>{product.image}</Text>
-            )}
-          </View>
-          <View style={styles.productInfo}>
-            <Text style={styles.productBrand}>{product.brand}</Text>
-            <Text style={styles.productName} numberOfLines={2}>
-              {product.name}
-            </Text>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.stars}>{renderStars(product.rating)}</Text>
-              <Text style={styles.ratingText}>
-                {product.rating} ({product.reviewCount.toLocaleString()})
+          <TouchableOpacity
+            key={product.id}
+            style={styles.productCard}
+            onPress={() => navigation.navigate("ProductDetail", { product })}
+            activeOpacity={0.7}>
+            <View style={styles.rankBadge}>
+              <Text style={styles.rankText}>{index + 1}</Text>
+            </View>
+            <View style={styles.productImage}>
+              {product.image.startsWith('@') ? (
+                <Image
+                  source={
+                    product.image === '@dog_food.png' ? require('../../assets/images/dog_food.png') :
+                    product.image === '@dog_snack.png' ? require('../../assets/images/dog_snack.png') :
+                    product.image === '@cat_food.png' ? require('../../assets/images/cat_food.png') :
+                    product.image === '@cat_snack.png' ? require('../../assets/images/cat_snack.png') :
+                    product.image === '@toy.png' ? require('../../assets/images/toy.png') :
+                    product.image === '@toilet.png' ? require('../../assets/images/toilet.png') :
+                    product.image === '@grooming.png' ? require('../../assets/images/grooming.png') :
+                    product.image === '@clothing.png' ? require('../../assets/images/clothing.png') :
+                    product.image === '@outdoor.png' ? require('../../assets/images/outdoor.png') :
+                    product.image === '@house.png' ? require('../../assets/images/house.png') :
+                    product.image === '@shop.png' ? require('../../assets/images/shop.png') :
+                    product.image === '@walker.png' ? require('../../assets/images/walker.png') :
+                    require('../../assets/images/dog_food.png')
+                  }
+                  style={{ width: 40, height: 40 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={{ fontSize: 26 }}>{product.image}</Text>
+              )}
+            </View>
+            <View style={styles.productInfo}>
+              <Text style={styles.productBrand}>{product.brand}</Text>
+              <Text style={styles.productName} numberOfLines={2}>
+                {product.name}
               </Text>
-            </View>
-            <View style={styles.priceContainer}>
-              {product.originalPrice && (
-                <Text style={styles.originalPrice}>
-                  {formatPrice(product.originalPrice)}
+              <View style={styles.ratingContainer}>
+                <Text style={styles.stars}>{renderStars(product.rating)}</Text>
+                <Text style={styles.ratingText}>
+                  {product.rating} ({product.reviewCount.toLocaleString()})
                 </Text>
-              )}
-              <Text style={styles.price}>{formatPrice(product.price)}</Text>
-              {product.discount && (
-                <View style={styles.discountBadge}>
-                  <Text style={styles.discountText}>{product.discount}%</Text>
-                </View>
-              )}
+              </View>
+              <View style={styles.priceContainer}>
+                {product.originalPrice && (
+                  <Text style={styles.originalPrice}>
+                    {formatPrice(product.originalPrice)}
+                  </Text>
+                )}
+                <Text style={styles.price}>{formatPrice(product.price)}</Text>
+                {product.discount && (
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>{product.discount}%</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      ))}
+          </TouchableOpacity>
+        ))}
     </View>
   );
 

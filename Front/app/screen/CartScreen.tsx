@@ -78,7 +78,7 @@ const CartScreen = () => {
                         item.product.image === '@walker.png' ? require('../../assets/images/walker.png') :
                         require('../../assets/images/dog_food.png')
                       }
-                      style={{ width: 60, height: 60 }}
+                      style={{ width: 60, height: 60, marginRight:7 }}
                       resizeMode="contain"
                     />
                   ) : (
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   cartItem: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     marginHorizontal: 16,
-    marginTop: 12,
+    marginTop: 70,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   },
   itemImage: {
     fontSize: rf(48),
-    marginRight: 16,
+    marginRight: 20,
   },
   itemDetails: {
     flex: 1,
