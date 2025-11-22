@@ -65,6 +65,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // Request Header에서 토큰 추출
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+
+        return null;
+    }
+
+    // 정적 메서드로 토큰 추출 (다른 클래스에서 사용)
+    public static String getTokenFromRequest(HttpServletRequest request) {
+        String bearerToken = request.getHeader(AUTHORIZATION);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(TokenKey.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }

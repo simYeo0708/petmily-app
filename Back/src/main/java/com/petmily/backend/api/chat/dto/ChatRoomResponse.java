@@ -22,19 +22,19 @@ public class ChatRoomResponse {
     private ChatRoom.ChatType chatType;
     private String roomName;
     private Boolean isActive;
-    private LocalDateTime createTime;
-    private LocalDateTime modifyTime;
-    
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     // 채팅방 참여자 정보
     private String userName;
     private String walkerName;
     private String walkerProfileImageUrl;
-    
+
     // 마지막 메시지 정보
     private String lastMessage;
     private LocalDateTime lastMessageTime;
     private Long unreadCount;
-    
+
     public static ChatRoomResponse from(ChatRoom chatRoom) {
         return ChatRoomResponse.builder()
                 .id(chatRoom.getId())
@@ -45,10 +45,10 @@ public class ChatRoomResponse {
                 .chatType(chatRoom.getChatType())
                 .roomName(chatRoom.getRoomName())
                 .isActive(chatRoom.getIsActive())
-                .createTime(chatRoom.getCreateTime())
-                .modifyTime(chatRoom.getUpdateTime())
+                .createdAt(chatRoom.getCreatedAt())
+                .updatedAt(chatRoom.getUpdatedAt())
                 .userName(chatRoom.getUser() != null ? chatRoom.getUser().getName() : null)
-                .walkerName(chatRoom.getWalker() != null && chatRoom.getWalker().getUser() != null ? 
+                .walkerName(chatRoom.getWalker() != null && chatRoom.getWalker().getUser() != null ?
                            chatRoom.getWalker().getUser().getName() : null)
                 .walkerProfileImageUrl(chatRoom.getWalker() != null ? chatRoom.getWalker().getProfileImageUrl() : null)
                 .build();

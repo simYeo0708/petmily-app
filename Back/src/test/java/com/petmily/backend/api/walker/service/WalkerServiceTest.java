@@ -4,15 +4,15 @@ import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.map.dto.Coord;
 import com.petmily.backend.api.map.service.KakaoMapService;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileCreateRequest;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerProfileResponse;
-import com.petmily.backend.api.walker.dto.walkerProfile.WalkerSearchRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerCreateRequest;
+import com.petmily.backend.api.walker.dto.walker.WalkerResponse;
+import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.user.entity.Address;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +37,7 @@ class WalkerServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private WalkerProfileRepository walkerProfileRepository;
+    private WalkerRepository walkerRepository;
     @Mock
     private KakaoMapService kakaoMapService;
     @Mock
@@ -54,7 +54,7 @@ class WalkerServiceTest {
     void registerWalker_success() {
         // Given
         String username = "testuser";
-        WalkerProfileCreateRequest request = new WalkerProfileCreateRequest();
+        WalkerCreateRequest request = new WalkerCreateRequest();
         request.setBio("I love dogs");
         request.setExperience("5 years");
         request.setServiceArea("Seoul");
@@ -64,7 +64,7 @@ class WalkerServiceTest {
         when(user.getId()).thenReturn(1L);
         when(user.getUsername()).thenReturn(username);
 
-        WalkerProfile newWalkerProfile = WalkerProfile.builder()
+        Walker newWalker = Walker.builder()
                 .id(1L)
                 .userId(1L)
                 .bio("I love dogs")
@@ -75,19 +75,19 @@ class WalkerServiceTest {
                 .build();
 
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(walkerProfileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
-        when(walkerProfileRepository.save(any(WalkerProfile.class))).thenReturn(newWalkerProfile);
+        when(walkerRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+        when(walkerRepository.save(any(Walker.class))).thenReturn(newWalker);
 
         // When
-        WalkerProfileResponse response = walkerService.registerWalker(username, request);
+        WalkerResponse response = walkerService.registerWalker(username, request);
 
         // Then
         assertNotNull(response);
         assertEquals(username, response.getUsername());
         assertEquals(WalkerStatus.PENDING, response.getStatus());
         verify(userRepository, times(1)).findByUsername(username);
-        verify(walkerProfileRepository, times(1)).findByUserId(user.getId());
-        verify(walkerProfileRepository, times(1)).save(any(WalkerProfile.class));
+        verify(walkerRepository, times(1)).findByUserId(user.getId());
+        verify(walkerRepository, times(1)).save(any(Walker.class));
     }
 
     @Test
@@ -110,24 +110,24 @@ class WalkerServiceTest {
         // Mock KakaoMapService geocoding
         when(kakaoMapService.geocodeAddress(userRoadAddress)).thenReturn(new Coord(37.5000, 127.0000)); // User's coordinates
 
-        // Mock Walker Profiles
-        WalkerProfile walker1 = WalkerProfile.builder()
+        // Mock Walkers
+        Walker walker1 = Walker.builder()
                 .id(1L).userId(101L).location("37.5001,127.0001").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker1").build())
                 .build(); // Within 30km
-        WalkerProfile walker2 = WalkerProfile.builder()
+        Walker walker2 = Walker.builder()
                 .id(2L).userId(102L).location("37.8000,127.5000").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker2").build())
                 .build(); // Outside 30km
-        WalkerProfile walker3 = WalkerProfile.builder()
+        Walker walker3 = Walker.builder()
                 .id(3L).userId(103L).location("37.5002,127.0002").status(WalkerStatus.PENDING)
                 .user(User.builder().username("walker3").build())
                 .build(); // Within 30km, but PENDING status (should still be returned by filter)
 
-        when(walkerProfileRepository.findAll()).thenReturn(Arrays.asList(walker1, walker2, walker3));
+        when(walkerRepository.findAll()).thenReturn(Arrays.asList(walker1, walker2, walker3));
 
         // When
-        List<WalkerProfileResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
+        List<WalkerResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
 
         // Then
         assertNotNull(response);
@@ -141,7 +141,7 @@ class WalkerServiceTest {
 
         verify(userRepository, times(1)).findByUsername(username);
         verify(kakaoMapService, times(1)).geocodeAddress(userRoadAddress);
-        verify(walkerProfileRepository, times(1)).findAll();
+        verify(walkerRepository, times(1)).findAll();
     }
 
     @Test
@@ -163,7 +163,7 @@ class WalkerServiceTest {
 
         verify(userRepository, times(1)).findByUsername(username);
         verify(kakaoMapService, never()).geocodeAddress(anyString()); // Geocoding should not be called
-        verify(walkerProfileRepository, never()).findAll();
+        verify(walkerRepository, never()).findAll();
     }
 
     @Test
@@ -183,15 +183,15 @@ class WalkerServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(currentUser));
         when(kakaoMapService.geocodeAddress(userRoadAddress)).thenReturn(new Coord(37.5000, 127.0000));
 
-        // Mock Walker Profiles with malformed location
-        WalkerProfile walker1 = WalkerProfile.builder()
+        // Mock Walkers with malformed location
+        Walker walker1 = Walker.builder()
                 .id(1L).userId(101L).location("malformed_location").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker1").build())
                 .build();
-        when(walkerProfileRepository.findAll()).thenReturn(Arrays.asList(walker1));
+        when(walkerRepository.findAll()).thenReturn(Arrays.asList(walker1));
 
         // When
-        List<WalkerProfileResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
+        List<WalkerResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
 
         // Then
         assertNotNull(response);
@@ -199,6 +199,6 @@ class WalkerServiceTest {
 
         verify(userRepository, times(1)).findByUsername(username);
         verify(kakaoMapService, times(1)).geocodeAddress(userRoadAddress);
-        verify(walkerProfileRepository, times(1)).findAll();
+        verify(walkerRepository, times(1)).findAll();
     }
 }

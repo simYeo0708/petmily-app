@@ -28,8 +28,10 @@ public class RedisSubscriber implements MessageListener {
                     .deserialize(message.getBody());
 
             ChatMessageResponse roomMessage = objectMapper.readValue(publishMessage, ChatMessageResponse.class);
-            // roomUuid를 기반으로 WebSocket 경로 생성 (chatRoomId 대신 roomUuid 사용)
-            messageTemplate.convertAndSend("/sub/chat/room/" + roomMessage.getChatRoomId(), roomMessage);
+            // roomId(UUID)를 기반으로 WebSocket 경로 생성
+            String destination = "/sub/chat/room/" + roomMessage.getRoomId();
+            log.info("Redis 메시지 전송: {} -> {}", destination, roomMessage.getContent());
+            messageTemplate.convertAndSend(destination, roomMessage);
         } catch (JsonProcessingException e){
             log.error("Redis 메시지 처리 중 오류 발생", e);
             throw new RuntimeException(e);

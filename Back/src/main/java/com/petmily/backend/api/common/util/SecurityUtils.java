@@ -76,4 +76,11 @@ public class SecurityUtils {
             throw new CustomException(ErrorCode.NO_ACCESS);
         }
     }
+
+    public static Long getUserIdOrNull(UserDetails userDetails) {
+        if (userDetails == null) {
+            return null;
+        }
+        return getUserId(userDetails);
+    }
 }

@@ -11,7 +11,7 @@ import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,31 +32,35 @@ public class ChatMessageService {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
-    // 채팅방의 메시지 목록 조회 (페이징)
-    public Page<ChatMessageResponse> getChatMessages(String roomId, String username, Pageable pageable) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
+    private ChatRoom findChatRoomById(String roomId){
+        return chatRoomRepository.findByRoomId(roomId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    }
 
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    // 채팅방의 메시지 목록 조회 (페이징)
+    public Page<ChatMessageResponse> getChatMessages(String roomId, Long userId, Pageable pageable) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         // 접근 권한 확인
         if (!hasAccessToChatRoom(chatRoom, user)) {
             throw new CustomException(ErrorCode.NO_ACCESS, "채팅방에 접근할 권한이 없습니다");
         }
 
-        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomIdOrderByCreateTimeDesc(chatRoom.getId(), pageable);
+        Page<ChatMessage> messages = chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(chatRoom.getId(), pageable);
         return messages.map(ChatMessageResponse::from);
     }
 
     // 메시지 전송
     @Transactional
-    public ChatMessageResponse sendMessage(String roomId, String username, ChatMessageRequest request) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public ChatMessageResponse sendMessage(String roomId, Long userId, ChatMessageRequest request) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         // 접근 권한 확인
         if (!hasAccessToChatRoom(chatRoom, user)) {
@@ -73,12 +77,18 @@ public class ChatMessageService {
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
-        return ChatMessageResponse.from(savedMessage);
+        ChatMessageResponse response = ChatMessageResponse.from(savedMessage);
+
+        // 발신자 정보 명시적으로 설정
+        response.setSenderName(user.getName());
+        response.setSenderUsername(user.getUsername());
+
+        return response;
     }
 
     // 예약 상세 정보가 포함된 시스템 메시지 생성
     @Transactional
-    public ChatMessageResponse createBookingSystemMessage(Long chatRoomId, WalkerBooking booking) {
+    public ChatMessageResponse createBookingSystemMessage(Long chatRoomId, WalkBooking booking) {
         try {
             // 예약 정보를 JSON으로 변환
             Map<String, Object> bookingData = new HashMap<>();
@@ -88,9 +98,9 @@ public class ChatMessageService {
             bookingData.put("totalPrice", booking.getTotalPrice());
             bookingData.put("pickupLocation", booking.getPickupAddress());
             bookingData.put("dropoffLocation", booking.getDropoffAddress());
-            
+
             String bookingButtonData = objectMapper.writeValueAsString(bookingData);
-            
+
             ChatMessage systemMessage = ChatMessage.builder()
                     .chatRoomId(chatRoomId)
                     .senderId(0L) // 시스템 메시지
@@ -103,7 +113,7 @@ public class ChatMessageService {
 
             ChatMessage savedMessage = chatMessageRepository.save(systemMessage);
             return ChatMessageResponse.from(savedMessage);
-            
+
         } catch (Exception e) {
             log.error("예약 시스템 메시지 생성 중 오류 발생", e);
             throw new CustomException(ErrorCode.INTERNAL_ERROR, "시스템 메시지 생성에 실패했습니다");
@@ -112,12 +122,13 @@ public class ChatMessageService {
 
     // 입장 시스템 메시지 생성
     @Transactional
-    public ChatMessageResponse createJoinMessage(Long chatRoomId, String username) {
+    public ChatMessageResponse createJoinMessage(Long chatRoomId, Long userId) {
+        User user = findUserById(userId);
         ChatMessage joinMessage = ChatMessage.builder()
                 .chatRoomId(chatRoomId)
                 .senderId(0L) // 시스템 메시지
                 .messageType(ChatMessage.MessageType.SYSTEM)
-                .content(username + "님이 채팅방에 입장했습니다.")
+                .content(user.getUsername() + "님이 채팅방에 입장했습니다.")
                 .isSystemMessage(true)
                 .isRead(false)
                 .build();
@@ -128,12 +139,9 @@ public class ChatMessageService {
 
     // 메시지를 읽음 처리
     @Transactional
-    public void markMessagesAsRead(String roomId, String username) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
-
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public void markMessagesAsRead(String roomId, Long userId) {
+        ChatRoom chatRoom = findChatRoomById(roomId);
+        User user = findUserById(userId);
 
         chatMessageRepository.markMessagesAsRead(chatRoom.getId(), user.getId());
     }
@@ -144,9 +152,9 @@ public class ChatMessageService {
         if (chatRoom.getUserId().equals(user.getId())) {
             return true;
         }
-        
+
         // 워커인지 확인 (walker 테이블에서 user_id로 조회)
-        return chatRoom.getWalker() != null && 
-               chatRoom.getWalker().getUserId().equals(user.getId());
+        return chatRoom.getWalker() != null &&
+                chatRoom.getWalker().getUserId().equals(user.getId());
     }
 }

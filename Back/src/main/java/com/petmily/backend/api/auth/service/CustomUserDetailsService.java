@@ -37,8 +37,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 이 username은 Authentication.getName()으로 반환됩니다
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
-                user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getKey()))
+                user.getPassword() != null ? user.getPassword() : "",
+                Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getAuthority()))
         );
     }
 }

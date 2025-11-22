@@ -8,9 +8,9 @@ import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.WalkerBooking;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +42,7 @@ class DashboardServiceTest {
     private WalkerBookingRepository walkerBookingRepository;
 
     @Mock
-    private WalkerProfileRepository walkerProfileRepository;
+    private WalkerRepository walkerRepository;
 
     @InjectMocks
     private DashboardService dashboardService;
@@ -50,7 +50,7 @@ class DashboardServiceTest {
     private User mockUser;
     private Pet mockPet1, mockPet2;
     private WalkerBooking mockActiveBooking, mockCompletedBooking;
-    private WalkerProfile mockWalker1, mockWalker2;
+    private Walker mockWalker1, mockWalker2;
 
     @BeforeEach
     void setUp() {
@@ -100,7 +100,7 @@ class DashboardServiceTest {
         mockCompletedBooking.setTotalPrice(25000.0);
 
         // Mock walkers
-        mockWalker1 = WalkerProfile.builder()
+        mockWalker1 = Walker.builder()
                 .id(1L)
                 .userId(2L)
                 .location("강남구")
@@ -111,7 +111,7 @@ class DashboardServiceTest {
                 .user(User.builder().username("walker1").name("김워커").build())
                 .build();
 
-        mockWalker2 = WalkerProfile.builder()
+        mockWalker2 = Walker.builder()
                 .id(2L)
                 .userId(3L)
                 .location("서초구")
@@ -131,7 +131,7 @@ class DashboardServiceTest {
                 .thenReturn(Arrays.asList(mockPet1, mockPet2));
         when(walkerBookingRepository.findByUserIdAndStatusIn(eq(1L), any()))
                 .thenReturn(Arrays.asList(mockActiveBooking));
-        when(walkerProfileRepository.findByIsAvailableTrue())
+        when(walkerRepository.findByIsAvailableTrue())
                 .thenReturn(Arrays.asList(mockWalker1, mockWalker2));
         when(petRepository.findByUserId(1L))
                 .thenReturn(Arrays.asList(mockPet1, mockPet2));
@@ -193,7 +193,7 @@ class DashboardServiceTest {
                 .thenReturn(Arrays.asList(mockPet1, mockPet2, mockPet3, mockPet4));
         when(walkerBookingRepository.findByUserIdAndStatusIn(eq(1L), any()))
                 .thenReturn(Arrays.asList());
-        when(walkerProfileRepository.findByIsAvailableTrue())
+        when(walkerRepository.findByIsAvailableTrue())
                 .thenReturn(Arrays.asList());
         when(petRepository.findByUserId(1L))
                 .thenReturn(Arrays.asList(mockPet1, mockPet2, mockPet3, mockPet4));
@@ -211,8 +211,8 @@ class DashboardServiceTest {
     @Test
     void getDashboard_LimitsWalkersToFive() {
         // Given
-        List<WalkerProfile> manyWalkers = Arrays.asList(
-                mockWalker1, mockWalker2, mockWalker1, mockWalker2, 
+        List<Walker> manyWalkers = Arrays.asList(
+                mockWalker1, mockWalker2, mockWalker1, mockWalker2,
                 mockWalker1, mockWalker2, mockWalker1 // 7개
         );
 
@@ -221,7 +221,7 @@ class DashboardServiceTest {
                 .thenReturn(Arrays.asList());
         when(walkerBookingRepository.findByUserIdAndStatusIn(eq(1L), any()))
                 .thenReturn(Arrays.asList());
-        when(walkerProfileRepository.findByIsAvailableTrue())
+        when(walkerRepository.findByIsAvailableTrue())
                 .thenReturn(manyWalkers);
         when(petRepository.findByUserId(1L))
                 .thenReturn(Arrays.asList());

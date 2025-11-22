@@ -10,8 +10,8 @@ import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
-import com.petmily.backend.domain.walker.repository.WalkerProfileRepository;
+import com.petmily.backend.domain.walker.entity.Walker;
+import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -33,16 +33,25 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
-    private final WalkerProfileRepository walkerProfileRepository;
+    private final WalkerRepository walkerRepository;
     private final RedisSubscriber redisSubscriber;
     private final RedisMessageListenerContainer redisMessageListenerContainer;
 
     private final Map<String, ChannelTopic> topics = new HashMap<>();
 
-    // 사용자의 모든 채팅방 조회
-    public List<ChatRoomResponse> getUserChatRooms(String username) {
-        User user = userRepository.findByUsername(username)
+    private User findUserById(Long userId){
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private ChatRoom findChatRoomById(String roomId){
+        return chatRoomRepository.findByRoomId(roomId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    }
+
+    // 사용자의 모든 채팅방 조회
+    public List<ChatRoomResponse> getUserChatRooms(Long userId) {
+        User user = findUserById(userId);
 
         List<ChatRoom> chatRooms = chatRoomRepository.findByUserIdOrWalkerUserId(user.getId());
         
@@ -55,7 +64,7 @@ public class ChatRoomService {
                     return ChatRoomResponse.fromWithLastMessage(
                             chatRoom,
                             lastMessage != null ? lastMessage.getContent() : null,
-                            lastMessage != null ? lastMessage.getCreateTime() : null,
+                            lastMessage != null ? lastMessage.getCreatedAt() : null,
                             unreadCount
                     );
                 })
@@ -64,18 +73,16 @@ public class ChatRoomService {
 
     // 채팅방 ID로 조회
     public ChatRoomResponse findRoomById(String roomId) {
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+        ChatRoom chatRoom = findChatRoomById(roomId);
         return ChatRoomResponse.from(chatRoom);
     }
 
     // 예약 전 문의용 채팅방 생성 (유저 -> 워커)
     @Transactional
-    public ChatRoomResponse createPreBookingChatRoom(String username, CreateChatRoomRequest request) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+    public ChatRoomResponse createPreBookingChatRoom(Long userId, CreateChatRoomRequest request) {
+        User user = findUserById(userId);
 
-        WalkerProfile walker = walkerProfileRepository.findById(request.getWalkerId())
+        Walker walker = walkerRepository.findById(request.getWalkerId())
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "워커를 찾을 수 없습니다"));
 
         // 워커는 자기 자신과 채팅할 수 없음
@@ -123,20 +130,17 @@ public class ChatRoomService {
     }
 
     // 사용자가 채팅방에 접근 권한이 있는지 확인
-    public boolean hasAccessToChatRoom(String roomId, String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
-
-        ChatRoom chatRoom = chatRoomRepository.findByRoomId(roomId)
-                .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "채팅방을 찾을 수 없습니다"));
+    public boolean hasAccessToChatRoom(String roomId, Long userId) {
+        User user = findUserById(userId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
 
         // 채팅방의 유저이거나, 워커인 경우
         if (chatRoom.getUserId().equals(user.getId())) {
             return true;
         }
-        
+
         // 워커인지 확인
-        WalkerProfile walker = walkerProfileRepository.findByUserId(user.getId()).orElse(null);
+        Walker walker = walkerRepository.findByUserId(user.getId()).orElse(null);
         return walker != null && chatRoom.getWalkerId().equals(walker.getId());
     }
 

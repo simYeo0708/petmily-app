@@ -24,6 +24,7 @@
     "@tamagui/animations-react-native": "^1.132.24",
     "@tamagui/config": "^1.132.24",
     "@tamagui/core": "^1.132.24",
+    "dotenv": "^17.2.3",
     "expo": "~54.0.7",
     "expo-blur": "^15.0.7",
     "expo-constants": "~18.0.8",
