@@ -240,29 +240,29 @@ const SettingsScreen = () => {
                 
                 return (
                   <AnimatedTouchable
-                    key={itemIndex}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      paddingVertical: 18,
-                      paddingHorizontal: 20,
-                      borderBottomWidth:
-                        itemIndex < section.items.length - 1 ? 1 : 0,
-                      borderBottomColor: "rgba(240, 240, 240, 0.5)",
+                  key={itemIndex}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 18,
+                    paddingHorizontal: 20,
+                    borderBottomWidth:
+                      itemIndex < section.items.length - 1 ? 1 : 0,
+                    borderBottomColor: "rgba(240, 240, 240, 0.5)",
                       transform: item.animationKey 
                         ? [{ scale: switchAnimations[item.animationKey] }]
                         : undefined,
-                    }}
-                    onPress={item.action}
+                  }}
+                  onPress={item.action}
                     disabled={item.hasSwitch}
                     activeOpacity={0.7}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        flex: 1,
-                      }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flex: 1,
+                    }}>
                       <View
                         style={{
                           width: 40,
@@ -281,15 +281,15 @@ const SettingsScreen = () => {
                         />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text
-                          style={{
+                    <Text
+                      style={{
                             fontSize: rf(16),
-                            color: "#333",
+                        color: "#333",
                             fontWeight: "600",
                             marginBottom: 2,
-                          }}>
-                          {item.title}
-                        </Text>
+                      }}>
+                      {item.title}
+                    </Text>
                         {item.description && (
                           <Text
                             style={{
@@ -300,19 +300,19 @@ const SettingsScreen = () => {
                           </Text>
                         )}
                       </View>
-                    </View>
+                  </View>
 
-                    {item.hasSwitch ? (
-                      <Switch
-                        value={item.value}
-                        onValueChange={item.onToggle}
+                  {item.hasSwitch ? (
+                    <Switch
+                      value={item.value}
+                      onValueChange={item.onToggle}
                         trackColor={{ false: "#E0E0E0", true: "#C59172" }}
-                        thumbColor={item.value ? "#fff" : "#f4f3f4"}
+                      thumbColor={item.value ? "#fff" : "#f4f3f4"}
                         ios_backgroundColor="#E0E0E0"
-                      />
-                    ) : (
+                    />
+                  ) : (
                       <Text style={{ fontSize: 18, color: "#C59172", fontWeight: "600" }}>›</Text>
-                    )}
+                  )}
                   </AnimatedTouchable>
                 );
               })}

@@ -152,9 +152,9 @@ export const useSettings = () => {
   const setMarketingEmails = async (value: boolean) => {
     try {
       if (value) {
-        await AsyncStorage.setItem(SETTINGS_KEYS.MARKETING_EMAILS, JSON.stringify(value));
-        setMarketingEmailsState(value);
-        
+      await AsyncStorage.setItem(SETTINGS_KEYS.MARKETING_EMAILS, JSON.stringify(value));
+      setMarketingEmailsState(value);
+      
         Alert.alert(
           "🎉 마케팅 수신 동의",
           "다양한 혜택을 받으실 수 있습니다!\n\n• 신규 상품 출시 소식\n• 특별 할인 쿠폰\n• 시즌 이벤트\n• 반려동물 케어 팁\n• VIP 회원 혜택\n\n언제든지 설정에서 변경 가능합니다.",
