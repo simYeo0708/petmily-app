@@ -142,7 +142,7 @@ const GuideStepModal: React.FC<GuideStepModalProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 30,
     left: 0,
     right: 0,
     top: 0,
