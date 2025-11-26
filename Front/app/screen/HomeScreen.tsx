@@ -201,6 +201,7 @@ const HomeScreen = () => {
   const walkRequestListRef = useRef<View | null>(null);
   const shopButtonRef = useRef<View | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const [scrollY, setScrollY] = useState(0);
 
   const handleNavigateToHelper = () => {
     navigation.navigate("HelperDashboard");
@@ -444,6 +445,12 @@ const HomeScreen = () => {
         contentContainerStyle={homeScreenStyles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!showGuideOverlay}
+        // onScroll={(event) => {
+        //   const currentScrollY = event.nativeEvent.contentOffset.y;
+        //   setScrollY(currentScrollY);
+        //   console.log('[HomeScreen] scrollY:', currentScrollY);
+        // }}
+        scrollEventThrottle={16}
       >
         {!showGuideOverlay && (
         <View style={homeScreenStyles.fullWidthBanner}>
@@ -466,36 +473,6 @@ const HomeScreen = () => {
               <Text style={{ color: 'white', fontSize: rf(12) }}>가이드 시작</Text>
             </TouchableOpacity>
           </View> */}
-          {/* 가이드 시작 버튼 */}
-          <View style={{ marginBottom: 12, paddingHorizontal: 20 }}>
-            <TouchableOpacity
-              onPress={() => {
-                console.log("[가이드] 가이드 시작 버튼 클릭");
-                forceStartGuide();
-                setGuideActive(true);
-                setGuideStep(0);
-              }}
-              style={{
-                backgroundColor: '#4A90E2',
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                borderRadius: 12,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#4A90E2',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <IconImage name="paw" size={18} />
-                <Text style={{ color: 'white', fontSize: rf(14), fontWeight: '600' }}>
-                  가이드 시작
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
 
           {/* 서비스 선택 */}
           <View style={modeStyles.modeRow}>
@@ -602,6 +579,87 @@ const HomeScreen = () => {
 
         </View>
       </SafeAreaView>
+      
+      {/* 가이드 시작 플로팅 버튼 */}
+      <TouchableOpacity
+        style={styles.guideButton}
+        onPress={() => {
+          console.log("[가이드] 가이드 시작 버튼 클릭");
+          console.log("[가이드] 현재 scrollY:", scrollY);
+          
+          // 특정 박스 구간으로 스크롤 (예: 0 위치로 이동)
+          // TODO: 원하는 박스 구간의 Y 좌표로 변경 필요
+          const targetScrollY = 0;
+          
+          if (scrollViewRef.current) {
+            // Animated.timing을 사용하여 명시적으로 300ms duration 적용
+            // transition-all duration-300과 동일한 효과
+            const startY = scrollY;
+            const diff = targetScrollY - startY;
+            const duration = 300; // 300ms duration
+            const startTime = Date.now();
+            
+            // requestAnimationFrame을 사용하여 부드러운 스크롤 애니메이션 구현
+            const animateScroll = () => {
+              const elapsed = Date.now() - startTime;
+              const progress = Math.min(elapsed / duration, 1); // 0 ~ 1
+              
+              // Easing 함수 적용 (ease-out cubic)
+              const easedProgress = 1 - Math.pow(1 - progress, 3);
+              
+              const currentY = startY + (diff * easedProgress);
+              
+              if (scrollViewRef.current) {
+                scrollViewRef.current.scrollTo({
+                  x: 0,
+                  y: currentY,
+                  animated: false, // 즉시 이동 (애니메이션은 requestAnimationFrame으로 제어)
+                });
+              }
+              
+              if (progress < 1) {
+                // 아직 애니메이션 진행 중
+                requestAnimationFrame(animateScroll);
+              } else {
+                // 애니메이션 완료
+                // 최종 위치로 정확히 이동
+                if (scrollViewRef.current) {
+                  scrollViewRef.current.scrollTo({
+                    x: 0,
+                    y: targetScrollY,
+                    animated: false,
+                  });
+                }
+                
+                // 300ms 애니메이션 완료 후 가이드 시작
+                forceStartGuide();
+                setGuideActive(true);
+                setGuideStep(0);
+              }
+            };
+            
+            // 애니메이션 시작
+            requestAnimationFrame(animateScroll);
+          } else {
+            // scrollViewRef가 없을 경우 즉시 실행
+            forceStartGuide();
+            setGuideActive(true);
+            setGuideStep(0);
+          }
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="help-circle" size={28} color="#fff" />
+      </TouchableOpacity>
+      
+      {/* 헬퍼 대시보드 플로팅 버튼 */}
+      <TouchableOpacity
+        style={styles.helperDashboardButton}
+        onPress={handleNavigateToHelper}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="grid" size={28} color="#fff" />
+      </TouchableOpacity>
       
       {/* AI 고객지원 플로팅 버튼 */}
       <TouchableOpacity
@@ -731,6 +789,46 @@ const styles = StyleSheet.create({
     fontSize: rf(14),
     color: '#666',
     textAlign: 'center',
+  },
+  guideButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 230,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#4A90E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    zIndex: 999,
+  },
+  helperDashboardButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 160,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#C59172',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    zIndex: 999,
   },
   aiChatButton: {
     position: 'absolute',
