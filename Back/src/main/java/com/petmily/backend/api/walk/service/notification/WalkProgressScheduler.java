@@ -3,7 +3,7 @@ package com.petmily.backend.api.walk.service.notification;
 import com.petmily.backend.api.common.service.LocationValidationService;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
@@ -101,7 +101,7 @@ public class WalkProgressScheduler {
     private void checkStationaryAlert(WalkBooking booking) {
         try {
             LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(STATIONARY_THRESHOLD_MINUTES);
-            List<WalkTrack> recentTracks = walkTrackRepository
+            List<WalkingTrack> recentTracks = walkTrackRepository
                     .findByBookingIdAndTimestampAfter(booking.getId(), cutoffTime);
 
             if (recentTracks.isEmpty()) {
@@ -133,14 +133,14 @@ public class WalkProgressScheduler {
     /**
      * 위치들이 정지 상태인지 확인
      */
-    private boolean isStationaryLocation(List<WalkTrack> tracks) {
+    private boolean isStationaryLocation(List<WalkingTrack> tracks) {
         if (tracks.size() < 3) {
             return false;
         }
 
-        WalkTrack baseLocation = tracks.get(0);
+        WalkingTrack baseLocation = tracks.get(0);
         
-        for (WalkTrack track : tracks) {
+        for (WalkingTrack track : tracks) {
             double distanceKm = LocationValidationService.calculateDistance(
                     baseLocation.getLatitude(), baseLocation.getLongitude(),
                     track.getLatitude(), track.getLongitude()

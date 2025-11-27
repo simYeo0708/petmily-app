@@ -1,6 +1,6 @@
 package com.petmily.backend.api.walk.dto.tracking.response;
 
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,11 +15,11 @@ public class WalkTrackResponse {
     private Double longitude;
     private LocalDateTime timestamp;
     private Double accuracy;
-    private WalkTrack.TrackType trackType;
+    private WalkingTrack.TrackType trackType;
     private Double speed;
     private Double altitude;
 
-    public static WalkTrackResponse from(WalkTrack walkTrack) {
+    public static WalkTrackResponse from(WalkingTrack walkTrack) {
         return WalkTrackResponse.builder()
                 .id(walkTrack.getId())
                 .bookingId(walkTrack.getBookingId())

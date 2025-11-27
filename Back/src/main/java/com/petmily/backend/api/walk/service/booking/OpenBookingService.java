@@ -5,7 +5,7 @@ import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.walk.dto.booking.request.WalkApplicationRequest;
 import com.petmily.backend.api.walk.dto.booking.request.WalkBookingRequest;
 import com.petmily.backend.api.walk.dto.booking.response.WalkApplicationResponse;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walk.service.validation.ValidationService;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
@@ -34,7 +34,7 @@ public class OpenBookingService {
     private final ValidationService validationService;
 
     @Transactional
-    public WalkBookingResponse createOpenBooking(Long userId, WalkBookingRequest request) {
+    public WalkerBookingResponse createOpenBooking(Long userId, WalkBookingRequest request) {
         User user = walkBookingService.findUserById(userId);
 
         if (request.getPickupLocation() == null || request.getPickupAddress() == null) {
@@ -62,36 +62,36 @@ public class OpenBookingService {
         booking.setStatus(WalkBooking.BookingStatus.PENDING); // 워커들의 지원을 기다림
 
         WalkBooking savedBooking = walkBookingRepository.save(booking);
-        return WalkBookingResponse.from(savedBooking);
+        return WalkerBookingResponse.from(savedBooking);
     }
 
-    public List<WalkBookingResponse> getOpenBookings() {
+    public List<WalkerBookingResponse> getOpenBookings() {
         List<WalkBooking> openBookings = walkBookingRepository.findByBookingMethodAndStatusOrderByCreatedAtDesc(
                 WalkBooking.BookingMethod.OPEN_REQUEST,
                 WalkBooking.BookingStatus.PENDING
         );
         return openBookings.stream()
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
-    public WalkBookingResponse getOpenBooking(Long bookingId, Long userId) {
+    public WalkerBookingResponse getOpenBooking(Long bookingId, Long userId) {
         ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
 
         if (validation.booking.getBookingMethod() != WalkBooking.BookingMethod.OPEN_REQUEST) {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "This is not an open booking");
         }
 
-        return WalkBookingResponse.from(validation.booking);
+        return WalkerBookingResponse.from(validation.booking);
     }
 
-    public List<WalkBookingResponse> getOpenBookingsByUser(Long userId) {
+    public List<WalkerBookingResponse> getOpenBookingsByUser(Long userId) {
         User user = walkBookingService.findUserById(userId);
 
         List<WalkBooking> bookings = walkBookingRepository.findByUserIdOrderByDateDesc(user.getId());
         return bookings.stream()
                 .filter(booking -> booking.getBookingMethod() == WalkBooking.BookingMethod.OPEN_REQUEST)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
@@ -123,7 +123,7 @@ public class OpenBookingService {
     }
 
 
-    public List<WalkBookingResponse> getApplicationsByWalker(Long userId) {
+    public List<WalkerBookingResponse> getApplicationsByWalker(Long userId) {
         User user = walkBookingService.findUserById(userId);
         Walker walker = walkBookingService.findWalkerByUserId(user.getId());
 
@@ -134,12 +134,12 @@ public class OpenBookingService {
         List<WalkBooking> applications = walkBookingRepository.findByWalkerIdOrderByDateDesc(walker.getId());
         return applications.stream()
                 .filter(booking -> booking.getBookingMethod() == WalkBooking.BookingMethod.OPEN_REQUEST)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public WalkBookingResponse applyToOpenBooking(Long openBookingId, WalkApplicationRequest request, Long userId) {
+    public WalkerBookingResponse applyToOpenBooking(Long openBookingId, WalkApplicationRequest request, Long userId) {
         User user = walkBookingService.findUserById(userId);
         Walker walker = walkBookingService.findWalkerByUserId(user.getId());
 
@@ -187,11 +187,11 @@ public class OpenBookingService {
         application.setStatus(WalkBooking.BookingStatus.WALKER_APPLIED);
 
         WalkBooking savedApplication = walkBookingRepository.save(application);
-        return WalkBookingResponse.from(savedApplication);
+        return WalkerBookingResponse.from(savedApplication);
     }
 
     @Transactional
-    public WalkBookingResponse updateApplicationStatus(Long applicationId, WalkBooking.BookingStatus status, Long userId) {
+    public WalkerBookingResponse updateApplicationStatus(Long applicationId, WalkBooking.BookingStatus status, Long userId) {
         User user = walkBookingService.findUserById(userId);
         WalkBooking application = walkBookingRepository.findById(applicationId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Application not found"));
@@ -241,6 +241,6 @@ public class OpenBookingService {
             walkBookingService.createBookingChatRoomAndSendSystemMessage(updatedApplication);
         }
 
-        return WalkBookingResponse.from(updatedApplication);
+        return WalkerBookingResponse.from(updatedApplication);
     }
 }

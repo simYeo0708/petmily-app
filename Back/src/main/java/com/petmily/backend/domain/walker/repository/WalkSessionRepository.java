@@ -42,3 +42,4 @@ public interface WalkSessionRepository extends JpaRepository<WalkSession, Long> 
 }
 
 
+

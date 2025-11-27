@@ -4,8 +4,9 @@ import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.exception.InvalidCoordinatesException;
 import com.petmily.backend.api.exception.LocationRequiredException;
-import com.petmily.backend.domain.walker.entity.WalkingTrack;
-import com.petmily.backend.domain.walker.repository.WalkingTrackRepository;
+import com.petmily.backend.api.common.service.LocationValidationService;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
+import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.*;
 class LocationValidationServiceTest {
 
     @Mock
-    private WalkingTrackRepository walkingTrackRepository;
+    private WalkTrackRepository walkTrackRepository;
 
     @InjectMocks
     private LocationValidationService locationValidationService;
@@ -39,7 +40,6 @@ class LocationValidationServiceTest {
     @BeforeEach
     void setUp() {
         previousTrack = WalkingTrack.builder()
-                .id(1L)
                 .bookingId(1L)
                 .latitude(37.5665)
                 .longitude(126.9780)
@@ -162,14 +162,14 @@ class LocationValidationServiceTest {
         Double newLatitude = 37.5665;
         Double newLongitude = 126.9780;
 
-        when(walkingTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Optional.empty());
 
         // When & Then
         assertThatCode(() -> locationValidationService.validateLocationChange(bookingId, newLatitude, newLongitude))
                 .doesNotThrowAnyException();
 
-        verify(walkingTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -180,14 +180,14 @@ class LocationValidationServiceTest {
         Double newLatitude = 37.5666; // 약 11m 이동
         Double newLongitude = 126.9781;
 
-        when(walkingTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Optional.of(previousTrack));
 
         // When & Then
         assertThatCode(() -> locationValidationService.validateLocationChange(bookingId, newLatitude, newLongitude))
                 .doesNotThrowAnyException();
 
-        verify(walkingTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -199,14 +199,13 @@ class LocationValidationServiceTest {
         Double newLongitude = 127.0780;
 
         WalkingTrack recentTrack = WalkingTrack.builder()
-                .id(1L)
                 .bookingId(1L)
                 .latitude(37.5665)
                 .longitude(126.9780)
                 .timestamp(LocalDateTime.now().minusSeconds(10)) // 10초 전
                 .build();
 
-        when(walkingTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Optional.of(recentTrack));
 
         // When & Then
@@ -215,7 +214,7 @@ class LocationValidationServiceTest {
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.UNREALISTIC_LOCATION_CHANGE)
                 .hasMessageContaining("이동 속도가 너무 빠릅니다");
 
-        verify(walkingTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTopByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -227,14 +226,13 @@ class LocationValidationServiceTest {
         Double newLongitude = 127.0780;
 
         WalkingTrack futureTrack = WalkingTrack.builder()
-                .id(1L)
                 .bookingId(1L)
                 .latitude(37.5665)
                 .longitude(126.9780)
                 .timestamp(LocalDateTime.now().plusSeconds(10)) // 미래 시간
                 .build();
 
-        when(walkingTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Optional.of(futureTrack));
 
         // When & Then
@@ -277,7 +275,7 @@ class LocationValidationServiceTest {
         Double latitude = 37.5665;
         Double longitude = 126.9780;
 
-        when(walkingTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Arrays.asList(
                         createTrack(1L, 37.5665, 126.9780),
                         createTrack(2L, 37.5665, 126.9780)
@@ -289,7 +287,7 @@ class LocationValidationServiceTest {
         // Then
         assertThat(result).isFalse();
 
-        verify(walkingTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -300,7 +298,7 @@ class LocationValidationServiceTest {
         Double latitude = 37.5665;
         Double longitude = 126.9780;
 
-        when(walkingTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(recentTracks);
 
         // When
@@ -309,7 +307,7 @@ class LocationValidationServiceTest {
         // Then
         assertThat(result).isTrue();
 
-        verify(walkingTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -328,7 +326,7 @@ class LocationValidationServiceTest {
                 createTrack(5L, 37.5665, 126.9780)
         );
 
-        when(walkingTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(variableTracks);
 
         // When
@@ -346,7 +344,7 @@ class LocationValidationServiceTest {
         Double latitude = 37.56650001; // 매우 작은 차이
         Double longitude = 126.97800001;
 
-        when(walkingTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(recentTracks);
 
         // When
@@ -355,7 +353,7 @@ class LocationValidationServiceTest {
         // Then
         assertThat(result).isTrue(); // 허용 범위 내에서 동일하다고 판단
 
-        verify(walkingTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
+        verify(walkTrackRepository).findTop5ByBookingIdOrderByTimestampDesc(bookingId);
     }
 
     @Test
@@ -366,7 +364,7 @@ class LocationValidationServiceTest {
         Double latitude = 37.5665;
         Double longitude = 126.9780;
 
-        when(walkingTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTop5ByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Collections.emptyList());
 
         // When
@@ -405,7 +403,6 @@ class LocationValidationServiceTest {
 
         // 1분 전 위치 (서울역)
         WalkingTrack baseTrack = WalkingTrack.builder()
-                .id(1L)
                 .bookingId(1L)
                 .latitude(37.5547)
                 .longitude(126.9707)
@@ -416,7 +413,7 @@ class LocationValidationServiceTest {
         Double newLatitude = 37.4979;
         Double newLongitude = 127.0276;
 
-        when(walkingTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
+        when(walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId))
                 .thenReturn(Optional.of(baseTrack));
 
         // When & Then
@@ -428,11 +425,11 @@ class LocationValidationServiceTest {
 
     private WalkingTrack createTrack(Long id, Double latitude, Double longitude) {
         return WalkingTrack.builder()
-                .id(id)
                 .bookingId(1L)
                 .latitude(latitude)
                 .longitude(longitude)
                 .timestamp(LocalDateTime.now().minusMinutes(id))
+                .trackType(WalkingTrack.TrackType.WALKING)
                 .build();
     }
 }

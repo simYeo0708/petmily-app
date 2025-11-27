@@ -1,7 +1,7 @@
 package com.petmily.backend.api.walk.controller.walk;
 
 import com.petmily.backend.api.common.util.SecurityUtils;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walk.dto.tracking.request.*;
 import com.petmily.backend.api.walk.dto.tracking.response.*;
 import com.petmily.backend.api.walk.service.walk.WalkService;
@@ -50,7 +50,7 @@ public class WalkController {
             @RequestBody LocationTrackRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = SecurityUtils.getUserId(userDetails);
-        WalkTrackResponse response = walkService.saveWalkTrack(bookingId, request, userId);
+        WalkTrackResponse response = walkService.saveWalkingTrack(bookingId, request, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -101,12 +101,12 @@ public class WalkController {
      * 산책 종료 요청 (양방향 동의 필요)
      */
     @PostMapping("/{bookingId}/request-termination")
-    public ResponseEntity<WalkBookingResponse> requestWalkTermination(
+    public ResponseEntity<WalkerBookingResponse> requestWalkTermination(
             @PathVariable Long bookingId,
             @RequestBody WalkTerminationRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = SecurityUtils.getUserId(userDetails);
-        WalkBookingResponse response = walkService.requestWalkTermination(bookingId, request, userId);
+        WalkerBookingResponse response = walkService.requestWalkTermination(bookingId, request, userId);
         return ResponseEntity.ok(response);
     }
 

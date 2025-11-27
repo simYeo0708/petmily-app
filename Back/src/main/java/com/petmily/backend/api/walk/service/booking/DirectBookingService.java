@@ -3,7 +3,7 @@ package com.petmily.backend.api.walk.service.booking;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.walk.dto.booking.request.WalkBookingRequest;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walk.service.validation.ValidationService;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
@@ -28,7 +28,7 @@ public class DirectBookingService {
     private final ValidationService validationService;
 
     @Transactional
-    public WalkBookingResponse createWalkerSelectionBooking(Long userId, WalkBookingRequest request) {
+    public WalkerBookingResponse createWalkerSelectionBooking(Long userId, WalkBookingRequest request) {
         User user = walkBookingService.findUserById(userId);
 
         if (request.getWalkerId() == null) {
@@ -63,31 +63,31 @@ public class DirectBookingService {
         booking.setStatus(WalkBooking.BookingStatus.PENDING);
 
         WalkBooking savedBooking = walkBookingRepository.save(booking);
-        return WalkBookingResponse.from(savedBooking);
+        return WalkerBookingResponse.from(savedBooking);
     }
 
-    public List<WalkBookingResponse> getDirectBookingsByUser(Long userId) {
+    public List<WalkerBookingResponse> getDirectBookingsByUser(Long userId) {
         User user = walkBookingService.findUserById(userId);
 
         List<WalkBooking> bookings = walkBookingRepository.findByUserIdOrderByDateDesc(user.getId());
         return bookings.stream()
                 .filter(booking -> booking.getBookingMethod() == WalkBooking.BookingMethod.WALKER_SELECTION)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
-    public List<WalkBookingResponse> getDirectBookingsByWalker(Long userId) {
+    public List<WalkerBookingResponse> getDirectBookingsByWalker(Long userId) {
         User user = walkBookingService.findUserById(userId);
-        Walker walker = walkBookingService.findWalkerById(user.getId());
+        Walker walker = walkBookingService.findWalkerByUserId(user.getId());
 
         List<WalkBooking> bookings = walkBookingRepository.findByWalkerIdOrderByDateDesc(walker.getId());
         return bookings.stream()
                 .filter(booking -> booking.getBookingMethod() == WalkBooking.BookingMethod.WALKER_SELECTION)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
-    public WalkBookingResponse getDirectBooking(Long bookingId, Long userId) {
+    public WalkerBookingResponse getDirectBooking(Long bookingId, Long userId) {
         ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
 
         // Verify this is a direct booking
@@ -95,12 +95,12 @@ public class DirectBookingService {
             throw new CustomException(ErrorCode.INVALID_REQUEST, "This is not a direct booking");
         }
 
-        return WalkBookingResponse.from(validation.booking);
+        return WalkerBookingResponse.from(validation.booking);
     }
 
 
     @Transactional
-    public WalkBookingResponse updateBookingStatus(Long bookingId, WalkBooking.BookingStatus status, Long userId) {
+    public WalkerBookingResponse updateBookingStatus(Long bookingId, WalkBooking.BookingStatus status, Long userId) {
         ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
 
         // Verify this is a direct booking
@@ -132,11 +132,11 @@ public class DirectBookingService {
             walkBookingService.createBookingChatRoomAndSendSystemMessage(updatedBooking);
         }
 
-        return WalkBookingResponse.from(updatedBooking);
+        return WalkerBookingResponse.from(updatedBooking);
     }
 
     @Transactional
-    public WalkBookingResponse cancelBooking(Long bookingId, Long userId) {
+    public WalkerBookingResponse cancelBooking(Long bookingId, Long userId) {
         return updateBookingStatus(bookingId, WalkBooking.BookingStatus.CANCELLED, userId);
     }
 }

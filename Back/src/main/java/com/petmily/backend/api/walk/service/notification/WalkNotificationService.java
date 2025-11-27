@@ -1,6 +1,6 @@
 package com.petmily.backend.api.walk.service.notification;
 
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
 import com.petmily.backend.domain.walker.entity.Walker;
@@ -57,7 +57,7 @@ public class WalkNotificationService {
                 return;
             }
 
-            List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(booking.getId());
+            List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(booking.getId());
             String message = messageGenerator.generateWalkProgressMessage(booking, tracks, petName);
             
             boolean sent = sendNotification(ownerContact, message);
@@ -76,7 +76,7 @@ public class WalkNotificationService {
      */
     public void sendWalkCompleteNotification(WalkBooking booking, String petName, String ownerContact) {
         try {
-            List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(booking.getId());
+            List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(booking.getId());
             String message = messageGenerator.generateWalkCompleteMessage(booking, tracks, petName);
             
             boolean sent = sendNotification(ownerContact, message);

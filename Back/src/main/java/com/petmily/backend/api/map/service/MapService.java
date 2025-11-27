@@ -7,9 +7,9 @@ import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.pet.entity.Pet;
 import com.petmily.backend.domain.pet.repository.PetRepository;
 import com.petmily.backend.domain.walker.entity.WalkSession;
-import com.petmily.backend.domain.walker.entity.WalkingTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walker.repository.WalkSessionRepository;
-import com.petmily.backend.domain.walker.repository.WalkingTrackRepository;
+import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -27,18 +27,18 @@ public class MapService {
     private final UserRepository userRepository;
     private final PetRepository petRepository;
     private final WalkSessionRepository walkSessionRepository;
-    private final WalkingTrackRepository walkingTrackRepository;
+    private final WalkTrackRepository walkTrackRepository;
     
     @Value("${kakao.map.api.key}")
     private String kakaoMapApiKey;
     
     public MapService(UserRepository userRepository, PetRepository petRepository,
                      WalkSessionRepository walkSessionRepository,
-                     WalkingTrackRepository walkingTrackRepository) {
+                     WalkTrackRepository walkTrackRepository) {
         this.userRepository = userRepository;
         this.petRepository = petRepository;
         this.walkSessionRepository = walkSessionRepository;
-        this.walkingTrackRepository = walkingTrackRepository;
+        this.walkTrackRepository = walkTrackRepository;
     }
     
     public MapConfigResponse getMapConfig() {
@@ -94,7 +94,7 @@ public class MapService {
                     .trackType(WalkingTrack.TrackType.WALKING)
                     .build();
 
-            walkingTrackRepository.save(track);
+            walkTrackRepository.save(track);
         }
 
         // 응답 생성
@@ -140,7 +140,7 @@ public class MapService {
                     .timestamp(session.getStartTime())
                     .trackType(WalkingTrack.TrackType.START)
                     .build();
-            walkingTrackRepository.save(startTrack);
+            walkTrackRepository.save(startTrack);
         }
 
         return convertToResponse(session);
@@ -167,7 +167,7 @@ public class MapService {
                     .timestamp(LocalDateTime.now())
                     .trackType(WalkingTrack.TrackType.END)
                     .build();
-            walkingTrackRepository.save(endTrack);
+            walkTrackRepository.save(endTrack);
         }
 
         session.complete(LocalDateTime.now(), endLatitude, endLongitude, totalDistance, durationSeconds);
@@ -186,7 +186,7 @@ public class MapService {
             throw new RuntimeException("User does not own this walk session");
         }
 
-        List<WalkingTrack> tracks = walkingTrackRepository.findPathPointsByWalkSessionId(walkSessionId);
+        List<WalkingTrack> tracks = walkTrackRepository.findPathPointsByWalkSessionId(walkSessionId);
 
         List<RouteResponse.RoutePoint> points = tracks.stream()
                 .map(track -> RouteResponse.RoutePoint.builder()

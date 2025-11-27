@@ -47,8 +47,8 @@ public class ReviewResponse {
                 .unhelpfulCount(review.getUnhelpfulCount())
                 .helpfulnessScore(review.getHelpfulnessScore())
                 .isVerifiedPurchase(review.getIsVerifiedPurchase())
-                .createdAt(review.getCreateTime())
-                .updatedAt(review.getUpdateTime())
+                .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
                 .build();
     }
 

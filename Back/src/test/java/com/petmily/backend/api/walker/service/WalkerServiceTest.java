@@ -55,8 +55,8 @@ class WalkerServiceTest {
         // Given
         String username = "testuser";
         WalkerCreateRequest request = new WalkerCreateRequest();
-        request.setBio("I love dogs");
-        request.setExperience("5 years");
+        // WalkerCreateRequest에는 introduction 필드가 없고 detailDescription만 있음
+        request.setDetailDescription("5 years");
         request.setServiceArea("Seoul");
 
         // Create user as a Mockito mock
@@ -67,10 +67,10 @@ class WalkerServiceTest {
         Walker newWalker = Walker.builder()
                 .id(1L)
                 .userId(1L)
-                .bio("I love dogs")
-                .experience("5 years")
+                .detailDescription("I love dogs")
+                .detailDescription("5 years")
                 .status(WalkerStatus.PENDING)
-                .location("Seoul")
+                .serviceArea("Seoul")
                 .user(user) // Set user for response mapping
                 .build();
 
@@ -79,7 +79,7 @@ class WalkerServiceTest {
         when(walkerRepository.save(any(Walker.class))).thenReturn(newWalker);
 
         // When
-        WalkerResponse response = walkerService.registerWalker(username, request);
+        WalkerResponse response = walkerService.registerWalker(user.getId(), request);
 
         // Then
         assertNotNull(response);
@@ -112,22 +112,22 @@ class WalkerServiceTest {
 
         // Mock Walkers
         Walker walker1 = Walker.builder()
-                .id(1L).userId(101L).location("37.5001,127.0001").status(WalkerStatus.ACTIVE)
+                .id(1L).userId(101L).coordinates("37.5001,127.0001").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker1").build())
                 .build(); // Within 30km
         Walker walker2 = Walker.builder()
-                .id(2L).userId(102L).location("37.8000,127.5000").status(WalkerStatus.ACTIVE)
+                .id(2L).userId(102L).coordinates("37.8000,127.5000").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker2").build())
                 .build(); // Outside 30km
         Walker walker3 = Walker.builder()
-                .id(3L).userId(103L).location("37.5002,127.0002").status(WalkerStatus.PENDING)
+                .id(3L).userId(103L).coordinates("37.5002,127.0002").status(WalkerStatus.PENDING)
                 .user(User.builder().username("walker3").build())
                 .build(); // Within 30km, but PENDING status (should still be returned by filter)
 
         when(walkerRepository.findAll()).thenReturn(Arrays.asList(walker1, walker2, walker3));
 
         // When
-        List<WalkerResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
+        List<WalkerResponse> response = walkerService.getAllWalkers(currentUser.getId(), new WalkerSearchRequest());
 
         // Then
         assertNotNull(response);
@@ -157,7 +157,7 @@ class WalkerServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(currentUser));
 
         // When & Then
-        CustomException exception = assertThrows(CustomException.class, () -> walkerService.getAllWalkers(new WalkerSearchRequest()));
+        CustomException exception = assertThrows(CustomException.class, () -> walkerService.getAllWalkers(currentUser.getId(), new WalkerSearchRequest()));
         assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
         assertEquals("User address not found for location-based search.", exception.getMessage());
 
@@ -185,13 +185,13 @@ class WalkerServiceTest {
 
         // Mock Walkers with malformed location
         Walker walker1 = Walker.builder()
-                .id(1L).userId(101L).location("malformed_location").status(WalkerStatus.ACTIVE)
+                .id(1L).userId(101L).coordinates("malformed_location").status(WalkerStatus.ACTIVE)
                 .user(User.builder().username("walker1").build())
                 .build();
         when(walkerRepository.findAll()).thenReturn(Arrays.asList(walker1));
 
         // When
-        List<WalkerResponse> response = walkerService.getAllWalkers(new WalkerSearchRequest());
+        List<WalkerResponse> response = walkerService.getAllWalkers(currentUser.getId(), new WalkerSearchRequest());
 
         // Then
         assertNotNull(response);

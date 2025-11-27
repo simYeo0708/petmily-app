@@ -3,7 +3,7 @@ package com.petmily.backend.api.dashboard.dto;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,8 +32,8 @@ public class DashboardResponse {
     private PetStats petStats;
 
     // 산책 관련
-    private List<WalkBookingResponse> recentBookings;
-    private List<WalkBookingResponse> upcomingBookings;
+    private List<WalkerBookingResponse> recentBookings;
+    private List<WalkerBookingResponse> upcomingBookings;
     private WalkingStats walkingStats;
 
     // 워커 관련

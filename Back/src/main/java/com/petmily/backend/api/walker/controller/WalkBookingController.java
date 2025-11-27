@@ -1,9 +1,11 @@
 package com.petmily.backend.api.walker.controller;
 
 import com.petmily.backend.api.common.util.SecurityUtils;
-import com.petmily.backend.api.walker.dto.walkerBooking.*;
-import com.petmily.backend.api.walker.service.WalkerBookingService;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.api.walk.dto.booking.request.*;
+import com.petmily.backend.api.walk.dto.booking.response.*;
+import com.petmily.backend.api.walk.service.booking.DirectBookingService;
+import com.petmily.backend.api.walk.service.booking.OpenBookingService;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,19 +15,26 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-public class WalkerBookingController {
+public class WalkBookingController {
 
-    private final WalkerBookingService walkerBookingService;
+    private final DirectBookingService directBookingService;
+    private final OpenBookingService openBookingService;
 
     /**
      * 산책 예약 생성
      */
     @PostMapping({"/walker/bookings", "/walker-bookings"})
     public ResponseEntity<WalkerBookingResponse> createBooking(
-            @RequestBody WalkerBookingRequest request,
+            @RequestBody WalkBookingRequest request,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.createBooking(userId, request);
+        // walkerId가 있으면 직접 예약, 없으면 오픈 요청
+        WalkerBookingResponse response;
+        if (request.getWalkerId() != null) {
+            response = directBookingService.createWalkerSelectionBooking(userId, request);
+        } else {
+            response = openBookingService.createOpenBooking(userId, request);
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -35,17 +44,24 @@ public class WalkerBookingController {
     @GetMapping({"/walker/bookings/user", "/walker-bookings/my-bookings"})
     public ResponseEntity<List<WalkerBookingResponse>> getUserBookings(Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        List<WalkerBookingResponse> bookings = walkerBookingService.getUserBookings(userId);
-        return ResponseEntity.ok(bookings);
+        // 직접 예약과 오픈 요청 모두 조회
+        List<WalkerBookingResponse> directBookings = directBookingService.getDirectBookingsByUser(userId);
+        List<WalkerBookingResponse> openBookings = openBookingService.getOpenBookingsByUser(userId);
+        // 합치기
+        List<WalkerBookingResponse> allBookings = new java.util.ArrayList<>();
+        allBookings.addAll(directBookings);
+        allBookings.addAll(openBookings);
+        return ResponseEntity.ok(allBookings);
     }
 
     /**
      * 워커의 예약 목록 조회
      */
     @GetMapping({"/walker/bookings/walker", "/walker-bookings/walker"})
-    public ResponseEntity<List<WalkerBookingResponse>> getWalkerBookings(Authentication authentication) {
+    public ResponseEntity<List<WalkerBookingResponse>> getWalkBookings(Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        List<WalkerBookingResponse> bookings = walkerBookingService.getWalkerBookings(userId);
+        // 직접 예약만 조회 (워커의 예약)
+        List<WalkerBookingResponse> bookings = directBookingService.getDirectBookingsByWalker(userId);
         return ResponseEntity.ok(bookings);
     }
 
@@ -57,8 +73,15 @@ public class WalkerBookingController {
             @PathVariable Long bookingId,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse booking = walkerBookingService.getBooking(bookingId, userId);
-        return ResponseEntity.ok(booking);
+        // 먼저 직접 예약으로 시도
+        try {
+            WalkerBookingResponse booking = directBookingService.getDirectBooking(bookingId, userId);
+            return ResponseEntity.ok(booking);
+        } catch (Exception e) {
+            // 직접 예약이 아니면 오픈 요청으로 시도
+            WalkerBookingResponse booking = openBookingService.getOpenBooking(bookingId, userId);
+            return ResponseEntity.ok(booking);
+        }
     }
 
     /**
@@ -67,10 +90,11 @@ public class WalkerBookingController {
     @PutMapping({"/walker/bookings/{bookingId}/status", "/walker-bookings/{bookingId}/status"})
     public ResponseEntity<WalkerBookingResponse> updateBookingStatus(
             @PathVariable Long bookingId,
-            @RequestParam WalkerBooking.BookingStatus status,
+            @RequestParam WalkBooking.BookingStatus status,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.updateBookingStatus(bookingId, status, userId);
+        // 직접 예약 상태 업데이트
+        WalkerBookingResponse response = directBookingService.updateBookingStatus(bookingId, status, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -82,7 +106,7 @@ public class WalkerBookingController {
             @PathVariable Long bookingId,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        walkerBookingService.cancelBooking(bookingId, userId);
+        directBookingService.cancelBooking(bookingId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -94,8 +118,8 @@ public class WalkerBookingController {
             @PathVariable Long bookingId,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.updateBookingStatus(
-            bookingId, WalkerBooking.BookingStatus.CONFIRMED, userId);
+        WalkerBookingResponse response = directBookingService.updateBookingStatus(
+            bookingId, WalkBooking.BookingStatus.CONFIRMED, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -104,7 +128,7 @@ public class WalkerBookingController {
      */
     @GetMapping({"/walker/bookings/open-requests", "/walker-bookings/open-requests"})
     public ResponseEntity<List<WalkerBookingResponse>> getOpenRequests() {
-        List<WalkerBookingResponse> openRequests = walkerBookingService.getOpenRequests();
+        List<WalkerBookingResponse> openRequests = openBookingService.getOpenBookings();
         return ResponseEntity.ok(openRequests);
     }
 
@@ -114,10 +138,10 @@ public class WalkerBookingController {
     @PostMapping({"/walker/bookings/open-requests/{openRequestId}/apply", "/walker-bookings/open-requests/{openRequestId}/apply"})
     public ResponseEntity<WalkerBookingResponse> applyToOpenRequest(
             @PathVariable Long openRequestId,
-            @RequestBody WalkerApplicationRequest request,
+            @RequestBody WalkApplicationRequest request,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.applyToOpenRequest(openRequestId, request, userId);
+        WalkerBookingResponse response = openBookingService.applyToOpenBooking(openRequestId, request, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -125,11 +149,11 @@ public class WalkerBookingController {
      * 사용자가 자신의 오픈 요청에 대한 워커 지원자 목록 조회
      */
     @GetMapping({"/walker/bookings/{openRequestId}/applications", "/walker-bookings/{openRequestId}/applications"})
-    public ResponseEntity<List<WalkerApplicationResponse>> getWalkerApplications(
+    public ResponseEntity<List<WalkApplicationResponse>> getWalkerApplications(
             @PathVariable Long openRequestId,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        List<WalkerApplicationResponse> applications = walkerBookingService.getWalkerApplications(openRequestId, userId);
+        List<WalkApplicationResponse> applications = openBookingService.getApplicationsByUser(openRequestId, userId);
         return ResponseEntity.ok(applications);
     }
 
@@ -142,7 +166,8 @@ public class WalkerBookingController {
             @RequestParam boolean accept,
             Authentication authentication) {
         Long userId = SecurityUtils.getUserId(authentication);
-        WalkerBookingResponse response = walkerBookingService.respondToWalkerApplication(applicationId, accept, userId);
+        WalkBooking.BookingStatus status = accept ? WalkBooking.BookingStatus.CONFIRMED : WalkBooking.BookingStatus.REJECTED;
+        WalkerBookingResponse response = openBookingService.updateApplicationStatus(applicationId, status, userId);
         return ResponseEntity.ok(response);
     }
 }

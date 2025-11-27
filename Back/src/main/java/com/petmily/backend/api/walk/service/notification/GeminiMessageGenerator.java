@@ -1,7 +1,7 @@
 package com.petmily.backend.api.walk.service.notification;
 
 import com.petmily.backend.api.common.service.LocationValidationService;
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +36,12 @@ public class GeminiMessageGenerator {
         return generateMessage(prompt);
     }
 
-    public String generateWalkProgressMessage(WalkBooking booking, List<WalkTrack> tracks, String petName) {
+    public String generateWalkProgressMessage(WalkBooking booking, List<WalkingTrack> tracks, String petName) {
         if (tracks.isEmpty()) {
             return generateDefaultProgressMessage(petName);
         }
 
-        WalkTrack latestTrack = tracks.get(tracks.size() - 1);
+        WalkingTrack latestTrack = tracks.get(tracks.size() - 1);
         double totalDistance = calculateTotalDistance(tracks);
         long walkingMinutes = calculateWalkingDuration(tracks);
 
@@ -63,7 +63,7 @@ public class GeminiMessageGenerator {
         return generateMessage(prompt);
     }
 
-    public String generateWalkCompleteMessage(WalkBooking booking, List<WalkTrack> tracks, String petName) {
+    public String generateWalkCompleteMessage(WalkBooking booking, List<WalkingTrack> tracks, String petName) {
         if (tracks.isEmpty()) {
             return generateDefaultCompleteMessage(petName);
         }
@@ -122,12 +122,12 @@ public class GeminiMessageGenerator {
         return String.format("✅ %s 산책이 완료되었습니다!", petName);
     }
 
-    private double calculateTotalDistance(List<WalkTrack> tracks) {
+    private double calculateTotalDistance(List<WalkingTrack> tracks) {
         double totalDistance = 0.0;
         
         for (int i = 1; i < tracks.size(); i++) {
-            WalkTrack prev = tracks.get(i - 1);
-            WalkTrack current = tracks.get(i);
+            WalkingTrack prev = tracks.get(i - 1);
+            WalkingTrack current = tracks.get(i);
             
             if (prev.getLatitude() != null && prev.getLongitude() != null &&
                 current.getLatitude() != null && current.getLongitude() != null) {
@@ -142,7 +142,7 @@ public class GeminiMessageGenerator {
         return totalDistance;
     }
 
-    private long calculateWalkingDuration(List<WalkTrack> tracks) {
+    private long calculateWalkingDuration(List<WalkingTrack> tracks) {
         if (tracks.size() < 2) return 0;
         
         LocalDateTime startTime = tracks.get(0).getTimestamp();
@@ -151,7 +151,7 @@ public class GeminiMessageGenerator {
         return Duration.between(startTime, endTime).toMinutes();
     }
 
-    private String getLocationDescription(WalkTrack track) {
+    private String getLocationDescription(WalkingTrack track) {
         // 실제 구현에서는 역지오코딩 API를 사용하여 위치 정보를 변환
         // 여기서는 간단한 예시로 GPS 좌표 기반 추정
         if (track.getSpeed() != null && track.getSpeed() > 3.0) {

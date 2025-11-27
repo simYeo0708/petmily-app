@@ -1,7 +1,7 @@
-package com.petmily.backend.api.walker.dto.walkerBooking;
+package com.petmily.backend.api.walk.dto.booking.response;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +21,7 @@ public class WalkerBookingResponse {
     private Long petId;
     private LocalDateTime date;
     private Integer duration;
-    private WalkerBooking.BookingStatus status;
+    private WalkBooking.BookingStatus status;
     private Double totalPrice;
     private String notes;
     
@@ -48,7 +48,7 @@ public class WalkerBookingResponse {
     private String packageFrequency;
     
     // Booking method and locations
-    private WalkerBooking.BookingMethod bookingMethod;
+    private WalkBooking.BookingMethod bookingMethod;
     private String pickupLocation;
     private String pickupAddress;
     private String dropoffLocation;
@@ -61,7 +61,7 @@ public class WalkerBookingResponse {
     // User info
     private String username;
     
-    public static WalkerBookingResponse from(WalkerBooking booking) {
+    public static WalkerBookingResponse from(WalkBooking booking) {
         return WalkerBookingResponse.builder()
                 .id(booking.getId())
                 .userId(booking.getUserId())
@@ -72,16 +72,16 @@ public class WalkerBookingResponse {
                 .status(booking.getStatus())
                 .totalPrice(booking.getTotalPrice())
                 .notes(booking.getNotes())
-                .walkerLocation(booking.getWalkerLocation())
-                .walkStartLocation(booking.getWalkStartLocation())
-                .walkEndLocation(booking.getWalkEndLocation())
-                .startPhotoUrl(booking.getStartPhotoUrl())
-                .middlePhotoUrl(booking.getMiddlePhotoUrl())
-                .endPhotoUrl(booking.getEndPhotoUrl())
-                .actualStartTime(booking.getActualStartTime())
-                .actualEndTime(booking.getActualEndTime())
+                .walkerLocation(null) // TODO: WalkDetail에 필드 추가 필요
+                .walkStartLocation(null) // TODO: WalkDetail에 필드 추가 필요
+                .walkEndLocation(null) // TODO: WalkDetail에 필드 추가 필요
+                .startPhotoUrl(booking.getWalkDetail() != null ? booking.getWalkDetail().getStartPhotoUrl() : null)
+                .middlePhotoUrl(booking.getWalkDetail() != null ? booking.getWalkDetail().getMiddlePhotoUrl() : null)
+                .endPhotoUrl(booking.getWalkDetail() != null ? booking.getWalkDetail().getEndPhotoUrl() : null)
+                .actualStartTime(booking.getWalkDetail() != null ? booking.getWalkDetail().getActualStartTime() : null)
+                .actualEndTime(booking.getWalkDetail() != null ? booking.getWalkDetail().getActualEndTime() : null)
                 .insuranceCovered(booking.getInsuranceCovered())
-                .emergencyContact(booking.getEmergencyContact())
+                .emergencyContact(null) // TODO: WalkDetail에 필드 추가 필요
                 .isRegularPackage(booking.getIsRegularPackage())
                 .packageFrequency(booking.getPackageFrequency())
                 .bookingMethod(booking.getBookingMethod())

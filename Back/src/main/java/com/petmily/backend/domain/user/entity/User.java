@@ -1,9 +1,9 @@
 package com.petmily.backend.domain.user.entity;
 
-import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.common.BaseTimeEntity;
 import com.petmily.backend.domain.mall.order.entity.Order;
 import com.petmily.backend.domain.pet.entity.Pet;
-import com.petmily.backend.domain.walker.entity.WalkerProfile;
+import com.petmily.backend.domain.walker.entity.Walker;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -70,6 +70,6 @@ public class User extends BaseTimeEntity {
     private List<Order> orders = new ArrayList<>();
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private WalkerProfile walkerProfile;
+    private Walker walker;
     
 }

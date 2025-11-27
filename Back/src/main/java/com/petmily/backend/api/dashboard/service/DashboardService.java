@@ -4,7 +4,7 @@ import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import com.petmily.backend.domain.mall.cart.repository.CartRepository;
 import com.petmily.backend.domain.mall.order.entity.Order;
@@ -109,23 +109,23 @@ public class DashboardService {
                 .count();
     }
 
-    private List<WalkBookingResponse> getRecentBookings(Long userId) {
+    private List<WalkerBookingResponse> getRecentBookings(Long userId) {
         return walkBookingRepository
                 .findByUserIdAndStatusOrderByCreatedAtDesc(userId, WalkBooking.BookingStatus.COMPLETED)
                 .stream()
                 .limit(3)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 
-    private List<WalkBookingResponse> getUpcomingBookings(Long userId) {
+    private List<WalkerBookingResponse> getUpcomingBookings(Long userId) {
         return walkBookingRepository
                 .findByUserIdAndStatusInOrderByDateAsc(userId,
                         List.of(WalkBooking.BookingStatus.PENDING,
                                WalkBooking.BookingStatus.CONFIRMED))
                 .stream()
                 .limit(5)
-                .map(WalkBookingResponse::from)
+                .map(WalkerBookingResponse::from)
                 .collect(Collectors.toList());
     }
 

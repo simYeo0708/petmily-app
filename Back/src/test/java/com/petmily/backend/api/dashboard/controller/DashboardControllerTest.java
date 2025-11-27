@@ -6,11 +6,11 @@ import com.petmily.backend.api.auth.handler.OAuth2SuccessHandler;
 import com.petmily.backend.api.dashboard.dto.DashboardResponse;
 import com.petmily.backend.api.dashboard.service.DashboardService;
 import com.petmily.backend.api.pet.dto.response.PetSummaryResponse;
-import com.petmily.backend.api.walker.dto.walkerBooking.WalkerBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walker.dto.WalkerSummaryResponse;
 import com.petmily.backend.domain.walker.entity.WalkerStatus;
 import com.petmily.backend.domain.pet.entity.Pet;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Disabled;
@@ -86,7 +86,7 @@ class DashboardControllerTest {
                         .walkerId(1L)
                         .date(LocalDateTime.now().plusDays(1))
                         .duration(60)
-                        .status(WalkerBooking.BookingStatus.CONFIRMED)
+                        .status(com.petmily.backend.domain.walk.entity.WalkBooking.BookingStatus.CONFIRMED)
                         .totalPrice(30000.0)
                         .build()
         );
@@ -100,10 +100,9 @@ class DashboardControllerTest {
                         .profileImageUrl("https://example.com/walker1.jpg")
                         .location("강남구")
                         .rating(4.8)
-                        .totalWalks(150)
+                        .walksCount(150)
                         .pricePerHour(25000.0)
                         .status(WalkerStatus.ACTIVE)
-                        .isAvailable(true)
                         .build(),
                 WalkerSummaryResponse.builder()
                         .id(2L)
@@ -112,33 +111,28 @@ class DashboardControllerTest {
                         .profileImageUrl("https://example.com/walker2.jpg")
                         .location("서초구")
                         .rating(4.9)
-                        .totalWalks(200)
+                        .walksCount(200)
                         .pricePerHour(30000.0)
                         .status(WalkerStatus.ACTIVE)
-                        .isAvailable(true)
                         .build()
         );
 
-        // Mock stats
-        DashboardResponse.QuickStats mockStats = DashboardResponse.QuickStats.builder()
-                .totalPets(2)
-                .upcomingBookings(1)
-                .completedWalks(5)
-                .totalSpent(150000.0)
-                .build();
-
         mockDashboardResponse = DashboardResponse.builder()
                 .myPets(mockPets)
-                .activeBookings(mockBookings)
-                .nearbyWalkers(mockWalkers)
-                .stats(mockStats)
+                .upcomingBookings(mockBookings)
+                .recommendedWalkers(mockWalkers)
+                .overallStats(DashboardResponse.OverallStats.builder()
+                        .totalActivities(10)
+                        .preferredActivityType("walking")
+                        .satisfactionScore(4.5)
+                        .build())
                 .build();
     }
 
     @Test
     @WithMockUser(username = "testuser")
     void getDashboard_Success() throws Exception {
-        when(dashboardService.getDashboard("testuser")).thenReturn(mockDashboardResponse);
+        when(dashboardService.getDashboard(1L)).thenReturn(mockDashboardResponse);
 
         mockMvc.perform(get("/api/dashboard")
                 .accept(MediaType.APPLICATION_JSON))
@@ -154,7 +148,7 @@ class DashboardControllerTest {
                 .andExpect(jsonPath("$.data").exists())
                 .andExpect(jsonPath("$.data.myPets").isArray());
                 
-        verify(dashboardService).getDashboard("testuser");
+        verify(dashboardService).getDashboard(1L);
     }
 
     @Test

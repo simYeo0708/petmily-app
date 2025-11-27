@@ -2,7 +2,7 @@ package com.petmily.backend.api.auth.jwt;
 
 import com.petmily.backend.api.auth.exception.TokenException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.domain.auth.token.AuthRefreshTokenRepository;
+import com.petmily.backend.domain.auth.repository.AuthRefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;

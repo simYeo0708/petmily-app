@@ -6,12 +6,12 @@ import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.api.map.dto.AddressInfo;
 import com.petmily.backend.api.map.service.KakaoMapService;
 import com.petmily.backend.api.walk.controller.walk.WalkWebSocketController;
-import com.petmily.backend.api.walk.dto.booking.response.WalkBookingResponse;
+import com.petmily.backend.api.walk.dto.booking.response.WalkerBookingResponse;
 import com.petmily.backend.api.walk.dto.tracking.request.*;
 import com.petmily.backend.api.walk.dto.tracking.response.*;
 import com.petmily.backend.api.walk.service.notification.WalkNotificationService;
 import com.petmily.backend.api.walk.service.validation.ValidationService;
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.entity.WalkDetail;
@@ -78,7 +78,7 @@ public class WalkService {
         }
 
         return WalkSessionResponse.of(
-                WalkBookingResponse.from(updatedBooking),
+                WalkerBookingResponse.from(updatedBooking),
                 WalkDetailResponse.from(savedWalkDetail)
         );
     }
@@ -112,7 +112,7 @@ public class WalkService {
         }
 
         // 총 거리 계산 및 저장
-        List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
+        List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
         WalkPathResponse.WalkStatistics statistics = calculateWalkStatistics(tracks);
         walkDetail.setTotalDistance(statistics.getTotalDistance());
 
@@ -135,7 +135,7 @@ public class WalkService {
         }
 
         return WalkCompletionResponse.of(
-                WalkBookingResponse.from(updatedBooking),
+                WalkerBookingResponse.from(updatedBooking),
                 WalkDetailResponse.from(savedWalkDetail),
                 statistics
         );
@@ -153,7 +153,7 @@ public class WalkService {
                 contactNumber = "119";
                 break;
             case EMERGENCY_CONTACT:
-                contactNumber = validation.booking.getUser() != null ? validation.booking.getUser().getEmergencyContactPhone() : null;
+                contactNumber = validation.booking.getUser() != null ? validation.booking.getUser().getPhone() : null;
                 if (contactNumber == null || contactNumber.trim().isEmpty()) {
                     throw new CustomException(ErrorCode.INVALID_REQUEST, "Emergency contact not set for this booking");
                 }
@@ -186,7 +186,7 @@ public class WalkService {
     }
 
     @Transactional
-    public WalkBookingResponse requestWalkTermination(Long bookingId, WalkTerminationRequest request, Long userId) {
+    public WalkerBookingResponse requestWalkTermination(Long bookingId, WalkTerminationRequest request, Long userId) {
         ValidationService.WalkBookingValidation validation = validationService.validateWalkBooking(bookingId, userId);
 
         if (validation.booking.getStatus() != WalkBooking.BookingStatus.IN_PROGRESS) {
@@ -215,11 +215,11 @@ public class WalkService {
             log.warn("산책 종료 요청 알림 발송 실패 - Booking ID: {}", updatedBooking.getId(), e);
         }
 
-        return WalkBookingResponse.from(updatedBooking);
+        return WalkerBookingResponse.from(updatedBooking);
     }
 
     @Transactional
-    public WalkTrackResponse saveWalkTrack(Long bookingId, LocationTrackRequest request, Long userId) {
+    public WalkTrackResponse saveWalkingTrack(Long bookingId, LocationTrackRequest request, Long userId) {
         ValidationService.WalkBookingValidation validation = validationService.validateWalkBooking(bookingId, userId);
         
         if (validation.booking.getStatus() != WalkBooking.BookingStatus.IN_PROGRESS) {
@@ -234,18 +234,18 @@ public class WalkService {
                      bookingId, request.getLatitude(), request.getLongitude());
         }
 
-        WalkTrack walkTrack = WalkTrack.builder()
+        WalkingTrack walkTrack = WalkingTrack.builder()
                 .bookingId(bookingId)
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .timestamp(request.getTimestamp() != null ? request.getTimestamp() : LocalDateTime.now())
                 .accuracy(request.getAccuracy())
-                .trackType(request.getTrackType() != null ? request.getTrackType() : WalkTrack.TrackType.WALKING)
+                .trackType(request.getTrackType() != null ? request.getTrackType() : WalkingTrack.TrackType.WALKING)
                 .speed(request.getSpeed())
                 .altitude(request.getAltitude())
                 .build();
 
-        WalkTrack savedTrack = walkTrackRepository.save(walkTrack);
+        WalkingTrack savedTrack = walkTrackRepository.save(walkTrack);
         WalkTrackResponse response = WalkTrackResponse.from(savedTrack);
 
         try{
@@ -261,7 +261,7 @@ public class WalkService {
     public WalkPathResponse getWalkPath(Long bookingId, Long userId) {
         ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
 
-        List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
+        List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
         List<WalkTrackResponse> trackResponses = tracks.stream()
                 .map(WalkTrackResponse::from)
                 .collect(Collectors.toList());
@@ -278,7 +278,7 @@ public class WalkService {
     public List<WalkTrackResponse> getRealtimeLocation(Long bookingId, LocalDateTime afterTime, Long userId) {
         ValidationService.UserBookingValidation validation = validationService.validateUserBooking(bookingId, userId);
 
-        List<WalkTrack> tracks = walkTrackRepository.findByBookingIdAndTimestampAfter(bookingId, afterTime);
+        List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdAndTimestampAfter(bookingId, afterTime);
         return tracks.stream()
                 .map(WalkTrackResponse::from)
                 .collect(Collectors.toList());
@@ -323,7 +323,7 @@ public class WalkService {
     }
 
     public AddressInfo getWalkerCurrentAddress(Long bookingId){
-        WalkTrack lastestTrack = walkTrackRepository
+        WalkingTrack lastestTrack = walkTrackRepository
                 .findTopByBookingIdOrderByTimestampDesc(bookingId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
 
@@ -343,14 +343,14 @@ public class WalkService {
                         "산책 상세 정보를 찾을 수 없습니다."));
 
         // 전체 경로
-        List<WalkTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
+        List<WalkingTrack> tracks = walkTrackRepository.findByBookingIdOrderByTimestampAsc(bookingId);
 
         if(tracks.isEmpty()){
             throw new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "산책 경로 정보가 없습니다.");
         }
 
         // 현재 위치
-        WalkTrack lastestTrack = tracks.get(tracks.size() - 1);
+        WalkingTrack lastestTrack = tracks.get(tracks.size() - 1);
         WalkTrackResponse currentLocation = WalkTrackResponse.from(lastestTrack);
 
         // 현재 주소
@@ -406,7 +406,7 @@ public class WalkService {
     }
 
 
-    private WalkPathResponse.WalkStatistics calculateWalkStatistics(List<WalkTrack> tracks) {
+    private WalkPathResponse.WalkStatistics calculateWalkStatistics(List<WalkingTrack> tracks) {
         if (tracks.isEmpty()) {
             return WalkPathResponse.WalkStatistics.builder()
                     .totalDistance(0.0)
@@ -424,7 +424,7 @@ public class WalkService {
         
         double maxSpeed = tracks.stream()
                 .filter(track -> track.getSpeed() != null)
-                .mapToDouble(WalkTrack::getSpeed)
+                .mapToDouble(WalkingTrack::getSpeed)
                 .max()
                 .orElse(0.0);
 
@@ -441,12 +441,12 @@ public class WalkService {
                 .build();
     }
 
-    private double calculateTotalDistance(List<WalkTrack> tracks) {
+    private double calculateTotalDistance(List<WalkingTrack> tracks) {
         double totalDistance = 0.0;
 
         for (int i = 1; i < tracks.size(); i++) {
-            WalkTrack prev = tracks.get(i - 1);
-            WalkTrack current = tracks.get(i);
+            WalkingTrack prev = tracks.get(i - 1);
+            WalkingTrack current = tracks.get(i);
 
             if (prev.getLatitude() != null && prev.getLongitude() != null &&
                 current.getLatitude() != null && current.getLongitude() != null) {
