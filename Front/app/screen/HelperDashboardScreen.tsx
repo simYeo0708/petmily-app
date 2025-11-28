@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -14,6 +14,7 @@ import { RootStackParamList } from "../index";
 import { helperDashboardStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { Ionicons } from "@expo/vector-icons";
 import { IconImage } from "../components/IconImage";
+import WalkerDashboardService, { WalkerDashboardResponse } from "../services/WalkerDashboardService";
 
 type HelperDashboardScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -22,9 +23,50 @@ type HelperDashboardScreenNavigationProp = NativeStackNavigationProp<
 
 const HelperDashboardScreen = () => {
   const navigation = useNavigation<HelperDashboardScreenNavigationProp>();
-  const { helperStatus } = useHelperStatus();
+  const { helperStatus, loadHelperStatus } = useHelperStatus();
+  const [dashboardData, setDashboardData] = useState<WalkerDashboardResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await WalkerDashboardService.getDashboard();
+      if (data) {
+        setDashboardData(data);
+        // helperStatus도 업데이트
+        await loadHelperStatus();
+      }
+    } catch (error) {
+      console.error('대시보드 데이터 로드 실패:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const earningsSummary = useMemo(() => {
+    if (dashboardData?.earningsInfo) {
+      const nextPayoutDate = dashboardData.earningsInfo.nextPayoutDate 
+        ? new Date(dashboardData.earningsInfo.nextPayoutDate)
+        : null;
+      const nextPayoutStr = nextPayoutDate 
+        ? `${nextPayoutDate.getMonth() + 1}월 ${nextPayoutDate.getDate()}일`
+        : "미정";
+
+      return {
+        total: dashboardData.earningsInfo.totalEarnings ?? 0,
+        month: dashboardData.earningsInfo.thisMonthEarnings ?? 0,
+        week: dashboardData.earningsInfo.thisWeekEarnings ?? 0,
+        today: dashboardData.earningsInfo.todayEarnings ?? 0,
+        growthRate: dashboardData.earningsInfo.growthRate ?? 0,
+        nextPayout: nextPayoutStr,
+      };
+    }
+    
+    // Fallback to helperStatus
     const todayEstimate = Math.max(0, Math.floor(helperStatus.thisMonthEarnings / 20));
     const weekEstimate = Math.max(
       todayEstimate,
@@ -39,18 +81,25 @@ const HelperDashboardScreen = () => {
       growthRate: 12.4,
       nextPayout: helperStatus.thisMonthEarnings > 0 ? "4월 28일" : "미정",
     };
-  }, [helperStatus]);
+  }, [dashboardData, helperStatus]);
 
-  const trendData = useMemo(
-    () => [
+  const trendData = useMemo(() => {
+    if (dashboardData?.weeklyEarnings && dashboardData.weeklyEarnings.length > 0) {
+      return dashboardData.weeklyEarnings.map(week => ({
+        label: week.weekLabel,
+        value: week.earnings,
+      }));
+    }
+    
+    // Fallback
+    return [
       { label: "4주전", value: Math.max(120000, earningsSummary.week * 0.7) },
       { label: "3주전", value: Math.max(140000, earningsSummary.week * 0.85) },
       { label: "2주전", value: Math.max(160000, earningsSummary.week * 0.95) },
       { label: "지난주", value: Math.max(190000, earningsSummary.week) },
       { label: "이번주", value: Math.max(earningsSummary.week + 25000, 210000) },
-    ],
-    [earningsSummary.week]
-  );
+    ];
+  }, [dashboardData, earningsSummary.week]);
 
   const chartMaxValue = useMemo(
     () => Math.max(...trendData.map((item) => item.value), 1),
@@ -67,24 +116,39 @@ const HelperDashboardScreen = () => {
       {
         ionIcon: "star" as const,
         label: "평균 평점",
-        value: `${helperStatus.rating.toFixed(1)} / 5`,
+        value: `${(dashboardData?.statisticsInfo?.averageRating ?? helperStatus.rating).toFixed(1)} / 5`,
       },
       {
         ionIcon: "people-outline" as const,
         label: "총 산책 횟수",
-        value: `${helperStatus.totalWalks}회`,
+        value: `${dashboardData?.statisticsInfo?.totalWalks ?? helperStatus.totalWalks}회`,
       },
       {
         ionIcon: "refresh" as const,
         label: "재요청률",
-        value: "92%",
+        value: `${(dashboardData?.statisticsInfo?.repeatRate ?? 92).toFixed(0)}%`,
       },
     ],
-    [earningsSummary.week, helperStatus.rating, helperStatus.totalWalks]
+    [earningsSummary.week, dashboardData, helperStatus.rating, helperStatus.totalWalks]
   );
 
-  const recentReviews = useMemo(
-    () => [
+  const recentReviews = useMemo(() => {
+    if (dashboardData?.recentReviews && dashboardData.recentReviews.length > 0) {
+      return dashboardData.recentReviews.map(review => ({
+        id: review.id.toString(),
+        name: review.userName,
+        rating: review.rating,
+        comment: review.comment,
+        date: new Date(review.createdAt).toLocaleDateString('ko-KR', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\./g, '.').replace(/\s/g, ''),
+      }));
+    }
+    
+    // Fallback
+    return [
       {
         id: "review-1",
         name: "이루다 보호자",
@@ -106,12 +170,39 @@ const HelperDashboardScreen = () => {
         comment: "비 오는 날에도 꼼꼼히 케어해주셔서 감사했습니다.",
         date: "2025.04.12",
       },
-    ],
-    []
-  );
+    ];
+  }, [dashboardData]);
 
-  const upcomingTasks = useMemo(
-    () => [
+  const upcomingTasks = useMemo(() => {
+    if (dashboardData?.upcomingBookings && dashboardData.upcomingBookings.length > 0) {
+      return dashboardData.upcomingBookings.map(booking => {
+        const bookingDate = new Date(booking.date);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const bookingDay = new Date(bookingDate.getFullYear(), bookingDate.getMonth(), bookingDate.getDate());
+        
+        const diffDays = Math.floor((bookingDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        let timeLabel = "";
+        if (diffDays === 0) {
+          timeLabel = `오늘 · ${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+        } else if (diffDays === 1) {
+          timeLabel = `내일 · ${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+        } else {
+          const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+          timeLabel = `${dayNames[bookingDate.getDay()]}요일 · ${bookingDate.getHours().toString().padStart(2, '0')}:${bookingDate.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        return {
+          id: booking.id.toString(),
+          time: timeLabel,
+          pet: `${booking.petName}${booking.petBreed ? ` (${booking.petBreed})` : ''}`,
+          note: booking.notes || "",
+        };
+      });
+    }
+    
+    // Fallback
+    return [
       {
         id: "task-1",
         time: "오늘 · 18:00",
@@ -130,9 +221,8 @@ const HelperDashboardScreen = () => {
         pet: "쁘띠 (푸들)",
         note: "첫 산책, 집 앞 10분 전 도착",
       },
-    ],
-    []
-  );
+    ];
+  }, [dashboardData]);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -180,7 +270,7 @@ const HelperDashboardScreen = () => {
             <View style={helperDashboardStyles.heroBadge}>
               <Ionicons name="star" size={14} color="#FFC107" style={helperDashboardStyles.heroBadgeIcon} />
               <Text style={helperDashboardStyles.heroBadgeText}>
-                평균 평점 {helperStatus.rating.toFixed(1)}
+                평균 평점 {(dashboardData?.statisticsInfo?.averageRating ?? helperStatus.rating).toFixed(1)}
               </Text>
             </View>
           </View>
@@ -247,33 +337,56 @@ const HelperDashboardScreen = () => {
         <View style={helperDashboardStyles.tasksCard}>
           <View style={helperDashboardStyles.sectionHeaderRow}>
             <Text style={helperDashboardStyles.sectionTitle}>다가오는 산책 일정</Text>
-            <Text style={helperDashboardStyles.sectionLink}>전체 보기</Text>
+            <Pressable onPress={() => navigation.navigate('WalkerBookings')}>
+              <Text style={helperDashboardStyles.sectionLink}>전체 보기</Text>
+            </Pressable>
           </View>
-          {upcomingTasks.map((task, index) => (
-            <View
-              key={task.id}
-              style={[
-                helperDashboardStyles.taskItem,
-                index < upcomingTasks.length - 1 && helperDashboardStyles.taskDivider,
-              ]}
-            >
-              <View style={helperDashboardStyles.taskIconBubble}>
-                <IconImage name="paw" size={18} style={helperDashboardStyles.taskIcon} />
-              </View>
-              <View style={helperDashboardStyles.taskInfo}>
-                <Text style={helperDashboardStyles.taskTime}>{task.time}</Text>
-                <Text style={helperDashboardStyles.taskPet}>{task.pet}</Text>
-                <Text style={helperDashboardStyles.taskNote}>{task.note}</Text>
-              </View>
-              <Text style={helperDashboardStyles.taskChevron}>›</Text>
-            </View>
-          ))}
+          {upcomingTasks.map((task, index) => {
+            const booking = dashboardData?.upcomingBookings?.find(b => b.id.toString() === task.id);
+            return (
+              <Pressable
+                key={task.id}
+                onPress={() => {
+                  if (booking) {
+                    navigation.navigate('WalkerBookingDetail', {
+                      bookingId: booking.id,
+                      bookingData: {
+                        id: booking.id,
+                        date: booking.date,
+                        petName: booking.petName,
+                        petBreed: booking.petBreed,
+                        notes: booking.notes,
+                        status: booking.status,
+                        address: booking.address,
+                      },
+                    });
+                  }
+                }}
+                style={[
+                  helperDashboardStyles.taskItem,
+                  index < upcomingTasks.length - 1 && helperDashboardStyles.taskDivider,
+                ]}
+              >
+                <View style={helperDashboardStyles.taskIconBubble}>
+                  <IconImage name="paw" size={18} style={helperDashboardStyles.taskIcon} />
+                </View>
+                <View style={helperDashboardStyles.taskInfo}>
+                  <Text style={helperDashboardStyles.taskTime}>{task.time}</Text>
+                  <Text style={helperDashboardStyles.taskPet}>{task.pet}</Text>
+                  <Text style={helperDashboardStyles.taskNote}>{task.note}</Text>
+                </View>
+                <Text style={helperDashboardStyles.taskChevron}>›</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <View style={helperDashboardStyles.reviewCard}>
           <View style={helperDashboardStyles.sectionHeaderRow}>
             <Text style={helperDashboardStyles.sectionTitle}>최근 리뷰</Text>
-            <Text style={helperDashboardStyles.sectionLink}>모두 보기</Text>
+            <Pressable onPress={() => navigation.navigate('WalkerReviews')}>
+              <Text style={helperDashboardStyles.sectionLink}>모두 보기</Text>
+            </Pressable>
           </View>
           {recentReviews.map((review, index) => (
             <View

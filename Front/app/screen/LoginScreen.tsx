@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { RootStackParamList } from "../index";
 import AuthService from "../services/AuthService";
+import GoogleAuthService from "../services/GoogleAuthService";
 import DevTools from "../utils/DevTools";
 import { Ionicons } from "@expo/vector-icons";
 import { IconImage } from "../components/IconImage";
@@ -136,6 +137,29 @@ const LoginScreen = ({ navigation }: Props) => {
     } catch (error: any) {
       setLoginError("잘못된 아이디이거나 비밀번호입니다.");
       showLoginErrorModal();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await GoogleAuthService.loginWithGoogle();
+      
+      if (result) {
+        Alert.alert("로그인 성공", "구글 계정으로 로그인했습니다.", [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Main"),
+          },
+        ]);
+      } else {
+        Alert.alert("로그인 실패", "구글 로그인에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      Alert.alert("로그인 실패", "구글 로그인 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -302,14 +326,12 @@ const LoginScreen = ({ navigation }: Props) => {
 
               {/* Social Login Buttons */}
               <View style={styles.socialContainer}>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Text style={styles.socialIcon}>G</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Text style={styles.socialIcon}>f</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialButton}>
-                  <Text style={styles.socialIcon}>A</Text>
+                <TouchableOpacity 
+                  style={styles.socialButton}
+                  onPress={handleGoogleLogin}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="logo-google" size={24} color="#4285F4" />
                 </TouchableOpacity>
               </View>
 

@@ -47,12 +47,15 @@ export const logApiConfig = () => {
  */
 export const testApiConnection = async (): Promise<boolean> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/test`, {
-      method: 'GET',
+    // /auth/test/setup 엔드포인트로 연결 테스트 (인증이 필요 없거나 간단한 엔드포인트 사용)
+    const response = await fetch(`${API_BASE_URL}/auth/test/setup`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     });
-    return response.ok;
+    // 200 OK 또는 404 (dev mode 비활성화) 모두 서버가 실행 중임을 의미
+    return response.status === 200 || response.status === 404;
   } catch (error) {
+    // 네트워크 에러는 서버가 실행되지 않음을 의미
     return false;
   }
 };

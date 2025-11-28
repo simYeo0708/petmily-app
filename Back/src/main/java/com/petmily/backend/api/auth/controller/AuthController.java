@@ -19,6 +19,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/auth")
@@ -147,5 +150,15 @@ public class AuthController {
             log.error("Error generating password hash", e);
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
+    }
+    
+    // API 연결 테스트용 간단한 엔드포인트
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, Object>> test() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "백엔드 서버가 정상적으로 실행 중입니다.");
+        response.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(response);
     }
 }

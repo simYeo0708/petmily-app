@@ -10,6 +10,8 @@ import { RootStackParamList } from "../index";
 import { ORDER_DATA, getOrderStatusText, getOrderStatusColor } from "../constants/OrderData";
 import { rf } from "../utils/responsive";
 import { PRODUCT_DATA, Product } from "../constants/ProductData";
+import { RecommendedProductsCarousel } from "./RecommendedProductsCarousel";
+import { ProductRecommendation } from "../services/ProductRecommendationService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -181,6 +183,28 @@ export const PetMallContent: React.FC<PetMallContentProps> = ({
           </TouchableOpacity>
         </View>
         <CategoryList onCategoryPress={onCategoryPress} />
+      </View>
+
+      {/* AI 추천 상품 캐러셀 */}
+      <View style={homeScreenStyles.section}>
+        <RecommendedProductsCarousel
+          onProductPress={(product: ProductRecommendation) => {
+            // ProductRecommendation을 Product로 변환하여 ProductDetail로 이동
+            const productForDetail: Product = {
+              id: product.id.toString(),
+              name: product.name,
+              brand: product.category || '',
+              image: product.imageUrl || '@shop.png',
+              price: product.price,
+              originalPrice: product.price,
+              rating: product.averageRating,
+              reviewCount: product.likeCount,
+              favoriteCount: product.likeCount,
+              discount: 0,
+            };
+            navigation.navigate("ProductDetail", { product: productForDetail });
+          }}
+        />
       </View>
 
       {/* 인기 상품 & 추천 상품 슬라이더 */}

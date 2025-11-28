@@ -7,6 +7,8 @@ import com.petmily.backend.api.walker.dto.walker.WalkerUpdateRequest;
 import com.petmily.backend.api.walker.dto.walker.WalkerSearchRequest;
 import com.petmily.backend.api.walker.service.WalkerService;
 import com.petmily.backend.api.walker.service.WalkerSearchService;
+import com.petmily.backend.api.walker.service.WalkerDashboardService;
+import com.petmily.backend.api.walker.dto.WalkerDashboardResponse;
 import com.petmily.backend.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ public class WalkerController {
 
     private final WalkerService walkerService;
     private final WalkerSearchService walkerSearchService;
+    private final WalkerDashboardService walkerDashboardService;
 
     @PostMapping
     public ResponseEntity<WalkerResponse> registerWalker(
@@ -125,6 +128,17 @@ public class WalkerController {
         Long userId = SecurityUtils.getUserId(userDetails);
         Page<WalkerResponse> response = walkerSearchService.searchWalkers(request, userId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 워커 대시보드 데이터 조회
+     */
+    @GetMapping("/me/dashboard")
+    public ResponseEntity<WalkerDashboardResponse> getWalkerDashboard(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = SecurityUtils.getUserId(userDetails);
+        WalkerDashboardResponse dashboard = walkerDashboardService.getWalkerDashboard(userId);
+        return ResponseEntity.ok(dashboard);
     }
 
 }

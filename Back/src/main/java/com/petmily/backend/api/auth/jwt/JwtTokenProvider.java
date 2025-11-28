@@ -1,8 +1,11 @@
 package com.petmily.backend.api.auth.jwt;
 
+import com.petmily.backend.api.auth.dto.model.PrincipalDetails;
 import com.petmily.backend.api.auth.exception.TokenException;
 import com.petmily.backend.api.exception.ErrorCode;
 import com.petmily.backend.domain.auth.repository.AuthRefreshTokenRepository;
+import com.petmily.backend.domain.user.entity.User;
+import com.petmily.backend.domain.user.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -14,7 +17,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -45,6 +48,7 @@ public class JwtTokenProvider {
     private static final String KEY_ROLE = "role";
 
     private final AuthRefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
 
     @PostConstruct
     private void setSecretKey() {
@@ -90,22 +94,39 @@ public class JwtTokenProvider {
         
         // Jwt 토큰 복호화
         Claims claims = parseClaims(token);
+        String username = claims.getSubject();
+
+        // username으로 User 엔티티 조회
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new TokenException(ErrorCode.USER_NOT_FOUND));
+
+        // PrincipalDetails 생성
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("username", username);
+        attributes.put("id", user.getId());
+        PrincipalDetails principalDetails = new PrincipalDetails(user, attributes, "username");
 
         // 클레임에서 권한 가져오기
         List<SimpleGrantedAuthority> authorities = getAuthorities(claims);
 
-        // UserDetails 객체를 만들어서 Authentication 리턴
-        User principal = new User(claims.getSubject(), "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, token, authorities);
+        return new UsernamePasswordAuthenticationToken(principalDetails, token, authorities);
     }
 
     // 테스트용 인증 객체 생성
     private Authentication getTestAuthentication() {
+        // 테스트용 사용자 ID 1 조회
+        User user = userRepository.findById(1L)
+                .orElseThrow(() -> new TokenException(ErrorCode.USER_NOT_FOUND));
+        
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("username", user.getUsername());
+        attributes.put("id", user.getId());
+        PrincipalDetails principalDetails = new PrincipalDetails(user, attributes, "username");
+        
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
             new SimpleGrantedAuthority("ROLE_USER")
         );
-        User principal = new User("1", "", authorities);
-        return new UsernamePasswordAuthenticationToken(principal, "test-token", authorities);
+        return new UsernamePasswordAuthenticationToken(principalDetails, "test-token", authorities);
     }
 
     private List<SimpleGrantedAuthority> getAuthorities(Claims claims) {

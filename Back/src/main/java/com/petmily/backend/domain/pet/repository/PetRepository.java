@@ -16,8 +16,6 @@ public interface PetRepository extends JpaRepository<Pet, Long> {
     
     List<Pet> findByUserId(Long userId);
     
-    List<Pet> findByUserIdOrderByCreateTimeDesc(Long userId);
-    
     List<Pet> findByUserIdOrderByCreatedAtDesc(Long userId);
     
     Page<Pet> findBySpeciesContainingIgnoreCase(String species, Pageable pageable);
