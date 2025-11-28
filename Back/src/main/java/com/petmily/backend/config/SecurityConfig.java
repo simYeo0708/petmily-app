@@ -105,7 +105,10 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/auth/test/**"),
                                 new AntPathRequestMatcher("/api/products/**", "GET"),
                                 new AntPathRequestMatcher("/api/reviews/products/**", "GET"),
-                                new AntPathRequestMatcher("/api/reviews/**", "GET")
+                                new AntPathRequestMatcher("/api/reviews/**", "GET"),
+                                // OAuth2 엔드포인트 허용 (모바일/웹 OAuth 로그인용)
+                                new AntPathRequestMatcher("/oauth2/**"),
+                                new AntPathRequestMatcher("/login/oauth2/**")
                         ).permitAll().anyRequest().authenticated()
                 )
 
@@ -127,10 +130,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // OAuth2 엔드포인트도 CORS 허용
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

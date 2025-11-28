@@ -56,13 +56,36 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // AccessToken만 URL 파라미터로 전달 (프론트에서 받아서 저장)
         // 웹과 모바일 모두 지원: 웹은 http://localhost:3000/oauth2/redirect, 모바일은 petmily://oauth2/redirect
+        
+        // 요청 헤더에서 정보 가져오기
         String referer = request.getHeader("Referer");
         String userAgent = request.getHeader("User-Agent");
+        String origin = request.getHeader("Origin");
+        
+        log.info("OAuth2 Success - Referer: {}, User-Agent: {}, Origin: {}", referer, userAgent, origin);
         
         String redirectBaseUrl;
-        if (userAgent != null && (userAgent.contains("Mobile") || userAgent.contains("Android") || userAgent.contains("iPhone"))) {
-            // 모바일 앱인 경우
+        
+        // 모바일 앱 감지: User-Agent에 모바일 관련 키워드가 있거나, Origin이 없고 Referer가 특정 패턴인 경우
+        boolean isMobile = false;
+        if (userAgent != null) {
+            String lowerUserAgent = userAgent.toLowerCase();
+            isMobile = lowerUserAgent.contains("mobile") || 
+                      lowerUserAgent.contains("android") || 
+                      lowerUserAgent.contains("iphone") ||
+                      lowerUserAgent.contains("ipad") ||
+                      lowerUserAgent.contains("expo");
+        }
+        
+        // Origin이 없거나 특정 패턴인 경우도 모바일로 간주
+        if (!isMobile && (origin == null || origin.isEmpty())) {
+            isMobile = true;
+        }
+        
+        if (isMobile) {
+            // 모바일 앱인 경우 - Deep Link 사용
             redirectBaseUrl = "petmily://oauth2/redirect";
+            log.info("Redirecting to mobile app: {}", redirectBaseUrl);
         } else {
             // 웹인 경우 - 환경 변수나 설정에서 가져오거나 기본값 사용
             String webRedirectUrl = System.getenv("WEB_OAUTH_REDIRECT_URL");
@@ -70,11 +93,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 webRedirectUrl = "http://localhost:3000/oauth2/redirect";
             }
             redirectBaseUrl = webRedirectUrl;
+            log.info("Redirecting to web: {}", redirectBaseUrl);
         }
         
         String targetUrl = UriComponentsBuilder.fromUriString(redirectBaseUrl)
                 .queryParam("accessToken", accessToken)
                 .build().toUriString();
+        
+        log.info("Final redirect URL: {}", targetUrl);
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
