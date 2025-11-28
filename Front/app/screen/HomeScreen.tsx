@@ -208,6 +208,7 @@ const HomeScreen = () => {
   };
 
   const handleNavigateToMyPet = () => {
+    // TabNavigator 내의 MyPetTab으로 이동
     navigation.navigate("Main", { initialTab: "MyPetTab" });
   };
 

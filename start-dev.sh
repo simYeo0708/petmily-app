@@ -90,10 +90,24 @@ cd ../Front
 npm run dev &
 FRONTEND_PID=$!
 
+# 3. 웹 프론트엔드 시작
+echo "웹 프론트엔드 서버 시작 중..."
+cd ../web
+# node_modules가 없으면 설치
+if [ ! -d "node_modules" ]; then
+    echo "   - 의존성 설치 중..."
+    npm install > /dev/null 2>&1
+fi
+# 환경 변수 설정
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8083/api"
+npm run dev &
+WEB_PID=$!
+
 echo ""
 echo "개발 환경이 시작되었습니다!"
 echo "   백엔드: http://localhost:8083/api"
-echo "   프론트엔드: http://localhost:8082"
+echo "   프론트엔드 (모바일): http://localhost:8082"
+echo "   웹 프론트엔드: http://localhost:3000"
 echo ""
 echo "종료하려면 Ctrl+C를 누르세요."
 
@@ -119,6 +133,13 @@ cleanup() {
         kill $FRONTEND_PID 2>/dev/null
     fi
     lsof -ti:8081 | xargs kill -9 2>/dev/null
+    
+    # 웹 프론트엔드 종료
+    echo "   웹 프론트엔드 서버 종료 중..."
+    if [ ! -z "$WEB_PID" ]; then
+        kill $WEB_PID 2>/dev/null
+    fi
+    lsof -ti:3000 | xargs kill -9 2>/dev/null
     
     echo ""
     echo "✅ 종료 완료"

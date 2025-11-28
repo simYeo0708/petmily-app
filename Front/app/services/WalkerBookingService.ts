@@ -146,6 +146,29 @@ const WalkerBookingService = {
       return false;
     }
   },
+
+  async getWalkBookings(): Promise<WalkingBookingResponse[]> {
+    try {
+      const token = await getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/walker-bookings/walker`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`워커 예약 목록 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as WalkingBookingResponse[];
+      return data;
+    } catch (error) {
+      console.error('워커 예약 목록 조회 실패:', error);
+      return [];
+    }
+  },
 };
 
 export default WalkerBookingService;

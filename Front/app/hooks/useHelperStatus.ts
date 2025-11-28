@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import WalkerDashboardService from "../services/WalkerDashboardService";
 
 const HELPER_STATUS_KEY = "petmily_helper_status";
 
@@ -24,22 +25,59 @@ export const useHelperStatus = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadHelperStatus();
-  }, []);
-
-  const loadHelperStatus = async () => {
+  const loadHelperStatus = useCallback(async () => {
     try {
-      const statusData = await AsyncStorage.getItem(HELPER_STATUS_KEY);
-
-      if (statusData) {
-        setHelperStatus(JSON.parse(statusData));
+      setIsLoading(true);
+      
+      // 백엔드 API에서 데이터 가져오기
+      const dashboardData = await WalkerDashboardService.getDashboard();
+      
+      if (dashboardData) {
+        // 백엔드 데이터로 상태 업데이트
+        setHelperStatus({
+          isHelper: true,
+          totalEarnings: dashboardData.earningsInfo.totalEarnings || 0,
+          thisMonthEarnings: dashboardData.earningsInfo.thisMonthEarnings || 0,
+          totalWalks: dashboardData.statisticsInfo.totalWalks || 0,
+          completedWalks: dashboardData.statisticsInfo.completedWalks || 0,
+          rating: dashboardData.statisticsInfo.averageRating || 0,
+        });
+        
+        // 로컬 스토리지에도 저장 (오프라인 대비)
+        await AsyncStorage.setItem(HELPER_STATUS_KEY, JSON.stringify({
+          isHelper: true,
+          totalEarnings: dashboardData.earningsInfo.totalEarnings || 0,
+          thisMonthEarnings: dashboardData.earningsInfo.thisMonthEarnings || 0,
+          totalWalks: dashboardData.statisticsInfo.totalWalks || 0,
+          completedWalks: dashboardData.statisticsInfo.completedWalks || 0,
+          rating: dashboardData.statisticsInfo.averageRating || 0,
+        }));
+      } else {
+        // API 실패 시 로컬 스토리지에서 로드
+        const statusData = await AsyncStorage.getItem(HELPER_STATUS_KEY);
+        if (statusData) {
+          setHelperStatus(JSON.parse(statusData));
+        }
       }
     } catch (error) {
+      console.error('워커 상태 로드 실패:', error);
+      // 에러 시 로컬 스토리지에서 로드
+      try {
+        const statusData = await AsyncStorage.getItem(HELPER_STATUS_KEY);
+        if (statusData) {
+          setHelperStatus(JSON.parse(statusData));
+        }
+      } catch (storageError) {
+        console.error('로컬 스토리지 로드 실패:', storageError);
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadHelperStatus();
+  }, [loadHelperStatus]);
 
   const saveHelperStatus = async (status: HelperStatus) => {
     try {
@@ -89,6 +127,7 @@ export const useHelperStatus = () => {
     becomeHelper,
     updateEarnings,
     completeWalk,
+    loadHelperStatus, // 새로고침을 위해 export
   };
 };
 

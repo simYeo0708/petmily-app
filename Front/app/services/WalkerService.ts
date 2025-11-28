@@ -137,6 +137,34 @@ const WalkerService = {
       return null;
     }
   },
+
+  async getCurrentWalker(): Promise<Walker | null> {
+    try {
+      const token = await getAuthToken();
+      
+      // 현재 사용자의 워커 프로필 조회
+      const response = await fetch(`${API_BASE_URL}/walkers/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // 404면 워커가 등록되지 않은 것
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error(`현재 워커 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as Walker;
+      return data;
+    } catch (error) {
+      console.error('현재 워커 조회 실패:', error);
+      return null;
+    }
+  },
 };
 
 export default WalkerService;
