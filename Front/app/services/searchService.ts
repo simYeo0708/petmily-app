@@ -68,4 +68,3 @@ export const searchAll = async (
     return null;
   }
 };
-

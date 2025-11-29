@@ -98,11 +98,14 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <aside className="rounded-3xl border border-white/25 bg-white/15 p-6 shadow-[0_35px_70px_rgba(0,0,0,0.25)] backdrop-blur-md">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/70">컨셉 이미지</p>
-                <p className="mt-3 text-sm text-white/80 leading-relaxed">
-                  보호자가 스마트폰으로 Petmily 앱을 보며 반려동물 정보를 입력하는 장면. 옆에는 반려견이 앉아 있고, 화면에는 AI 추천 상품 목록과 산책 워커 예약 화면이 보인다. 자연광이 들어오는 거실 배경.
-                </p>
+              <aside className="rounded-3xl border border-white/25 bg-white/15 p-6 shadow-[0_35px_70px_rgba(0,0,0,0.25)] backdrop-blur-md overflow-hidden">
+                <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+                  <img
+                    src="/images/aboutusPage.png"
+                    alt="Petmily About Us Concept"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </aside>
             </div>
           </div>
@@ -110,11 +113,14 @@ export default function AboutPage() {
 
         <section className="mt-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_1fr] items-center rounded-3xl bg-white p-10 shadow-[0_35px_80px_rgba(82,62,52,0.08)] border border-[#E8D9D3]">
-            <div className="rounded-3xl border border-[#E8D9D3] bg-[#F8EFEB] p-6 shadow-inner">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#B0867B]">스토리 이미지</p>
-              <p className="mt-3 text-sm text-[#66574E] leading-relaxed">
-                Petmily 팀이 반려동물 정보 기반 AI 추천 시스템을 개발하는 과정을 보여주는 모습. 화이트보드에는 반려동물 정보 입력 프로세스와 상품 추천 알고리즘 설계가 그려져 있고, 옆에는 검증된 산책 워커 매칭 시스템 다이어그램이 있는 장면.
-              </p>
+            <div className="rounded-3xl border border-[#E8D9D3] bg-[#F8EFEB] p-6 shadow-inner overflow-hidden">
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden">
+                <img
+                  src="/images/aboutusPage1.png"
+                  alt="Petmily Team Story"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
             <div className="space-y-6">

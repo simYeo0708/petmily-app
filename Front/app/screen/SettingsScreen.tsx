@@ -10,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../index";
@@ -17,6 +18,7 @@ import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { IconImage, IconName } from "../components/IconImage";
 import { usePet } from "../contexts/PetContext";
 import { useSettings } from "../hooks/useSettings";
+import { rf } from "../utils/responsive";
 
 type SettingsScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
@@ -32,6 +34,29 @@ const SettingsScreen = () => {
     marketingEmails,
     setMarketingEmails,
   } = useSettings();
+
+  // 스위치 애니메이션을 위한 상태
+  const [switchAnimations] = useState({
+    push: new Animated.Value(1),
+    location: new Animated.Value(1),
+    marketing: new Animated.Value(1),
+  });
+
+  // 스위치 토글 시 애니메이션
+  const animateSwitch = (key: 'push' | 'location' | 'marketing') => {
+    Animated.sequence([
+      Animated.timing(switchAnimations[key], {
+        toValue: 1.1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(switchAnimations[key], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
   
   // 화면 포커스될 때만 펫 정보 갱신
   // SettingsScreen에서는 펫 정보를 직접 수정하지 않으므로 자동 갱신 비활성화
@@ -49,6 +74,8 @@ const SettingsScreen = () => {
     hasSwitch?: boolean;
     value?: boolean;
     onToggle?: (value: boolean) => void;
+    description?: string;
+    animationKey?: 'push' | 'location' | 'marketing';
   };
 
   const settingSections: { title: string; items: SettingItem[] }[] = [
@@ -59,16 +86,19 @@ const SettingsScreen = () => {
           title: "프로필 편집",
           icon: "paw",
           action: () => navigation.navigate("ProfileEdit"),
+          description: "프로필 사진 및 정보 수정",
         },
         {
           title: "반려동물 정보",
           icon: "dog",
           action: () => navigation.navigate("Main", { initialTab: "MyPetTab" }),
+          description: "반려동물 프로필 관리",
         },
         {
           title: "비밀번호 변경",
           icon: "setting",
           action: () => navigation.navigate("PasswordChange"),
+          description: "계정 보안 설정",
         },
       ],
     },
@@ -80,14 +110,24 @@ const SettingsScreen = () => {
           icon: "setting",
           hasSwitch: true,
           value: pushNotifications,
-          onToggle: setPushNotifications,
+          onToggle: (value) => {
+            animateSwitch('push');
+            setPushNotifications(value);
+          },
+          description: "산책, 주문 등 중요 알림",
+          animationKey: 'push',
         },
         {
           title: "마케팅 수신",
           icon: "shop",
           hasSwitch: true,
           value: marketingEmails,
-          onToggle: setMarketingEmails,
+          onToggle: (value) => {
+            animateSwitch('marketing');
+            setMarketingEmails(value);
+          },
+          description: "이벤트 및 프로모션 정보",
+          animationKey: 'marketing',
         },
       ],
     },
@@ -99,17 +139,24 @@ const SettingsScreen = () => {
           icon: "map",
           hasSwitch: true,
           value: locationServices,
-          onToggle: setLocationServices,
+          onToggle: (value) => {
+            animateSwitch('location');
+            setLocationServices(value);
+          },
+          description: "산책 경로 추적 및 워커 찾기",
+          animationKey: 'location',
         },
         {
           title: "개인정보 처리방침",
           icon: "home",
           action: () => navigation.navigate("PrivacyPolicy"),
+          description: "개인정보 보호 정책",
         },
         {
           title: "이용약관",
           icon: "paw",
           action: () => navigation.navigate("TermsOfService"),
+          description: "서비스 이용 약관",
         },
       ],
     },
@@ -120,9 +167,20 @@ const SettingsScreen = () => {
           title: "고객센터",
           icon: "cart",
           action: () => navigation.navigate("CustomerService"),
+          description: "1:1 문의 및 상담",
         },
-        { title: "FAQ", icon: "paw", action: () => navigation.navigate("FAQ") },
-        { title: "앱 정보", icon: "home", action: () => navigation.navigate("AppInfo") },
+        { 
+          title: "FAQ", 
+          icon: "paw", 
+          action: () => navigation.navigate("FAQ"),
+          description: "자주 묻는 질문",
+        },
+        { 
+          title: "앱 정보", 
+          icon: "home", 
+          action: () => navigation.navigate("AppInfo"),
+          description: "버전 및 라이선스 정보",
+        },
       ],
     },
   ];
@@ -175,8 +233,13 @@ const SettingsScreen = () => {
                 shadowRadius: 8,
                 elevation: 4,
               }}>
-              {section.items.map((item, itemIndex) => (
-                <TouchableOpacity
+              {section.items.map((item, itemIndex) => {
+                const AnimatedTouchable = item.animationKey 
+                  ? Animated.createAnimatedComponent(TouchableOpacity)
+                  : TouchableOpacity;
+                
+                return (
+                  <AnimatedTouchable
                   key={itemIndex}
                   style={{
                     flexDirection: "row",
@@ -187,38 +250,72 @@ const SettingsScreen = () => {
                     borderBottomWidth:
                       itemIndex < section.items.length - 1 ? 1 : 0,
                     borderBottomColor: "rgba(240, 240, 240, 0.5)",
+                      transform: item.animationKey 
+                        ? [{ scale: switchAnimations[item.animationKey] }]
+                        : undefined,
                   }}
                   onPress={item.action}
-                  disabled={item.hasSwitch}>
+                    disabled={item.hasSwitch}
+                    activeOpacity={0.7}>
                   <View
                     style={{
                       flexDirection: "row",
                       alignItems: "center",
                       flex: 1,
                     }}>
-                    <IconImage name={item.icon} size={22} style={{ marginRight: 12 }} />
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: item.value 
+                            ? "rgba(197, 145, 114, 0.15)" 
+                            : "rgba(0, 0, 0, 0.05)",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          marginRight: 12,
+                        }}>
+                        <IconImage 
+                          name={item.icon} 
+                          size={20} 
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontSize: 16,
+                            fontSize: rf(16),
                         color: "#333",
-                        fontWeight: "500",
+                            fontWeight: "600",
+                            marginBottom: 2,
                       }}>
                       {item.title}
                     </Text>
+                        {item.description && (
+                          <Text
+                            style={{
+                              fontSize: rf(12),
+                              color: "#999",
+                            }}>
+                            {item.description}
+                          </Text>
+                        )}
+                      </View>
                   </View>
 
                   {item.hasSwitch ? (
                     <Switch
                       value={item.value}
                       onValueChange={item.onToggle}
-                      trackColor={{ false: "#ccc", true: "#4CAF50" }}
-                      thumbColor={item.value ? "#fff" : "#fff"}
+                        trackColor={{ false: "#E0E0E0", true: "#C59172" }}
+                      thumbColor={item.value ? "#fff" : "#f4f3f4"}
+                        ios_backgroundColor="#E0E0E0"
                     />
                   ) : (
-                    <Text style={{ fontSize: 16, color: "#999" }}>&gt;</Text>
+                      <Text style={{ fontSize: 18, color: "#C59172", fontWeight: "600" }}>›</Text>
                   )}
-                </TouchableOpacity>
-              ))}
+                  </AnimatedTouchable>
+                );
+              })}
             </View>
           </View>
         ))}
