@@ -10,6 +10,7 @@ import {
   Alert,
   Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCart } from "../contexts/CartContext";
@@ -81,7 +82,7 @@ const CheckoutScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       
       {/* 헤더 */}
@@ -249,15 +250,14 @@ const CheckoutScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f8f8",
-    paddingTop: StatusBar.currentHeight || 0,
+    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",

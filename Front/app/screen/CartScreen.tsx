@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,12 +15,21 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCart } from "../contexts/CartContext";
 import { RootStackParamList } from "../index";
 import { rf } from "../utils/responsive";
+import { SubscriptionModal, SubscriptionSettings } from "../components/SubscriptionModal";
+import { Ionicons } from "@expo/vector-icons";
 
 type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CartScreen = () => {
   const navigation = useNavigation<CartScreenNavigationProp>();
   const { cartItems, updateQuantity, removeFromCart, getTotalPrice } = useCart();
+  const [subscriptionModal, setSubscriptionModal] = useState<{
+    visible: boolean;
+    productId: string | null;
+  }>({ visible: false, productId: null });
+  const [subscriptions, setSubscriptions] = useState<
+    Record<string, SubscriptionSettings>
+  >({});
 
   const formatPrice = (price: number) => {
     return `${price.toLocaleString()}원`;
@@ -41,10 +50,48 @@ const CartScreen = () => {
     navigation.navigate("Shop", { category: "전체" });
   };
 
+  const handleSubscriptionOpen = (productId: string) => {
+    setSubscriptionModal({ visible: true, productId });
+  };
+
+  const handleSubscriptionConfirm = (settings: SubscriptionSettings) => {
+    if (!subscriptionModal.productId) return;
+    
+    setSubscriptions({
+      ...subscriptions,
+      [subscriptionModal.productId]: settings,
+    });
+    
+    Alert.alert(
+      "정기배송 설정 완료",
+      `${settings.cycle}마다 ${settings.quantity}개씩 배송됩니다.\n${settings.discount}% 할인이 적용됩니다.`,
+      [{ text: "확인" }]
+    );
+  };
+
+  const handleCancelSubscription = (productId: string) => {
+    Alert.alert(
+      "정기배송 해지",
+      "정기배송을 해지하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "해지",
+          style: "destructive",
+          onPress: () => {
+            const newSubscriptions = { ...subscriptions };
+            delete newSubscriptions[productId];
+            setSubscriptions(newSubscriptions);
+            Alert.alert("정기배송이 해지되었습니다");
+          },
+        },
+      ]
+    );
+  };
+
   return (
-    <>
-      <StatusBar backgroundColor="#000000" barStyle="dark-content" />
-      
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
 
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -89,6 +136,31 @@ const CartScreen = () => {
                     <Text style={styles.itemName}>{item.product.name}</Text>
                     <Text style={styles.itemPrice}>{formatPrice(item.product.price)}</Text>
                   </View>
+                  
+                  {/* 정기배송 버튼 */}
+                  {!subscriptions[item.product.id] ? (
+                    <TouchableOpacity
+                      style={styles.subscriptionButton}
+                      onPress={() => handleSubscriptionOpen(item.product.id)}
+                    >
+                      <Ionicons name="repeat" size={18} color="#C59172" />
+                      <Text style={styles.subscriptionButtonText}>정기배송</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.subscriptionActive}>
+                      <View style={styles.subscriptionInfo}>
+                        <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                        <Text style={styles.subscriptionInfoText}>
+                          {subscriptions[item.product.id].cycle} 배송
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => handleCancelSubscription(item.product.id)}
+                      >
+                        <Text style={styles.subscriptionCancelText}>해지</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.itemActions}>
@@ -157,7 +229,24 @@ const CartScreen = () => {
           </View>
         </>
       )}
-  </>
+      
+      {/* 정기배송 모달 */}
+      {subscriptionModal.productId && (
+        <SubscriptionModal
+          visible={subscriptionModal.visible}
+          onClose={() => setSubscriptionModal({ visible: false, productId: null })}
+          productName={
+            cartItems.find((item) => item.product.id === subscriptionModal.productId)
+              ?.product.name || ""
+          }
+          productPrice={
+            cartItems.find((item) => item.product.id === subscriptionModal.productId)
+              ?.product.price || 0
+          }
+          onConfirm={handleSubscriptionConfirm}
+        />
+      )}
+    </SafeAreaView>
   );
 };
 
@@ -223,7 +312,7 @@ const styles = StyleSheet.create({
   cartItem: {
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     marginHorizontal: 16,
-    marginTop: 70,
+    marginTop: 12,
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
@@ -386,6 +475,50 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: rf(16),
     fontWeight: "700",
+  },
+  subscriptionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#FFF9F6",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#C59172",
+  },
+  subscriptionButtonText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: "#C59172",
+  },
+  subscriptionActive: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#F0F8FF",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    gap: 8,
+  },
+  subscriptionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  subscriptionInfoText: {
+    fontSize: rf(12),
+    fontWeight: "600",
+    color: "#4CAF50",
+  },
+  subscriptionCancelText: {
+    fontSize: rf(11),
+    fontWeight: "500",
+    color: "#FF6B6B",
+    textDecorationLine: "underline",
   },
 });
 
