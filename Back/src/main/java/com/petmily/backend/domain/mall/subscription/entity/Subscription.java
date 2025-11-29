@@ -1,6 +1,6 @@
 package com.petmily.backend.domain.mall.subscription.entity;
 
-import com.petmily.backend.domain.common.entity.BaseTimeEntity;
+import com.petmily.backend.domain.common.BaseTimeEntity;
 import com.petmily.backend.domain.mall.order.entity.DeliveryInfo;
 import com.petmily.backend.domain.mall.product.entity.Product;
 import com.petmily.backend.domain.user.entity.User;
@@ -61,7 +61,7 @@ public class Subscription extends BaseTimeEntity {
         Product product = this.product;
 
         long subscriptionDays = ChronoUnit.DAYS.between(
-                this.getCreateTime().toLocalDate(),
+                this.getCreatedAt().toLocalDate(),
                 LocalDate.now()
         );
 
@@ -126,7 +126,7 @@ public class Subscription extends BaseTimeEntity {
     }
 
     public long getSubscriptionDays() {
-        return ChronoUnit.DAYS.between(this.getCreateTime().toLocalDate(), LocalDate.now());
+        return ChronoUnit.DAYS.between(this.getCreatedAt().toLocalDate(), LocalDate.now());
     }
 
 }

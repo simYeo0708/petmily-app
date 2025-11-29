@@ -62,7 +62,7 @@ class WalkerReviewControllerTest {
     @Test
     @WithMockUser(username = "testuser")
     void createReview_Success() throws Exception {
-        when(walkerReviewService.createReview(eq("testuser"), any(WalkerReviewRequest.class)))
+        when(walkerReviewService.createReview(eq(1L), any(WalkerReviewRequest.class)))
                 .thenReturn(mockReviewResponse);
 
         mockMvc.perform(post("/api/walker/reviews")
@@ -106,7 +106,7 @@ class WalkerReviewControllerTest {
     @WithMockUser(username = "testuser")
     void getMyReviews_Success() throws Exception {
         List<WalkerReviewResponse> reviews = Arrays.asList(mockReviewResponse);
-        when(walkerReviewService.getUserReviews("testuser")).thenReturn(reviews);
+        when(walkerReviewService.getUserReviews(1L)).thenReturn(reviews);
 
         mockMvc.perform(get("/api/walker/reviews/my"))
                 .andExpect(status().isOk())
@@ -125,7 +125,7 @@ class WalkerReviewControllerTest {
                 .comment("Updated comment")
                 .build();
 
-        when(walkerReviewService.updateReview(eq(1L), eq("testuser"), any(WalkerReviewRequest.class)))
+        when(walkerReviewService.updateReview(eq(1L), eq(1L), any(WalkerReviewRequest.class)))
                 .thenReturn(updatedResponse);
 
         WalkerReviewRequest updateRequest = new WalkerReviewRequest();
@@ -153,7 +153,7 @@ class WalkerReviewControllerTest {
     @Test
     @WithMockUser(username = "testuser")
     void getReview_Success() throws Exception {
-        when(walkerReviewService.getReview(1L, "testuser")).thenReturn(mockReviewResponse);
+        when(walkerReviewService.getReview(1L, 1L)).thenReturn(mockReviewResponse);
 
         mockMvc.perform(get("/api/walker/reviews/1"))
                 .andExpect(status().isOk())

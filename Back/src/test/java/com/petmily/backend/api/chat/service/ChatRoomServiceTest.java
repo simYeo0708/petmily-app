@@ -87,8 +87,7 @@ class ChatRoomServiceTest {
         walker = Walker.builder()
                 .id(1L)
                 .userId(2L)
-                .bio("Test Walker Bio")
-                .hourlyRate(25.0)
+                .hourlyRate(java.math.BigDecimal.valueOf(25.0))
                 .build();
 
         preBookingChatRoom = ChatRoom.builder()
@@ -143,7 +142,7 @@ class ChatRoomServiceTest {
         when(chatMessageRepository.countUnreadMessages(2L, 1L)).thenReturn(0L);
 
         // When
-        List<ChatRoomResponse> result = chatRoomService.getUserChatRooms(username);
+        List<ChatRoomResponse> result = chatRoomService.getUserChatRooms(user.getId());
 
         // Then
         assertThat(result).isNotNull();
@@ -175,7 +174,7 @@ class ChatRoomServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatRoomService.getUserChatRooms(username))
+        assertThatThrownBy(() -> chatRoomService.getUserChatRooms(user.getId()))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
 
@@ -230,7 +229,7 @@ class ChatRoomServiceTest {
         when(chatRoomRepository.save(any(ChatRoom.class))).thenReturn(preBookingChatRoom);
 
         // When
-        ChatRoomResponse result = chatRoomService.createPreBookingChatRoom(username, createChatRoomRequest);
+        ChatRoomResponse result = chatRoomService.createPreBookingChatRoom(user.getId(), createChatRoomRequest);
 
         // Then
         assertThat(result).isNotNull();
@@ -259,7 +258,7 @@ class ChatRoomServiceTest {
                 .thenReturn(Optional.of(preBookingChatRoom));
 
         // When
-        ChatRoomResponse result = chatRoomService.createPreBookingChatRoom(username, createChatRoomRequest);
+        ChatRoomResponse result = chatRoomService.createPreBookingChatRoom(user.getId(), createChatRoomRequest);
 
         // Then
         assertThat(result).isNotNull();
@@ -280,7 +279,7 @@ class ChatRoomServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(username, createChatRoomRequest))
+        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(user.getId(), createChatRoomRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
 
@@ -299,7 +298,7 @@ class ChatRoomServiceTest {
         createChatRoomRequest.setWalkerId(999L);
 
         // When & Then
-        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(username, createChatRoomRequest))
+        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(user.getId(), createChatRoomRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("워커를 찾을 수 없습니다");
@@ -316,15 +315,14 @@ class ChatRoomServiceTest {
         Walker selfWalker = Walker.builder()
                 .id(1L)
                 .userId(1L) // Same user ID as the requester
-                .bio("Self Walker Bio")
-                .hourlyRate(30.0)
+                .hourlyRate(java.math.BigDecimal.valueOf(30.0))
                 .build();
 
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
         when(walkerRepository.findById(1L)).thenReturn(Optional.of(selfWalker));
 
         // When & Then
-        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(username, createChatRoomRequest))
+        assertThatThrownBy(() -> chatRoomService.createPreBookingChatRoom(user.getId(), createChatRoomRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST)
                 .hasMessageContaining("자기 자신과는 채팅할 수 없습니다");
@@ -397,7 +395,7 @@ class ChatRoomServiceTest {
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.of(preBookingChatRoom));
 
         // When
-        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, username);
+        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, user.getId());
 
         // Then
         assertThat(hasAccess).isTrue();
@@ -418,7 +416,7 @@ class ChatRoomServiceTest {
         when(walkerRepository.findByUserId(2L)).thenReturn(Optional.of(walker));
 
         // When
-        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, username);
+        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, user.getId());
 
         // Then
         assertThat(hasAccess).isTrue();
@@ -444,7 +442,7 @@ class ChatRoomServiceTest {
         when(walkerRepository.findByUserId(99L)).thenReturn(Optional.empty());
 
         // When
-        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, username);
+        boolean hasAccess = chatRoomService.hasAccessToChatRoom(roomId, user.getId());
 
         // Then
         assertThat(hasAccess).isFalse();

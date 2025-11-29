@@ -36,7 +36,7 @@ public class OrderResponse {
                 .status(order.getStatus())
                 .deliveryInfo(DeliveryInfoResponse.from(order.getDeliveryInfo()))
                 .orderedAt(order.getOrderedAt())
-                .createdAt(order.getCreateTime())
+                .createdAt(order.getCreatedAt())
                 .build();
     }
 

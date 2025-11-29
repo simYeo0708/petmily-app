@@ -7,10 +7,10 @@ import com.petmily.backend.api.walker.dto.walkerReview.WalkerReviewResponse;
 import com.petmily.backend.domain.user.entity.Role;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.entity.WalkerReview;
-import com.petmily.backend.domain.walker.repository.WalkerBookingRepository;
+import com.petmily.backend.domain.walk.repository.WalkBookingRepository;
 import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import com.petmily.backend.domain.walker.repository.WalkerReviewRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,14 +45,14 @@ class WalkerReviewServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private WalkerBookingRepository walkerBookingRepository;
+    private WalkBookingRepository walkBookingRepository;
 
     @InjectMocks
     private WalkerReviewService walkerReviewService;
 
     private User testUser;
     private Walker testWalker;
-    private WalkerBooking testBooking;
+    private WalkBooking testBooking;
     private WalkerReview testReview;
     private WalkerReviewRequest testRequest;
     private String testUsername;
@@ -72,21 +72,19 @@ class WalkerReviewServiceTest {
         testWalker = Walker.builder()
                 .id(1L)
                 .userId(2L)
-                .bio("Experienced walker")
-                .hourlyRate(15000.0)
+                .hourlyRate(java.math.BigDecimal.valueOf(15000.0))
                 .build();
 
-        testBooking = new WalkerBooking();
+        testBooking = new WalkBooking();
         testBooking.setId(1L);
         testBooking.setUserId(1L);
         testBooking.setWalkerId(1L);
         testBooking.setPetId(1L);
         testBooking.setDate(LocalDateTime.now().minusDays(1));
         testBooking.setDuration(60);
-        testBooking.setStatus(WalkerBooking.BookingStatus.COMPLETED);
+        testBooking.setStatus(WalkBooking.BookingStatus.COMPLETED);
         testBooking.setTotalPrice(15000.0);
-        testBooking.setActualStartTime(LocalDateTime.now().minusHours(2));
-        testBooking.setActualEndTime(LocalDateTime.now().minusHours(1));
+        // ActualStartTime과 ActualEndTime은 WalkDetail에 있음
 
         testReview = WalkerReview.builder()
                 .id(1L)
@@ -95,8 +93,6 @@ class WalkerReviewServiceTest {
                 .bookingId(1L)
                 .rating(5)
                 .comment("Great walker!")
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         testRequest = new WalkerReviewRequest();
@@ -110,11 +106,11 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 생성 - 성공")
     void createReview_Success() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
-        given(walkerProfileRepository.findById(1L))
+        given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
         given(walkerReviewRepository.existsByBookingId(1L))
                 .willReturn(false);
@@ -122,7 +118,7 @@ class WalkerReviewServiceTest {
                 .willReturn(testReview);
 
         // when
-        WalkerReviewResponse response = walkerReviewService.createReview(testUsername, testRequest);
+        WalkerReviewResponse response = walkerReviewService.createReview(testUser.getId(), testRequest);
 
         // then
         assertThat(response).isNotNull();
@@ -133,9 +129,9 @@ class WalkerReviewServiceTest {
         assertThat(response.getRating()).isEqualTo(5);
         assertThat(response.getComment()).isEqualTo("Great walker!");
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerRepository).findById(1L);
-        verify(walkerBookingRepository).findById(1L);
+        verify(walkBookingRepository).findById(1L);
         verify(walkerReviewRepository).existsByBookingId(1L);
         verify(walkerReviewRepository).save(any(WalkerReview.class));
     }
@@ -148,11 +144,11 @@ class WalkerReviewServiceTest {
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerRepository, never()).findById(any());
     }
 
@@ -160,18 +156,18 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 생성 - 워커 프로필을 찾을 수 없음")
     void createReview_WalkerNotFound() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("워커 프로필을 찾을 수 없습니다.");
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerRepository).findById(1L);
     }
 
@@ -179,39 +175,39 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 생성 - 예약을 찾을 수 없음")
     void createReview_BookingNotFound() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("예약을 찾을 수 없습니다.");
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerRepository).findById(1L);
-        verify(walkerBookingRepository).findById(1L);
+        verify(walkBookingRepository).findById(1L);
     }
 
     @Test
     @DisplayName("리뷰 생성 - 완료되지 않은 예약에 대한 리뷰 생성 시도")
     void createReview_BookingNotCompleted() {
         // given
-        testBooking.setStatus(WalkerBooking.BookingStatus.IN_PROGRESS);
+        testBooking.setStatus(WalkBooking.BookingStatus.IN_PROGRESS);
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST)
                 .hasMessageContaining("완료된 산책에 대해서만 리뷰를 작성할 수 있습니다.");
@@ -223,15 +219,15 @@ class WalkerReviewServiceTest {
         // given
         testBooking.setUserId(99L); // Different user ID
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NO_ACCESS)
                 .hasMessageContaining("본인이 예약한 산책에 대해서만 리뷰를 작성할 수 있습니다.");
@@ -243,15 +239,15 @@ class WalkerReviewServiceTest {
         // given
         testBooking.setWalkerId(99L); // Different walker ID
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST)
                 .hasMessageContaining("예약의 워커와 리뷰 대상 워커가 일치하지 않습니다.");
@@ -261,17 +257,17 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 생성 - 이미 리뷰가 존재하는 경우")
     void createReview_ReviewAlreadyExists() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerRepository.findById(1L))
                 .willReturn(Optional.of(testWalker));
-        given(walkerBookingRepository.findById(1L))
+        given(walkBookingRepository.findById(1L))
                 .willReturn(Optional.of(testBooking));
         given(walkerReviewRepository.existsByBookingId(1L))
                 .willReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.createReview(testUsername, testRequest))
+        assertThatThrownBy(() -> walkerReviewService.createReview(testUser.getId(), testRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST)
                 .hasMessageContaining("이미 해당 산책에 대한 리뷰를 작성하셨습니다.");
@@ -370,20 +366,20 @@ class WalkerReviewServiceTest {
         // given
         List<WalkerReview> reviews = Arrays.asList(testReview);
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findByUserIdOrderByCreatedAtDesc(1L))
                 .willReturn(reviews);
 
         // when
-        List<WalkerReviewResponse> responses = walkerReviewService.getUserReviews(testUsername);
+        List<WalkerReviewResponse> responses = walkerReviewService.getUserReviews(testUser.getId());
 
         // then
         assertThat(responses).hasSize(1);
         assertThat(responses.get(0).getId()).isEqualTo(1L);
         assertThat(responses.get(0).getUserId()).isEqualTo(1L);
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerReviewRepository).findByUserIdOrderByCreatedAtDesc(1L);
     }
 
@@ -391,20 +387,20 @@ class WalkerReviewServiceTest {
     @DisplayName("특정 리뷰 조회 - 성공")
     void getReview_Success() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findById(1L))
                 .willReturn(Optional.of(testReview));
 
         // when
-        WalkerReviewResponse response = walkerReviewService.getReview(1L, testUsername);
+        WalkerReviewResponse response = walkerReviewService.getReview(1L, testUser.getId());
 
         // then
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getUserId()).isEqualTo(1L);
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerReviewRepository).findById(1L);
     }
 
@@ -412,13 +408,13 @@ class WalkerReviewServiceTest {
     @DisplayName("특정 리뷰 조회 - 리뷰를 찾을 수 없음")
     void getReview_ReviewNotFound() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findById(1L))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.getReview(1L, testUsername))
+        assertThatThrownBy(() -> walkerReviewService.getReview(1L, testUser.getId()))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("리뷰를 찾을 수 없습니다.");
@@ -430,13 +426,13 @@ class WalkerReviewServiceTest {
         // given
         testReview.setUserId(99L); // Different user ID
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findById(1L))
                 .willReturn(Optional.of(testReview));
 
         // when & then
-        assertThatThrownBy(() -> walkerReviewService.getReview(1L, testUsername))
+        assertThatThrownBy(() -> walkerReviewService.getReview(1L, testUser.getId()))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NO_ACCESS)
                 .hasMessageContaining("자신이 작성한 리뷰만 접근할 수 있습니다.");
@@ -450,7 +446,7 @@ class WalkerReviewServiceTest {
         updateRequest.setRating(4);
         updateRequest.setComment("Updated comment");
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findById(1L))
                 .willReturn(Optional.of(testReview));
@@ -458,13 +454,13 @@ class WalkerReviewServiceTest {
                 .willReturn(testReview);
 
         // when
-        WalkerReviewResponse response = walkerReviewService.updateReview(1L, testUsername, updateRequest);
+        WalkerReviewResponse response = walkerReviewService.updateReview(1L, testUser.getId(), updateRequest);
 
         // then
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(1L);
 
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerReviewRepository).findById(1L);
         verify(walkerReviewRepository).save(testReview);
     }
@@ -473,16 +469,16 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 삭제 - 성공")
     void deleteReview_Success() {
         // given
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
         given(walkerReviewRepository.findById(1L))
                 .willReturn(Optional.of(testReview));
 
         // when
-        walkerReviewService.deleteReview(1L, testUsername);
+        walkerReviewService.deleteReview(1L, testUser.getId());
 
         // then
-        verify(userRepository).findByUsername(testUsername);
+        verify(userRepository).findById(testUser.getId());
         verify(walkerReviewRepository).findById(1L);
         verify(walkerReviewRepository).delete(testReview);
     }
@@ -491,17 +487,17 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 작성 가능한 예약 목록 조회 - 성공")
     void getReviewableBookings_Success() {
         // given
-        List<WalkerBooking> completedBookings = Arrays.asList(testBooking);
+        List<WalkBooking> completedBookings = Arrays.asList(testBooking);
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
-        given(walkerBookingRepository.findByUserIdAndStatus(1L, WalkerBooking.BookingStatus.COMPLETED))
+        given(walkBookingRepository.findByUserIdAndStatus(1L, WalkBooking.BookingStatus.COMPLETED))
                 .willReturn(completedBookings);
         given(walkerReviewRepository.existsByBookingId(1L))
                 .willReturn(false);
 
         // when
-        List<Map<String, Object>> result = walkerReviewService.getReviewableBookings(testUsername);
+        List<Map<String, Object>> result = walkerReviewService.getReviewableBookings(testUser.getId());
 
         // then
         assertThat(result).hasSize(1);
@@ -513,8 +509,8 @@ class WalkerReviewServiceTest {
         assertThat(bookingInfo.get("bookingId")).isEqualTo(1L);
         assertThat(bookingInfo.get("walkerId")).isEqualTo(1L);
 
-        verify(userRepository).findByUsername(testUsername);
-        verify(walkerBookingRepository).findByUserIdAndStatus(1L, WalkerBooking.BookingStatus.COMPLETED);
+        verify(userRepository).findById(testUser.getId());
+        verify(walkBookingRepository).findByUserIdAndStatus(1L, WalkBooking.BookingStatus.COMPLETED);
         verify(walkerReviewRepository).existsByBookingId(1L);
     }
 
@@ -522,23 +518,23 @@ class WalkerReviewServiceTest {
     @DisplayName("리뷰 작성 가능한 예약 목록 조회 - 이미 리뷰가 작성된 예약은 제외")
     void getReviewableBookings_ExcludeReviewedBookings() {
         // given
-        List<WalkerBooking> completedBookings = Arrays.asList(testBooking);
+        List<WalkBooking> completedBookings = Arrays.asList(testBooking);
 
-        given(userRepository.findByUsername(testUsername))
+        given(userRepository.findById(testUser.getId()))
                 .willReturn(Optional.of(testUser));
-        given(walkerBookingRepository.findByUserIdAndStatus(1L, WalkerBooking.BookingStatus.COMPLETED))
+        given(walkBookingRepository.findByUserIdAndStatus(1L, WalkBooking.BookingStatus.COMPLETED))
                 .willReturn(completedBookings);
         given(walkerReviewRepository.existsByBookingId(1L))
                 .willReturn(true); // 이미 리뷰가 작성됨
 
         // when
-        List<Map<String, Object>> result = walkerReviewService.getReviewableBookings(testUsername);
+        List<Map<String, Object>> result = walkerReviewService.getReviewableBookings(testUser.getId());
 
         // then
         assertThat(result).isEmpty();
 
-        verify(userRepository).findByUsername(testUsername);
-        verify(walkerBookingRepository).findByUserIdAndStatus(1L, WalkerBooking.BookingStatus.COMPLETED);
+        verify(userRepository).findById(testUser.getId());
+        verify(walkBookingRepository).findByUserIdAndStatus(1L, WalkBooking.BookingStatus.COMPLETED);
         verify(walkerReviewRepository).existsByBookingId(1L);
     }
 

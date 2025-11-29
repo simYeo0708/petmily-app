@@ -5,6 +5,9 @@ import { View, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import TabNavigator, { TabParamList } from "./navigation/TabNavigator";
 import HelperDashboardScreen from "./screen/HelperDashboardScreen";
+import WalkerReviewsScreen from "./screen/WalkerReviewsScreen";
+import WalkerBookingsScreen from "./screen/WalkerBookingsScreen";
+import WalkerBookingDetailScreen from "./screen/WalkerBookingDetailScreen";
 import LoginScreen from "./screen/LoginScreen";
 import MatchingScreen from "./screen/MatchingScreen";
 import ShopScreen from "./screen/ShopScreen";
@@ -44,6 +47,29 @@ export type RootStackParamList = {
   Checkout: undefined;
   OrderComplete: { orderNumber: string };
   HelperDashboard: undefined;
+  WalkerReviews: undefined;
+  WalkerBookings: undefined;
+  WalkerBookingDetail: {
+    bookingId?: number;
+    bookingData?: {
+      id: number;
+      date: string;
+      petName: string;
+      petBreed: string;
+      notes: string | null;
+      status: string;
+      address: string;
+      pickupAddress?: string;
+      dropoffAddress?: string | null;
+      duration?: number;
+      totalPrice?: number | null;
+      ownerName?: string | null;
+      ownerPhone?: string | null;
+      emergencyContact?: string | null;
+      isRegularPackage?: boolean;
+      packageFrequency?: string | null;
+    };
+  };
   MatchingScreen: undefined;
   WalkingMap: undefined;
   WalkingMapEnhanced: {
@@ -127,6 +153,9 @@ export default function App() {
                 <Stack.Screen name="Checkout" component={CheckoutScreen}/>
                 <Stack.Screen name="OrderComplete" component={OrderCompleteScreen}/>
                 <Stack.Screen name="HelperDashboard" component={HelperDashboardScreen}/>
+                <Stack.Screen name="WalkerReviews" component={WalkerReviewsScreen} />
+                <Stack.Screen name="WalkerBookings" component={WalkerBookingsScreen} />
+                <Stack.Screen name="WalkerBookingDetail" component={WalkerBookingDetailScreen} />
                 <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
                 <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
                 <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />

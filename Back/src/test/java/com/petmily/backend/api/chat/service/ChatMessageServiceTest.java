@@ -11,7 +11,7 @@ import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
-import com.petmily.backend.domain.walker.entity.WalkerBooking;
+import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walker.entity.Walker;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +59,7 @@ class ChatMessageServiceTest {
     private ChatRoom chatRoom;
     private ChatMessage chatMessage;
     private ChatMessageRequest messageRequest;
-    private WalkerBooking booking;
+    private WalkBooking booking;
     private Pageable pageable;
 
     @BeforeEach
@@ -81,8 +81,7 @@ class ChatMessageServiceTest {
         walker = Walker.builder()
                 .id(1L)
                 .userId(2L)
-                .bio("Test Walker Bio")
-                .hourlyRate(25.0)
+                .hourlyRate(java.math.BigDecimal.valueOf(25.0))
                 .build();
 
         chatRoom = ChatRoom.builder()
@@ -110,7 +109,7 @@ class ChatMessageServiceTest {
                 .content("Test message content")
                 .build();
 
-        booking = WalkerBooking.builder()
+        booking = WalkBooking.builder()
                 .id(1L)
                 .userId(1L)
                 .walkerId(1L)
@@ -134,11 +133,11 @@ class ChatMessageServiceTest {
 
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.of(chatRoom));
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
-        when(chatMessageRepository.findByChatRoomIdOrderByCreateTimeDesc(1L, pageable))
+        when(chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(1L, pageable))
                 .thenReturn(messagePage);
 
         // When
-        Page<ChatMessageResponse> result = chatMessageService.getChatMessages(roomId, username, pageable);
+        Page<ChatMessageResponse> result = chatMessageService.getChatMessages(roomId, user.getId(), pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -147,7 +146,7 @@ class ChatMessageServiceTest {
 
         verify(chatRoomRepository).findByRoomId(roomId);
         verify(userRepository).findByUsername(username);
-        verify(chatMessageRepository).findByChatRoomIdOrderByCreateTimeDesc(1L, pageable);
+        verify(chatMessageRepository).findByChatRoomIdOrderByCreatedAtDesc(1L, pageable);
     }
 
     @Test
@@ -160,7 +159,7 @@ class ChatMessageServiceTest {
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, username, pageable))
+        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, user.getId(), pageable))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND)
                 .hasMessageContaining("채팅방을 찾을 수 없습니다");
@@ -180,7 +179,7 @@ class ChatMessageServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, username, pageable))
+        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, user.getId(), pageable))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.USER_NOT_FOUND);
 
@@ -203,7 +202,7 @@ class ChatMessageServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(unauthorizedUser));
 
         // When & Then
-        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, username, pageable))
+        assertThatThrownBy(() -> chatMessageService.getChatMessages(roomId, user.getId(), pageable))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.NO_ACCESS)
                 .hasMessageContaining("채팅방에 접근할 권한이 없습니다");
@@ -224,7 +223,7 @@ class ChatMessageServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(chatMessage);
 
         // When
-        ChatMessageResponse result = chatMessageService.sendMessage(roomId, username, messageRequest);
+        ChatMessageResponse result = chatMessageService.sendMessage(roomId, user.getId(), messageRequest);
 
         // Then
         assertThat(result).isNotNull();
@@ -251,7 +250,7 @@ class ChatMessageServiceTest {
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatMessageService.sendMessage(roomId, username, messageRequest))
+        assertThatThrownBy(() -> chatMessageService.sendMessage(roomId, user.getId(), messageRequest))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
 
@@ -316,7 +315,7 @@ class ChatMessageServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(chatMessage);
 
         // When
-        ChatMessageResponse result = chatMessageService.createJoinMessage(chatRoomId, username);
+        ChatMessageResponse result = chatMessageService.createJoinMessage(chatRoomId, user.getId());
 
         // Then
         assertThat(result).isNotNull();
@@ -343,7 +342,7 @@ class ChatMessageServiceTest {
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(user));
 
         // When
-        chatMessageService.markMessagesAsRead(roomId, username);
+        chatMessageService.markMessagesAsRead(roomId, user.getId());
 
         // Then
         verify(chatRoomRepository).findByRoomId(roomId);
@@ -361,7 +360,7 @@ class ChatMessageServiceTest {
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> chatMessageService.markMessagesAsRead(roomId, username))
+        assertThatThrownBy(() -> chatMessageService.markMessagesAsRead(roomId, user.getId()))
                 .isInstanceOf(CustomException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.RESOURCE_NOT_FOUND);
 
@@ -381,11 +380,11 @@ class ChatMessageServiceTest {
 
         when(chatRoomRepository.findByRoomId(roomId)).thenReturn(Optional.of(chatRoom));
         when(userRepository.findByUsername(username)).thenReturn(Optional.of(walkerUser));
-        when(chatMessageRepository.findByChatRoomIdOrderByCreateTimeDesc(1L, pageable))
+        when(chatMessageRepository.findByChatRoomIdOrderByCreatedAtDesc(1L, pageable))
                 .thenReturn(messagePage);
 
         // When
-        Page<ChatMessageResponse> result = chatMessageService.getChatMessages(roomId, username, pageable);
+        Page<ChatMessageResponse> result = chatMessageService.getChatMessages(roomId, user.getId(), pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -393,7 +392,7 @@ class ChatMessageServiceTest {
 
         verify(chatRoomRepository).findByRoomId(roomId);
         verify(userRepository).findByUsername(username);
-        verify(chatMessageRepository).findByChatRoomIdOrderByCreateTimeDesc(1L, pageable);
+        verify(chatMessageRepository).findByChatRoomIdOrderByCreatedAtDesc(1L, pageable);
     }
 
     @Test
@@ -412,7 +411,7 @@ class ChatMessageServiceTest {
         when(chatMessageRepository.save(any(ChatMessage.class))).thenReturn(chatMessage);
 
         // When
-        ChatMessageResponse result = chatMessageService.sendMessage(roomId, username, imageRequest);
+        ChatMessageResponse result = chatMessageService.sendMessage(roomId, walkerUser.getId(), imageRequest);
 
         // Then
         assertThat(result).isNotNull();

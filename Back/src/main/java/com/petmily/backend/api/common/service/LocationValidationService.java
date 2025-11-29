@@ -4,7 +4,7 @@ import com.petmily.backend.api.exception.InvalidCoordinatesException;
 import com.petmily.backend.api.exception.LocationRequiredException;
 import com.petmily.backend.api.exception.CustomException;
 import com.petmily.backend.api.exception.ErrorCode;
-import com.petmily.backend.domain.walk.entity.WalkTrack;
+import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,14 +84,14 @@ public class LocationValidationService {
     public void validateLocationChange(Long bookingId, Double newLatitude, Double newLongitude) {
         validateCoordinates(newLatitude, newLongitude);
 
-        Optional<WalkTrack> lastTrack = walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId);
+        Optional<WalkingTrack> lastTrack = walkTrackRepository.findTopByBookingIdOrderByTimestampDesc(bookingId);
 
         if (lastTrack.isEmpty()) {
             // 첫 번째 위치 기록이면 검증 생략
             return;
         }
 
-        WalkTrack previous = lastTrack.get();
+        WalkingTrack previous = lastTrack.get();
         double distanceKm = calculateDistance(
             previous.getLatitude(), previous.getLongitude(),
             newLatitude, newLongitude

@@ -56,7 +56,7 @@ public class SubscriptionResponse {
                 .currentPrice(subscription.calculateCurrentPrice())
                 .originalPrice(originalPrice)
                 .subscriptionDays(subscription.getSubscriptionDays())
-                .createdAt(subscription.getCreateTime())
+                .createdAt(subscription.getCreatedAt())
                 .canceledAt(subscription.getCanceledAt())
                 .cancelReason(subscription.getCancelReason())
                 .build();

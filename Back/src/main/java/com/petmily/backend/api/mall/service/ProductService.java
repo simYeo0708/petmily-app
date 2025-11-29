@@ -149,7 +149,7 @@ public class ProductService {
                 case "popular" -> productRepository.findByStatusOrderByLikeCountDesc(ProductStatus.ACTIVE, pageable);
                 case "rating" -> productRepository.findByStatusOrderByAverageRatingDesc(ProductStatus.ACTIVE, pageable);
                 case "sales" -> productRepository.findByStatusOrderBySalesCountDesc(ProductStatus.ACTIVE, pageable);
-                default -> productRepository.findByStatusOrderByCreateTimeDesc(ProductStatus.ACTIVE, pageable);
+                default -> productRepository.findByStatusOrderByCreatedAtDesc(ProductStatus.ACTIVE, pageable);
             };
         }
 

@@ -22,16 +22,6 @@ public class SecurityUtils {
     }
     
     /**
-     * 인증 정보가 없을 수 있는 상황에서 ID를 가져오되, 없으면 null 반환
-     */
-    public static Long getUserIdOrNull(UserDetails userDetails) {
-        if (userDetails instanceof PrincipalDetails principalDetails) {
-            return principalDetails.getUser().getId();
-        }
-        return null;
-    }
-    
-    /**
      * UserDetails에서 User 엔티티를 추출합니다.
      */
     public static User getUser(UserDetails userDetails) {
@@ -77,10 +67,16 @@ public class SecurityUtils {
         }
     }
 
+    /**
+     * 인증 정보가 없을 수 있는 상황에서 ID를 가져오되, 없으면 null 반환
+     */
     public static Long getUserIdOrNull(UserDetails userDetails) {
         if (userDetails == null) {
             return null;
         }
-        return getUserId(userDetails);
+        if (userDetails instanceof PrincipalDetails principalDetails) {
+            return principalDetails.getUser().getId();
+        }
+        return null;
     }
 }
