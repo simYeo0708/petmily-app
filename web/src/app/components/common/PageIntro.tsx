@@ -15,7 +15,8 @@ export interface PageIntroProps {
   title: string
   description: string
   tagline?: string
-  imagePrompt: string
+  imagePrompt?: string
+  imageSrc?: string
   actions?: ActionButton[]
   className?: string
 }
@@ -31,6 +32,7 @@ export default function PageIntro({
   description,
   tagline,
   imagePrompt,
+  imageSrc,
   actions = [],
   className = '',
 }: PageIntroProps) {
@@ -85,19 +87,36 @@ export default function PageIntro({
             )}
           </div>
 
-          <aside className="relative rounded-2xl border border-black/10 bg-white/70 backdrop-blur-sm p-6 shadow-[0_20px_50px_rgba(23,22,21,0.08)]">
+          <aside className="relative rounded-2xl border border-black/10 bg-white/70 backdrop-blur-sm p-6 shadow-[0_20px_50px_rgba(23,22,21,0.08)] overflow-hidden">
             <div className="absolute inset-x-6 -top-6 h-12 bg-gradient-to-tr from-[#1E1C1A] to-[#4B4036] opacity-10 blur-2xl rounded-full" />
             <div className="relative space-y-4">
-              <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8A7766]">
-                이미지 제안
-              </h2>
-              <p className="text-sm leading-relaxed text-[#3A3835]">
-                {imagePrompt}
-              </p>
-              <p className="text-xs text-[#6F6A64]">
-                고해상도 사진 또는 일러스트를 권장합니다. 이미지 선택 시
-                차분한 중간톤과 자연광을 활용하면 전체 톤과 조화를 이룹니다.
-              </p>
+              {imageSrc ? (
+                <>
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8A7766]">
+                    
+                  </h2>
+                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden">
+                    <img
+                      src={imageSrc}
+                      alt="Page concept"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-[#8A7766]">
+                    이미지 제안
+                  </h2>
+                  <p className="text-sm leading-relaxed text-[#3A3835]">
+                    {imagePrompt}
+                  </p>
+                  <p className="text-xs text-[#6F6A64]">
+                    고해상도 사진 또는 일러스트를 권장합니다. 이미지 선택 시
+                    차분한 중간톤과 자연광을 활용하면 전체 톤과 조화를 이룹니다.
+                  </p>
+                </>
+              )}
             </div>
           </aside>
         </div>

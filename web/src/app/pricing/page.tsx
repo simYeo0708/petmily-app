@@ -119,7 +119,7 @@ export default function PricingPage() {
         tagline="Pricing"
         title="반려 케어 여정에 맞는 플랜을 선택하세요"
         description="무료 체험으로 시작하고 필요에 따라 확장할 수 있습니다. 모든 플랜은 App Store와 Google Play에서 동일하게 적용됩니다."
-        imagePrompt="가격표가 놓여 있는 책상, 옆에는 반려견 사진이 있는 액자와 노트북. Petmily 앱 화면에는 요금제를 선택하는 인터페이스가 보인다."
+        imageSrc="/images/pricingPage.png"
         actions={[
           { label: '14일 무료 체험 시작', href: '/register', variant: 'primary' },
           { label: '다운로드 살펴보기', href: '/downloads', variant: 'secondary' },

@@ -70,11 +70,14 @@ export default function DownloadsPage() {
                 </a>
               </div>
 
-              <div className="rounded-2xl border border-[#E7E7E7] bg-white/80 p-5 shadow-[0_25px_70px_rgba(33,33,33,0.08)] backdrop-blur-sm">
-                <p className="text-sm text-[#393939]">
-                  <strong className="text-[#141414]">이미지 제안</strong> · 짙은 남색 배경 위에 Petmily 메인 화면이 보이는
-                  스마트폰을 손으로 들고 있는 사진. 오른쪽에는 배경 일러스트가 부드럽게 배치된 장면.
-                </p>
+              <div className="rounded-2xl border border-[#E7E7E7] bg-white/80 p-4 shadow-[0_25px_70px_rgba(33,33,33,0.08)] backdrop-blur-sm overflow-hidden max-w-sm">
+                <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden">
+                  <img
+                    src="/images/downloadPage.png"
+                    alt="Petmily Download"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -111,7 +114,7 @@ export default function DownloadsPage() {
         </section>
 
         {/* 파트너 로고 섹션 */}
-        <section className="relative z-10 max-w-7xl xl:max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pb-40">
+        <section className="relative z-10 max-w-7xl xl:max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-20 pb-40">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#9F9F9F] text-center py-3">
               TRUSTED BY TEAMS
