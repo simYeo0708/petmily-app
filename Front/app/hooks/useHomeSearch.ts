@@ -3,7 +3,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SearchResult } from "../types/HomeScreen";
-import { searchProducts, BackendSearchResult } from "../services/SearchService";
+import { searchProducts, BackendSearchResult } from "../services/searchService";
 import { ServiceMode } from "../constants/ServiceModes";
 import { RootStackParamList } from "../index";
 
