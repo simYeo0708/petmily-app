@@ -177,7 +177,7 @@ export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselPr
           <Ionicons name="cube-outline" size={48} color="#ccc" />
           <Text style={styles.emptyTitle}>추천된 상품이 없습니다</Text>
           <Text style={styles.emptyDescription}>
-            상품을 둘러보고 좋아요를 눌러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요
+            상품을 둘러보고 좋아요를 눌러보시면\n맞춤 추천 상품을 받아볼 수 있어요
           </Text>
           <TouchableOpacity
             style={styles.browseButton}
