@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Image,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -147,7 +148,29 @@ const MyOrdersScreen = () => {
             </TouchableOpacity>
           )}
           {order.status === "delivered" && (
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => {
+                // 첫 번째 상품에 대한 리뷰 작성 (여러 상품이 있을 경우 첫 번째만)
+                const firstItem = order.items[0];
+                if (firstItem) {
+                  // 주문 ID와 상품 ID를 숫자로 변환
+                  const orderIdNum = parseInt(order.id) || 0;
+                  const productIdNum = parseInt(firstItem.productId) || 0;
+                  
+                  if (orderIdNum && productIdNum) {
+                    navigation.navigate("ReviewWrite", {
+                      orderId: orderIdNum,
+                      productId: productIdNum,
+                      productName: firstItem.productName,
+                      productImage: firstItem.productImage,
+                    });
+                  } else {
+                    Alert.alert("오류", "주문 정보를 불러올 수 없습니다.");
+                  }
+                }
+              }}
+            >
               <Text style={styles.actionButtonText}>리뷰 작성</Text>
             </TouchableOpacity>
           )}

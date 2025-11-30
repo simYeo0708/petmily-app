@@ -148,8 +148,8 @@ export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselPr
             <Text style={styles.emptyTitle}>맞춤 추천을 준비 중이에요</Text>
             <Text style={styles.emptyDescription}>
               {viewHistoryCount === 0 
-                ? '상품을 둘러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요'
-                : `더 많은 상품을 둘러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요\n\n(현재 ${viewHistoryCount}개 상품 조회)`}
+                ? '상품을 둘러보시면\n맞춤 추천 상품을 받아볼 수 있어요'
+                : `더 많은 상품을 둘러보시면\n맞춤 추천 상품을 받아볼 수 있어요\n\n(현재 ${viewHistoryCount}개 상품 조회)`}
             </Text>
             <TouchableOpacity
               style={styles.browseButton}

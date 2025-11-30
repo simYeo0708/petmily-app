@@ -202,6 +202,7 @@ const HomeScreen = () => {
   const shopButtonRef = useRef<View | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const floatingButtonOpacity = useRef(new Animated.Value(1)).current;
 
   const handleNavigateToHelper = () => {
     navigation.navigate("HelperDashboard");
@@ -446,11 +447,35 @@ const HomeScreen = () => {
         contentContainerStyle={homeScreenStyles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEnabled={!showGuideOverlay}
-        // onScroll={(event) => {
-        //   const currentScrollY = event.nativeEvent.contentOffset.y;
-        //   setScrollY(currentScrollY);
-        //   console.log('[HomeScreen] scrollY:', currentScrollY);
-        // }}
+        onScroll={(event) => {
+          const currentScrollY = event.nativeEvent.contentOffset.y;
+          setScrollY(currentScrollY);
+          
+          // 스크롤 위치에 따라 투명도 조절 (50px 이상 스크롤 시 투명하게)
+          const threshold = 50;
+          const maxOpacity = 1;
+          const minOpacity = 0.3;
+          
+          if (currentScrollY > threshold) {
+            // 스크롤이 내려갔을 때 투명도 감소
+            const opacity = Math.max(
+              minOpacity,
+              maxOpacity - (currentScrollY - threshold) / 200 // 200px 스크롤 시 최소 투명도 도달
+            );
+            Animated.timing(floatingButtonOpacity, {
+              toValue: opacity,
+              duration: 100,
+              useNativeDriver: true,
+            }).start();
+          } else {
+            // 스크롤이 위로 올라왔을 때 투명도 복원
+            Animated.timing(floatingButtonOpacity, {
+              toValue: maxOpacity,
+              duration: 100,
+              useNativeDriver: true,
+            }).start();
+          }
+        }}
         scrollEventThrottle={16}
       >
         {!showGuideOverlay && (
@@ -582,8 +607,9 @@ const HomeScreen = () => {
       </SafeAreaView>
       
       {/* 가이드 시작 플로팅 버튼 */}
-      <TouchableOpacity
-        style={styles.guideButton}
+      <Animated.View style={{ opacity: floatingButtonOpacity }}>
+        <TouchableOpacity
+          style={styles.guideButton}
         onPress={() => {
           console.log("[가이드] 가이드 시작 버튼 클릭");
           console.log("[가이드] 현재 scrollY:", scrollY);
@@ -648,28 +674,33 @@ const HomeScreen = () => {
             setGuideStep(0);
           }
         }}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="help-circle" size={28} color="#fff" />
-      </TouchableOpacity>
+          activeOpacity={0.8}
+        >
+          <Ionicons name="help-circle" size={28} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
       
       {/* 헬퍼 대시보드 플로팅 버튼 */}
-      <TouchableOpacity
-        style={styles.helperDashboardButton}
+      <Animated.View style={{ opacity: floatingButtonOpacity }}>
+        <TouchableOpacity
+          style={styles.helperDashboardButton}
         onPress={handleNavigateToHelper}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="grid" size={28} color="#fff" />
-      </TouchableOpacity>
+          activeOpacity={0.8}
+        >
+          <Ionicons name="grid" size={28} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
       
       {/* AI 고객지원 플로팅 버튼 */}
-      <TouchableOpacity
-        style={styles.aiChatButton}
+      <Animated.View style={{ opacity: floatingButtonOpacity }}>
+        <TouchableOpacity
+          style={styles.aiChatButton}
         onPress={() => navigation.navigate('AIChat')}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
-      </TouchableOpacity>
+          activeOpacity={0.8}
+        >
+          <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
       
       {/* 서비스 가이드 오버레이 및 하이라이트 */}
       {/* {showServiceGuide && (

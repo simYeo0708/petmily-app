@@ -34,6 +34,7 @@ import FAQScreen from "./screen/FAQScreen";
 import AppInfoScreen from "./screen/AppInfoScreen";
 import WalkerRegistrationScreen from "./screen/WalkerRegistrationScreen";
 import WalkerVerificationScreen from "./screen/WalkerVerificationScreen";
+import ReviewWriteScreen from "./screen/ReviewWriteScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
@@ -98,6 +99,12 @@ export type RootStackParamList = {
   AppInfo: undefined;
   WalkerRegistration: undefined;
   WalkerVerification: undefined; // 관리자 전용 워커 검증 화면
+  ReviewWrite: {
+    orderId: number;
+    productId: number;
+    productName: string;
+    productImage?: string;
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -179,6 +186,7 @@ export default function App() {
                 <Stack.Screen name="AppInfo" component={AppInfoScreen} />
                 <Stack.Screen name="WalkerRegistration" component={WalkerRegistrationScreen} />
                 <Stack.Screen name="WalkerVerification" component={WalkerVerificationScreen} />
+                <Stack.Screen name="ReviewWrite" component={ReviewWriteScreen} />
                 </Stack.Navigator>
                 </CartProvider>
               </PetProvider>

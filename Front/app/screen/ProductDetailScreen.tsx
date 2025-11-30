@@ -1,6 +1,6 @@
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import { RootStackParamList } from "../index";
 import { rf } from "../utils/responsive";
 import { useCart } from "../contexts/CartContext";
 import { getProductById } from "../services/ProductService";
+import { getProductReviews, getReviewSummary, ReviewResponse } from "../services/reviewService";
+import { Ionicons } from "@expo/vector-icons";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -41,6 +43,9 @@ const ProductDetailScreen = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [reviews, setReviews] = useState<ReviewResponse[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<{ totalReviews: number; averageRating: number } | null>(null);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // 이미지 갤러리 (실제로는 여러 이미지가 있을 것임)
@@ -64,6 +69,56 @@ const ProductDetailScreen = () => {
 
     saveViewHistory();
   }, [product.id]);
+
+  // 리뷰 데이터 로드
+  const loadReviews = useCallback(async () => {
+    if (selectedTab !== 'review') return;
+    
+    try {
+      setIsLoadingReviews(true);
+      const productId = typeof product.id === 'string' ? parseInt(product.id) : product.id;
+      if (productId && !isNaN(productId)) {
+        try {
+          const [reviewsData, summaryData] = await Promise.all([
+            getProductReviews(productId, 'latest', 0, 20),
+            getReviewSummary(productId).catch(() => null),
+          ]);
+          
+          setReviews(reviewsData.content || []);
+          
+          if (summaryData) {
+            setReviewSummary({
+              totalReviews: summaryData.totalReviews,
+              averageRating: summaryData.averageRating,
+            });
+          }
+        } catch (error) {
+          // 리뷰가 없을 수도 있으므로 에러는 무시
+          console.log('리뷰 로드 실패:', error);
+        }
+      }
+    } catch (error) {
+      console.log('리뷰 로드 실패:', error);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  }, [product.id, selectedTab]);
+
+  // 리뷰 탭 선택 시 리뷰 데이터 로드
+  useEffect(() => {
+    if (selectedTab === 'review') {
+      loadReviews();
+    }
+  }, [selectedTab, loadReviews]);
+
+  // 화면 포커스 시 리뷰 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedTab === 'review') {
+        loadReviews();
+      }
+    }, [selectedTab, loadReviews])
+  );
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -321,29 +376,88 @@ const ProductDetailScreen = () => {
               <View style={styles.reviewSummary}>
                 <Text style={styles.reviewSummaryTitle}>구매 만족도</Text>
                 <View style={styles.reviewRatingContainer}>
-                  <Text style={styles.reviewRatingScore}>{product.rating}</Text>
+                  <Text style={styles.reviewRatingScore}>
+                    {reviewSummary?.averageRating?.toFixed(1) || product.rating.toFixed(1)}
+                  </Text>
                   <View>
-                    <Text style={styles.reviewStars}>{renderStars(product.rating)}</Text>
+                    <Text style={styles.reviewStars}>
+                      {renderStars(reviewSummary?.averageRating || product.rating)}
+                    </Text>
                     <Text style={styles.reviewTotalCount}>
-                      총 {product.reviewCount.toLocaleString()}개 리뷰
+                      총 {(reviewSummary?.totalReviews || product.reviewCount).toLocaleString()}개 리뷰
                     </Text>
                   </View>
                 </View>
               </View>
 
-              {/* 리뷰 목록 샘플 */}
-              {[1, 2, 3].map((item) => (
-                <View key={item} style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewAuthor}>구매자{item}</Text>
-                    <Text style={styles.reviewDate}>2024.01.{10 + item}</Text>
-                  </View>
-                  <Text style={styles.reviewStars}>{renderStars(product.rating)}</Text>
-                  <Text style={styles.reviewText}>
-                    좋은 제품입니다. 배송도 빠르고 품질도 만족스럽습니다.
-                  </Text>
+              {/* 리뷰 목록 */}
+              {isLoadingReviews ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>리뷰를 불러오는 중...</Text>
                 </View>
-              ))}
+              ) : reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <View key={review.id} style={styles.reviewItem}>
+                    <View style={styles.reviewHeader}>
+                      <View style={styles.reviewAuthorContainer}>
+                        {review.userProfileImage ? (
+                          <Image
+                            source={{ uri: review.userProfileImage }}
+                            style={styles.reviewAuthorImage}
+                          />
+                        ) : (
+                          <View style={styles.reviewAuthorImagePlaceholder}>
+                            <Ionicons name="person" size={20} color="#999" />
+                          </View>
+                        )}
+                        <View>
+                          <Text style={styles.reviewAuthor}>{review.userName}</Text>
+                          {review.isVerifiedPurchase && (
+                            <View style={styles.verifiedBadge}>
+                              <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+                              <Text style={styles.verifiedText}>구매 인증</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      <Text style={styles.reviewDate}>
+                        {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                      </Text>
+                    </View>
+                    <Text style={styles.reviewStars}>{renderStars(review.rating)}</Text>
+                    <Text style={styles.reviewText}>{review.content}</Text>
+                    
+                    {/* 리뷰 이미지 */}
+                    {review.imageUrls && review.imageUrls.length > 0 && (
+                      <View style={styles.reviewImagesContainer}>
+                        {review.imageUrls.map((imageUrl, idx) => (
+                          <Image
+                            key={idx}
+                            source={{ uri: imageUrl }}
+                            style={styles.reviewImage}
+                            resizeMode="cover"
+                          />
+                        ))}
+                      </View>
+                    )}
+                    
+                    {/* 도움이 됨 버튼 */}
+                    <View style={styles.reviewActions}>
+                      <TouchableOpacity style={styles.helpfulButton}>
+                        <Ionicons name="thumbs-up-outline" size={16} color="#666" />
+                        <Text style={styles.helpfulText}>
+                          도움이 됨 {review.helpfulCount > 0 ? review.helpfulCount : ''}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.emptyReviewsContainer}>
+                  <Ionicons name="chatbubble-outline" size={48} color="#ccc" />
+                  <Text style={styles.emptyReviewsText}>아직 작성된 리뷰가 없습니다.</Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -710,6 +824,83 @@ const styles = StyleSheet.create({
     color: "#555",
     lineHeight: rf(20),
     marginTop: 8,
+  },
+  reviewAuthorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewAuthorImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+  },
+  reviewAuthorImagePlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  verifiedText: {
+    fontSize: rf(10),
+    color: '#4CAF50',
+    fontWeight: '500',
+  },
+  reviewImagesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  reviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#F0F0F0',
+  },
+  reviewActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  helpfulButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  helpfulText: {
+    fontSize: rf(12),
+    color: '#666',
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: rf(14),
+    color: '#999',
+  },
+  emptyReviewsContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyReviewsText: {
+    fontSize: rf(14),
+    color: '#999',
+    marginTop: 12,
   },
   inquiryContent: {
     padding: 20,

@@ -43,8 +43,6 @@ export default function DashboardSection() {
 
   const upcomingBookings = dashboardData?.upcomingBookings || []
   
-  const chartMaxValue = Math.max(...weeklyEarnings.map(item => item.earnings), 1)
-  
   const quickMetrics = [
     {
       icon: Activity,

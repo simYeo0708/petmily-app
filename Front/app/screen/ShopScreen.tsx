@@ -18,6 +18,8 @@ import { getProductsByCategory, Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
 import { headerStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { IconImage } from "../components/IconImage";
+import { useCart } from "../contexts/CartContext";
+import { Alert } from "react-native";
 
 type ShopScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +34,7 @@ const ShopScreen = () => {
   const navigation = useNavigation<ShopScreenNavigationProp>();
   const route = useRoute();
   const { category } = (route.params as RouteParams) || { category: '전체' };
+  const { addToCart } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,7 +253,23 @@ const ShopScreen = () => {
                 paddingVertical: 8,
                 borderRadius: 8,
               }}
-              onPress={() => {}}>
+              onPress={() => {
+                addToCart(item, 1);
+                Alert.alert(
+                  "장바구니 추가",
+                  `${item.name}이(가) 장바구니에 추가되었습니다.`,
+                  [
+                    { text: "계속 쇼핑하기", style: "cancel" },
+                    {
+                      text: "장바구니로 이동",
+                      onPress: () => {
+                        navigation.navigate("Main", { initialTab: "CartTab" });
+                      },
+                    },
+                  ]
+                );
+              }}
+              activeOpacity={0.7}>
               <Text style={{ color: "white", fontSize: 12, fontWeight: "600" }}>
                 장바구니
               </Text>
