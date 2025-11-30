@@ -22,6 +22,8 @@ public class ProductRecommendationResponse {
     private Long salesCount;
     private String imageUrl;
     private String reason; // 추천 이유
+    private java.util.List<String> ingredients; // 상품 성분 목록
+    private java.util.List<String> allergyIngredients; // 알레르기 성분 목록 (사용자 반려동물의 알레르기와 매칭된 것)
 
     public static ProductRecommendationResponse from(ProductRecommendationService.ProductRecommendation recommendation) {
         Product product = recommendation.getProduct();
@@ -37,6 +39,8 @@ public class ProductRecommendationResponse {
                 .imageUrl(product.getImageUrls() != null && !product.getImageUrls().isEmpty() 
                         ? product.getImageUrls().get(0) : null)
                 .reason(recommendation.getReason())
+                .ingredients(product.getIngredients())
+                .allergyIngredients(recommendation.getAllergyIngredients())
                 .build();
     }
 }

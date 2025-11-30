@@ -6,6 +6,8 @@ export const STORAGE_KEYS = {
   SAVED_ADDRESSES: 'saved_addresses',
   PREVIOUS_WALKERS: 'previous_walkers',
   WALKING_REQUESTS: 'walking_requests',
+  CURRENT_WALKING_START_TIME: 'current_walking_start_time',
+  CURRENT_WALKING_DURATION: 'current_walking_duration',
 } as const;
 
 export const validateWalkingRequest = (requestData: WalkingRequestData): { isValid: boolean; errors: string[] } => {
@@ -142,3 +144,45 @@ export const generateMockPreviousWalkers = (): PreviousWalker[] => [
     walkCount: 22,
   },
 ];
+
+/**
+ * 현재 산책 시작 시간 저장
+ */
+export const saveCurrentWalkingStartTime = async (startTime: string, duration: number): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_WALKING_START_TIME, startTime);
+    await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_WALKING_DURATION, duration.toString());
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * 현재 산책 시작 시간 조회
+ */
+export const getCurrentWalkingStartTime = async (): Promise<{ startTime: string | null; duration: number | null }> => {
+  try {
+    const startTime = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_WALKING_START_TIME);
+    const durationStr = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_WALKING_DURATION);
+    return {
+      startTime: startTime,
+      duration: durationStr ? parseInt(durationStr, 10) : null,
+    };
+  } catch (error) {
+    return { startTime: null, duration: null };
+  }
+};
+
+/**
+ * 현재 산책 정보 삭제 (산책 종료 시)
+ */
+export const clearCurrentWalking = async (): Promise<void> => {
+  try {
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.CURRENT_WALKING_START_TIME,
+      STORAGE_KEYS.CURRENT_WALKING_DURATION,
+    ]);
+  } catch (error) {
+    // 에러 무시
+  }
+};

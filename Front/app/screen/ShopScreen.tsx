@@ -10,7 +10,9 @@ import {
   View,
   ScrollView,
   Image,
+  StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getProductsByCategory, Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
@@ -260,49 +262,33 @@ const ShopScreen = () => {
   );
 
   return (
-    <>
-      <StatusBar backgroundColor="#000000" barStyle="dark-content" translucent={false} />
-      {/* <View
-        style={[
-          headerStyles.header,
-          { backgroundColor: "rgba(255, 255, 255, 0.95)" },
-        ]}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={{
-            paddingRight: 16,
-          }}>
-          <Text style={{ fontSize: 18, color: "#C59172", fontWeight: "600" }}>
-            ← 뒤로
-          </Text>
+    <SafeAreaView 
+      style={[homeScreenStyles.root]}
+      edges={['top', 'left', 'right']}>
+      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <View style={[headerStyles.logoContainer, { flex: 1, justifyContent: "center" }]}>
-          <IconImage name="shop" size={22} style={headerStyles.logoIcon} />
-          <Text style={headerStyles.logoText}>Shop</Text>
-        </View>
-        <View style={{ width: 60 }} />
-      </View> */}
-      <SafeAreaView 
-        style={[homeScreenStyles.root]}
-        edges={['top', 'left', 'right', 'bottom']}>
-          <View
-        style={{ padding: 16, backgroundColor: "rgba(255, 255, 255, 0.95)" }}>
-        <View style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: "#F5F5F5",
-          borderRadius: 12,
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-        }}>
-          <IconImage name="map" size={18} style={{ marginRight: 8 }} />
+        <Text style={styles.headerTitle}>
+          {selectedCategory === '전체' ? '전체 상품' : selectedCategory}
+        </Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
+      {/* 검색바 */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
           <TextInput
-            style={{
-              flex: 1,
-              fontSize: 16,
-              color: "#333",
-              paddingVertical: 4,
-            }}
+            style={styles.searchInput}
             placeholder="상품명 또는 브랜드 검색"
             placeholderTextColor="#888"
             value={searchQuery}
@@ -459,12 +445,60 @@ const ShopScreen = () => {
           }
         />
       </TouchableOpacity>
-      </SafeAreaView>
-      {/* 검색바 */}
-      
-    </>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    backgroundColor: "#fff",
+    zIndex: 10,
+  },
+  backButton: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  headerSpacer: {
+    width: 44, // backButton과 동일한 너비로 중앙 정렬
+  },
+  searchContainer: {
+    padding: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 4,
+  },
+});
 
 export default ShopScreen;
 

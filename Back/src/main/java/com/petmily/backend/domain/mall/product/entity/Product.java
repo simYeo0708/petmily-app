@@ -97,6 +97,12 @@ public class Product extends BaseTimeEntity {
                     joinColumns = @JoinColumn(name = "product_id"))
     private Set<SubscriptionCycle> availableSubscriptionCycles = new HashSet<>();
 
+    @ElementCollection
+    @CollectionTable(name = "product_ingredients", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "ingredient")
+    @Builder.Default
+    private List<String> ingredients = new ArrayList<>(); // 상품 성분 목록 (알레르기 체크용)
+
     public void increaseViewCount() {
         this.viewCount += 1;
     }

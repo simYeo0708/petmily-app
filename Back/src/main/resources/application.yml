@@ -49,13 +49,25 @@ jwt:
   refresh:
     expiration: 604800000
 
+oauth2:
+  client:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:dummy-google-client-id}
+      client-secret: ${GOOGLE_CLIENT_SECRET:dummy-google-client-secret}
+    kakao:
+      client-id: ${KAKAO_CLIENT_ID:dummy-kakao-client-id}
+      client-secret: ${KAKAO_CLIENT_SECRET:dummy-kakao-client-secret}
+    naver:
+      client-id: ${NAVER_CLIENT_ID:dummy-naver-client-id}
+      client-secret: ${NAVER_CLIENT_SECRET:dummy-naver-client-secret}
+
 kakao:
   map:
     api:
       key: ${KAKAO_CLIENT_ID}
   native:
-    ios-key: ${KAKAO_NATIVE_KEY}
-    android-key: ${KAKAO_NATIVE_KEY}
+    ios-key: ${KAKAO_NAVIVE_APP_KEY:d371b5cb54c5d4744c8d636a3cfab88f}
+    android-key: ${KAKAO_NAVIVE_APP_KEY:d371b5cb54c5d4744c8d636a3cfab88f}
   message:
     api:
       key: ${KAKAO_MESSAGE_API_KEY:dummy-message-api-key}

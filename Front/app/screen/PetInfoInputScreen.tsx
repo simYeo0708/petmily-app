@@ -436,10 +436,10 @@ const PetInfoInputScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
-      
-      <KeyboardAvoidingView
+    <>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
         keyboardVerticalOffset={0}>
@@ -518,7 +518,8 @@ const PetInfoInputScreen = () => {
         onCustomBreedChange={setCustomBreed}
         onCustomBreedSubmit={handleCustomBreedSubmit}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 
@@ -533,7 +534,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    marginTop: -60,
+    paddingTop: 15,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',

@@ -92,7 +92,7 @@ const BookingScreen = () => {
         setIsEditingPet(true); // 정보가 없으면 편집 모드로 시작
       }
     } catch (error) {
-      console.error("Failed to load pet info:", error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       setIsEditingPet(true);
     }
   };

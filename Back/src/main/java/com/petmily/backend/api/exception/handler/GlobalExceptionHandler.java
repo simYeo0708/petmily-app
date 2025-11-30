@@ -28,11 +28,19 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex, WebRequest request) {
-        log.error("Unexpected error occurred", ex);
+        log.error("Unexpected error occurred: {}", ex.getMessage(), ex);
+        log.error("Exception class: {}", ex.getClass().getName());
+        log.error("Stack trace: ", ex);
+        
+        // 개발 환경에서는 더 자세한 에러 메시지 제공
+        String errorMessage = "일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        if (ex.getMessage() != null && !ex.getMessage().isEmpty()) {
+            log.error("Error details: {}", ex.getMessage());
+        }
         
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .success(false)
-                .message("일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.")
+                .message(errorMessage)
                 .timestamp(System.currentTimeMillis())
                 .build();
                 

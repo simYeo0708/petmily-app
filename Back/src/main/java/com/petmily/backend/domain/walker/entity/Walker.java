@@ -41,7 +41,8 @@ public class Walker extends BaseTimeEntity {
     @NotNull
     @Positive
     @Column(name = "hourly_rate")
-    private BigDecimal hourlyRate;
+    @Builder.Default
+    private BigDecimal hourlyRate = BigDecimal.valueOf(15000); // 기본 시간당 요금
     
     @Column(name = "coordinates")
     private String coordinates;

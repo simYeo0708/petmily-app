@@ -32,6 +32,8 @@ public class ProductResponse {
     private Double averageRating;
     private Integer reviewCount;
     private Boolean isLiked;
+    private List<String> ingredients; // 상품 성분 목록
+    private List<String> allergyIngredients; // 알레르기 성분 목록 (사용자 반려동물의 알레르기와 매칭된 것)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -52,6 +54,7 @@ public class ProductResponse {
                 .salesCount(product.getSalesCount())
                 .averageRating(product.getAverageRating())
                 .reviewCount(product.getReviewCount())
+                .ingredients(product.getIngredients())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .build();

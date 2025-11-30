@@ -84,8 +84,8 @@ const Step3WalkSettings: React.FC<StepProps> = ({ bookingData, onUpdate }) => {
       if (savedPetInfo) {
         setPetInfo(JSON.parse(savedPetInfo));
       }
-    } catch (error) {
-      console.error("Failed to load pet info:", error);
+      } catch (error) {
+        // 에러는 UI로만 처리 (콘솔 로그 없이)
     }
   };
 

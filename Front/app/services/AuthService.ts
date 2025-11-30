@@ -26,6 +26,7 @@ interface User {
   username: string;
   email: string;
   name: string;
+  role?: string; // 'USER', 'WALKER', 'ADMIN', 'SELLER'
 }
 
 const AuthService = {
@@ -87,7 +88,7 @@ const AuthService = {
   async signup(signupData: SignupRequest): Promise<AuthResponse> {
     // Mock 모드일 경우 Mock 데이터 반환
     if (USE_MOCK_DATA) {
-      console.log('🎭 Mock 모드: 회원가입');
+      console.log('Mock 모드: 회원가입');
       const mockData: AuthResponse = {
         accessToken: 'mock-jwt-token-for-development',
         refreshToken: 'mock-refresh-token',
@@ -249,6 +250,8 @@ const AuthService = {
       });
 
       if (!response.ok) {
+        // Refresh token도 만료된 경우 로그아웃 처리
+        await this.logout();
         throw new Error('토큰 갱신 실패');
       }
 
@@ -262,9 +265,50 @@ const AuthService = {
       
       return data.accessToken;
     } catch (error) {
-      // 
       return null;
     }
+  },
+
+  /**
+   * API 요청 시 자동으로 토큰 갱신하는 fetch 래퍼
+   */
+  async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    let token = await this.getAuthToken();
+    
+    // 토큰이 없으면 null 반환
+    if (!token) {
+      throw new Error('No authentication token');
+    }
+
+    // Authorization 헤더 추가
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+
+    let response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    // 401 에러인 경우 토큰 갱신 시도
+    if (response.status === 401) {
+      const newToken = await this.refreshToken();
+      if (newToken) {
+        // 재시도
+        headers['Authorization'] = `Bearer ${newToken}`;
+        response = await fetch(url, {
+          ...options,
+          headers,
+        });
+      } else {
+        // 토큰 갱신 실패
+        throw new Error('Authentication failed');
+      }
+    }
+
+    return response;
   },
 };
 

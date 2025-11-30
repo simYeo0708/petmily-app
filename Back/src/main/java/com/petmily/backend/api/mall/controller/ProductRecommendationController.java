@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,6 +27,40 @@ public class ProductRecommendationController {
         
         List<ProductRecommendationService.ProductRecommendation> recommendations = 
                 recommendationService.recommendProducts(petId);
+        
+        List<ProductRecommendationResponse> response = recommendations.stream()
+                .map(ProductRecommendationResponse::from)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 사용자 조회 이력 개수 확인
+     */
+    @GetMapping("/user/view-history-count")
+    public ResponseEntity<Map<String, Object>> getViewHistoryCount(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = com.petmily.backend.api.common.util.SecurityUtils.getUserId(userDetails);
+        
+        int count = recommendationService.getViewHistoryCount(userId);
+        Map<String, Object> response = new java.util.HashMap<>();
+        response.put("count", count);
+        response.put("hasEnoughHistory", count >= 3); // 최소 3개 이상 필요
+        
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 사용자 행동 기반 상품 추천 (구매 이력, 좋아요, 장바구니 활용)
+     */
+    @GetMapping("/user")
+    public ResponseEntity<List<ProductRecommendationResponse>> getRecommendationsByUser(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = com.petmily.backend.api.common.util.SecurityUtils.getUserId(userDetails);
+        
+        List<ProductRecommendationService.ProductRecommendation> recommendations = 
+                recommendationService.recommendProductsByUser(userId);
         
         List<ProductRecommendationResponse> response = recommendations.stream()
                 .map(ProductRecommendationResponse::from)

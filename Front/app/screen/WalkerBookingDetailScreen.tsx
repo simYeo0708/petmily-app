@@ -105,7 +105,7 @@ const WalkerBookingDetailScreen = () => {
         });
       }
     } catch (error) {
-      console.error('예약 상세 정보 로드 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       Alert.alert('오류', '예약 정보를 불러올 수 없습니다.');
     } finally {
       setIsLoading(false);

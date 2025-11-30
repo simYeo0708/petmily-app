@@ -122,10 +122,10 @@ const WalkerBookingsScreen = () => {
           });
           setBookings(bookingsList);
         }
-      }
-    } catch (error) {
-      console.error('예약 목록 로드 실패:', error);
-    } finally {
+        }
+      } catch (error) {
+        // 에러는 UI로만 처리 (콘솔 로그 없이)
+      } finally {
       setIsLoading(false);
     }
   };

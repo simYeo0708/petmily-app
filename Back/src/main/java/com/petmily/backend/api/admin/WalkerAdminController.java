@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/admin/walkers")
@@ -15,6 +17,15 @@ import org.springframework.web.bind.annotation.*;
 public class WalkerAdminController {
 
     private final WalkerService walkerService;
+
+    /**
+     * PENDING 상태의 워커 목록 조회 (관리자 전용)
+     */
+    @GetMapping("/pending")
+    public ResponseEntity<List<WalkerResponse>> getPendingWalkers() {
+        List<WalkerResponse> response = walkerService.getPendingWalkers();
+        return ResponseEntity.ok(response);
+    }
 
     /**
      * 워커 상태 변경 (관리자 전용)

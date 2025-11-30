@@ -105,7 +105,10 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/auth/test/**"),
                                 new AntPathRequestMatcher("/api/products/**", "GET"),
                                 new AntPathRequestMatcher("/api/reviews/products/**", "GET"),
-                                new AntPathRequestMatcher("/api/reviews/**", "GET")
+                                new AntPathRequestMatcher("/api/reviews/**", "GET"),
+                                // OAuth2 엔드포인트 허용 (모바일/웹 OAuth 로그인용)
+                                new AntPathRequestMatcher("/oauth2/**"),
+                                new AntPathRequestMatcher("/login/oauth2/**")
                         ).permitAll().anyRequest().authenticated()
                 )
 
@@ -127,10 +130,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // OAuth2 엔드포인트도 CORS 허용
         configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -158,10 +163,17 @@ public class SecurityConfig {
             clientSecret = "dummy-google-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String googleRedirectUri = ngrokUrl + "/login/oauth2/code/google";
+        
         return ClientRegistration.withRegistrationId("google")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/google")
+                .redirectUri(googleRedirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("email", "profile")
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
@@ -184,10 +196,17 @@ public class SecurityConfig {
             clientSecret = "dummy-kakao-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String kakaoRedirectUri = ngrokUrl + "/login/oauth2/code/kakao";
+        
         return ClientRegistration.withRegistrationId("kakao")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/kakao")
+                .redirectUri(kakaoRedirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("account_email", "profile_nickname", "profile_image")
                 .authorizationUri("https://kauth.kakao.com/oauth/authorize")
@@ -208,10 +227,17 @@ public class SecurityConfig {
             clientSecret = "dummy-naver-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String redirectUri = ngrokUrl + "/login/oauth2/code/naver";
+        
         return ClientRegistration.withRegistrationId("naver")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/naver")
+                .redirectUri(redirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("name", "email", "profile_image")
                 .authorizationUri("https://nid.naver.com/oauth2.0/authorize")

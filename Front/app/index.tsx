@@ -32,6 +32,8 @@ import TermsOfServiceScreen from "./screen/TermsOfServiceScreen";
 import CustomerServiceScreen from "./screen/CustomerServiceScreen";
 import FAQScreen from "./screen/FAQScreen";
 import AppInfoScreen from "./screen/AppInfoScreen";
+import WalkerRegistrationScreen from "./screen/WalkerRegistrationScreen";
+import WalkerVerificationScreen from "./screen/WalkerVerificationScreen";
 import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
@@ -94,6 +96,8 @@ export type RootStackParamList = {
   CustomerService: undefined;
   FAQ: undefined;
   AppInfo: undefined;
+  WalkerRegistration: undefined;
+  WalkerVerification: undefined; // 관리자 전용 워커 검증 화면
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -173,6 +177,8 @@ export default function App() {
                 <Stack.Screen name="CustomerService" component={CustomerServiceScreen} />
                 <Stack.Screen name="FAQ" component={FAQScreen} />
                 <Stack.Screen name="AppInfo" component={AppInfoScreen} />
+                <Stack.Screen name="WalkerRegistration" component={WalkerRegistrationScreen} />
+                <Stack.Screen name="WalkerVerification" component={WalkerVerificationScreen} />
                 </Stack.Navigator>
                 </CartProvider>
               </PetProvider>

@@ -10,6 +10,9 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../index';
 import NotificationService, { Notification, DismissNotificationRequest } from '../services/NotificationService';
 
 const { width, height } = Dimensions.get('window');
@@ -25,6 +28,7 @@ const WalkerRecruitmentModal: React.FC<WalkerRecruitmentModalProps> = ({
   onClose, 
   onDismiss 
 }) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [currentNotificationIndex, setCurrentNotificationIndex] = useState(0);
   const [slideAnimation] = useState(new Animated.Value(0));
@@ -131,12 +135,86 @@ const WalkerRecruitmentModal: React.FC<WalkerRecruitmentModalProps> = ({
   };
 
   const handleAction = () => {
-    // TODO: 워커 등록 화면으로 이동
     handleClose();
+    navigation.navigate('WalkerRegistration');
   };
 
-  if (!visible || notifications.length === 0) {
+  // 알림이 없어도 모달을 표시할 수 있도록 수정 (워커 미등록 시 사용)
+  if (!visible) {
     return null;
+  }
+
+  // 알림이 없는 경우 기본 메시지 사용
+  if (notifications.length === 0) {
+    const defaultNotification: Notification = {
+      id: 'default',
+      title: '워커로 활동해보세요!',
+      content: '반려동물 산책 서비스를 제공하고 수익을 얻을 수 있습니다. 지금 바로 워커로 등록해보세요.',
+      type: 'WALKER_RECRUITMENT',
+      createdAt: new Date().toISOString(),
+    };
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleClose}
+      >
+        <Animated.View 
+          style={[
+            styles.overlay,
+            {
+              opacity: fadeAnimation,
+            },
+          ]}
+        >
+          <TouchableOpacity 
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={handleClose}
+          />
+          
+          <Animated.View 
+            style={[
+              styles.modalContainer,
+              {
+                opacity: fadeAnimation,
+                transform: [{ scale: scaleAnimation }],
+              },
+            ]}
+          >
+            <View style={styles.modalContent}>
+              <View style={styles.header}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="paw" size={24} color="#C59172" />
+                </View>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={handleClose}
+                >
+                  <Ionicons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.content}>
+                <Text style={styles.title}>{defaultNotification.title}</Text>
+                <Text style={styles.description}>{defaultNotification.content}</Text>
+              </View>
+
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  style={styles.primaryButton}
+                  onPress={handleAction}
+                >
+                  <Ionicons name="person-add" size={20} color="white" />
+                  <Text style={styles.primaryButtonText}>워커 등록하기</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
+    );
   }
 
   const currentNotification = notifications[currentNotificationIndex];

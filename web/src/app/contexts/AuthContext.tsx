@@ -253,36 +253,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined') return false
     
     try {
-      const token = localStorage.getItem('petmily_token')
-      if (!token) {
+      const refreshTokenValue = localStorage.getItem('petmily_refresh_token')
+      if (!refreshTokenValue) {
+        logout()
         return false
       }
 
-      // Check if token is expired
-      const tokenParts = token.split('.')
-      if (tokenParts.length === 3) {
-        try {
-          const payload = JSON.parse(atob(tokenParts[1]))
-          const currentTime = Math.floor(Date.now() / 1000)
-          
-          // If token is not expired, return true
-          if (payload.exp && payload.exp > currentTime) {
-            return true
-          }
-        } catch (error) {
-          console.error('Invalid token format')
-          return false
+      // 백엔드 API를 통해 토큰 갱신
+      const response = await authAPI.refreshToken(refreshTokenValue)
+      
+      if (response.data && response.data.accessToken) {
+        const { accessToken, refreshToken: newRefreshToken } = response.data
+        
+        // 새 토큰 저장
+        localStorage.setItem('petmily_token', accessToken)
+        if (newRefreshToken) {
+          localStorage.setItem('petmily_refresh_token', newRefreshToken)
         }
+        
+        return true
+      } else {
+        logout()
+        return false
       }
-
-      // Token is expired or invalid, try to refresh
-      // For now, we'll just return false and let the user login again
-      // In a real app, you would call a refresh token endpoint
-      console.log('Token expired, user needs to login again')
-      logout()
-      return false
     } catch (error) {
       console.error('Token refresh error:', error)
+      logout()
       return false
     }
   }

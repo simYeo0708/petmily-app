@@ -1,12 +1,13 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState, useCallback } from "react";
 import {
   Pressable,
   ScrollView,
   StatusBar,
   Text,
   View,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useHelperStatus } from "../hooks/useHelperStatus";
@@ -14,7 +15,8 @@ import { RootStackParamList } from "../index";
 import { helperDashboardStyles, homeScreenStyles } from "../styles/HomeScreenStyles";
 import { Ionicons } from "@expo/vector-icons";
 import { IconImage } from "../components/IconImage";
-import WalkerDashboardService, { WalkerDashboardResponse } from "../services/WalkerDashboardService";
+import WalkerDashboardService, { WalkerDashboardResponse, DashboardError } from "../services/WalkerDashboardService";
+import WalkerRecruitmentModal from "../components/WalkerRecruitmentModal";
 
 type HelperDashboardScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -26,22 +28,43 @@ const HelperDashboardScreen = () => {
   const { helperStatus, loadHelperStatus } = useHelperStatus();
   const [dashboardData, setDashboardData] = useState<WalkerDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<DashboardError | null>(null);
+  const [showRecruitmentModal, setShowRecruitmentModal] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
+  // 화면이 포커스될 때마다 대시보드 새로고침 (등록 후 돌아올 때)
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [])
+  );
+
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const data = await WalkerDashboardService.getDashboard();
-      if (data) {
-        setDashboardData(data);
+      setError(null);
+      const result = await WalkerDashboardService.getDashboard();
+      
+      if (result.error) {
+        setError(result.error);
+        // 워커 프로필이 없는 경우 (404) 모달 표시
+        if (result.error.code === 'NOT_FOUND') {
+          setShowRecruitmentModal(true);
+        }
+      } else if (result.data) {
+        setDashboardData(result.data);
         // helperStatus도 업데이트
         await loadHelperStatus();
       }
     } catch (error) {
-      console.error('대시보드 데이터 로드 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
+      setError({
+        code: 'UNKNOWN',
+        message: '알 수 없는 오류가 발생했습니다.',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -228,6 +251,18 @@ const HelperDashboardScreen = () => {
     navigation.goBack();
   };
 
+  const handleRecruitmentModalClose = () => {
+    setShowRecruitmentModal(false);
+  };
+
+  const handleRecruitmentAction = () => {
+    setShowRecruitmentModal(false);
+    navigation.navigate('WalkerRegistration');
+  };
+
+  // 워커로 등록되지 않은 경우 블러 처리된 화면 표시
+  const isNotRegistered = error?.code === 'NOT_FOUND';
+
   return (
     <SafeAreaView style={homeScreenStyles.root}>
       <StatusBar backgroundColor="#000000" barStyle="light-content" translucent={false} />
@@ -239,7 +274,11 @@ const HelperDashboardScreen = () => {
         <View style={helperDashboardStyles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={helperDashboardStyles.scrollContent}>
+      <View style={styles.container}>
+        <ScrollView 
+          contentContainerStyle={helperDashboardStyles.scrollContent}
+          style={isNotRegistered ? styles.blurredContent : undefined}
+        >
         <View style={helperDashboardStyles.heroCard}>
           <Text style={helperDashboardStyles.heroLabel}>총 누적 수익</Text>
           <Text style={helperDashboardStyles.heroAmount}>
@@ -418,8 +457,96 @@ const HelperDashboardScreen = () => {
           ))}
         </View>
       </ScrollView>
+
+      {/* 워커로 등록되지 않은 경우 블러 오버레이 */}
+      {isNotRegistered && (
+        <View style={styles.blurOverlay} pointerEvents="box-none">
+          <View style={styles.notRegisteredContainer}>
+            <Ionicons name="person-outline" size={64} color="#999" />
+            <Text style={styles.notRegisteredTitle}>워커로 활동 중이 아닙니다</Text>
+            <Text style={styles.notRegisteredDescription}>
+              워커로 등록하시면{'\n'}산책 서비스를 제공하고 수익을 얻을 수 있어요
+            </Text>
+            <Pressable
+              style={styles.registerButton}
+              onPress={() => setShowRecruitmentModal(true)}
+            >
+              <Ionicons name="person-add" size={20} color="#fff" />
+              <Text style={styles.registerButtonText}>워커 등록하기</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* 워커 등록 모달 */}
+      <WalkerRecruitmentModal
+        visible={showRecruitmentModal}
+        onClose={handleRecruitmentModalClose}
+        onDismiss={handleRecruitmentModalClose}
+      />
+      </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    position: 'relative',
+  },
+  blurredContent: {
+    opacity: 0.3,
+  },
+  blurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  notRegisteredContainer: {
+    alignItems: 'center',
+    padding: 40,
+    maxWidth: 300,
+  },
+  notRegisteredTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  notRegisteredDescription: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 30,
+  },
+  registerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#C59172',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 25,
+    shadowColor: '#C59172',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  registerButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+});
 
 export default HelperDashboardScreen;

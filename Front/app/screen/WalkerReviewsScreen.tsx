@@ -62,7 +62,7 @@ const WalkerReviewsScreen = () => {
         }
       }
     } catch (error) {
-      console.error('워커 ID 로드 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       await loadAllReviews();
     } finally {
       setIsLoading(false);
@@ -92,7 +92,7 @@ const WalkerReviewsScreen = () => {
         setReviews(reviewsList);
       }
     } catch (error) {
-      console.error('리뷰 로드 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
     }
   };
 
@@ -113,7 +113,7 @@ const WalkerReviewsScreen = () => {
         setReviews(reviewsList);
       }
     } catch (error) {
-      console.error('리뷰 로드 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
     }
   };
 

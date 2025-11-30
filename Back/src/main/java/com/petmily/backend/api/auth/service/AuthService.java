@@ -230,8 +230,9 @@ public class AuthService {
             updated = true;
         }
 
-        if (existingUser.getRole() == null) {
-            existingUser.setRole(Role.USER);
+        // asdf 계정은 관리자(ADMIN) 권한으로 설정
+        if (existingUser.getRole() == null || !existingUser.getRole().equals(Role.ADMIN)) {
+            existingUser.setRole(Role.ADMIN);
             updated = true;
         }
 
@@ -257,7 +258,7 @@ public class AuthService {
                         .password(passwordEncoder.encode(password))
                         .email(devTestUserProperties.getEmail())
                         .name(devTestUserProperties.getName())
-                        .role(Role.USER)
+                        .role(Role.ADMIN) // asdf 계정은 관리자 권한으로 설정
                         .build(),
                 "User builder returned null"
         );

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../config/api';
+import AuthService from './AuthService';
 
 interface WalkerResponse {
   id: number;
@@ -161,8 +162,106 @@ const WalkerService = {
       const data = await response.json() as Walker;
       return data;
     } catch (error) {
-      console.error('현재 워커 조회 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       return null;
+    }
+  },
+
+  async registerWalker(request: {
+    detailDescription: string;
+    serviceArea: string;
+  }): Promise<WalkerResponse> {
+    try {
+      // 토큰 가져오기
+      const token = await AuthService.getAuthToken();
+      
+      if (!token) {
+        throw new Error('인증에 실패하였습니다. 다시 로그인해주세요.');
+      }
+
+      // API 호출
+      let response = await fetch(`${API_BASE_URL}/walkers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
+
+      // 401 에러인 경우 토큰 갱신 시도
+      if (response.status === 401) {
+        const newToken = await AuthService.refreshToken();
+        if (newToken) {
+          // 재시도
+          response = await fetch(`${API_BASE_URL}/walkers`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${newToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+          });
+        } else {
+          throw new Error('인증에 실패하였습니다. 다시 로그인해주세요.');
+        }
+      }
+
+      if (!response.ok) {
+        let errorData: any = {};
+        let errorMessage = `워커 등록 실패: ${response.status}`;
+        
+        try {
+          errorData = await response.json();
+          
+          // ApiResponse 형식인 경우 (success: false, message: "...")
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          // JSON 파싱 실패 시 기본 메시지 사용
+          errorMessage = `서버 오류가 발생했습니다. (${response.status})`;
+        }
+        
+        // HTTP 상태 코드별 에러 메시지 개선
+        if (response.status === 401) {
+          errorMessage = '인증에 실패하였습니다. 다시 로그인해주세요.';
+        } else if (response.status === 403) {
+          errorMessage = '권한이 없습니다.';
+        } else if (response.status === 400) {
+          // 400 에러는 백엔드 메시지를 그대로 사용하되, 없으면 기본 메시지
+          if (!errorData.message && !errorData.error) {
+            errorMessage = '입력 정보를 확인해주세요.';
+          }
+        } else if (response.status === 500) {
+          // 500 에러는 백엔드 메시지를 사용하되, 없으면 기본 메시지
+          if (!errorData.message && !errorData.error) {
+            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+          }
+        }
+        
+        // 개발 환경에서 상세 에러 정보 로깅
+        if (__DEV__) {
+          console.error('워커 등록 실패:', {
+            status: response.status,
+            errorData,
+            errorMessage,
+          });
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json() as WalkerResponse;
+      return data;
+    } catch (error: any) {
+      // 인증 실패 에러는 그대로 전달
+      if (error.message === 'No authentication token' || error.message === 'Authentication failed') {
+        throw new Error('인증에 실패하였습니다. 다시 로그인해주세요.');
+      }
+      throw new Error(error.message || '워커 등록 중 오류가 발생했습니다.');
     }
   },
 };

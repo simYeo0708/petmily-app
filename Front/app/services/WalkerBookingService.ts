@@ -165,7 +165,7 @@ const WalkerBookingService = {
       const data = await response.json() as WalkingBookingResponse[];
       return data;
     } catch (error) {
-      console.error('워커 예약 목록 조회 실패:', error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       return [];
     }
   },
