@@ -159,9 +159,11 @@ export const API_ENDPOINTS = {
 
   // 채팅 관련
   CHAT: {
-    ROOMS: '/chat/rooms',
-    ROOM: (roomId: number) => `/chat/rooms/${roomId}`,
-    MESSAGES: (roomId: number) => `/chat/rooms/${roomId}/messages`,
+    ROOMS: '/chat-rooms/rooms',
+    ROOM: (roomId: string) => `/chat-rooms/room/${roomId}`,
+    MESSAGES: (roomId: string) => `/chat-rooms/${roomId}/messages`,
+    CREATE_INQUIRY: '/chat-rooms/room/inquiry',
+    MARK_READ: (roomId: string) => `/chat-rooms/${roomId}/messages/read`,
   },
 
   // 상품 관련
@@ -194,13 +196,13 @@ export const API_ENDPOINTS = {
 
   // 장바구니 관련
   CART: {
-    GET: '/carts',
-    ADD_ITEM: '/carts/items',
-    UPDATE_ITEM: (itemId: number) => `/carts/items/${itemId}`,
-    REMOVE_ITEM: (itemId: number) => `/carts/items/${itemId}`,
-    TOGGLE_SELECT: (itemId: number) => `/carts/items/${itemId}/select`,
-    CLEAR: '/carts',
-    REMOVE_SELECTED: '/carts/items',
+    GET: '/cart',
+    ADD_ITEM: '/cart',
+    UPDATE_ITEM: (itemId: number) => `/cart/${itemId}`,
+    REMOVE_ITEM: (itemId: number) => `/cart/${itemId}`,
+    TOGGLE_SELECT: (itemId: number) => `/cart/${itemId}/select`,
+    CLEAR: '/cart',
+    REMOVE_SELECTED: '/cart/items',
   },
 
   // 주문 관련
@@ -234,14 +236,25 @@ export const API_ENDPOINTS = {
 
   // 정기배송 관련
   SUBSCRIPTIONS: {
-    LIST: '/subscriptions',
-    CREATE: '/subscriptions',
-    DETAIL: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
-    UPDATE: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
-    PAUSE: (subscriptionId: number) => `/subscriptions/${subscriptionId}/pause`,
-    RESUME: (subscriptionId: number) => `/subscriptions/${subscriptionId}/resume`,
-    CANCEL: (subscriptionId: number) => `/subscriptions/${subscriptionId}`,
-    HISTORY: (subscriptionId: number) => `/subscriptions/${subscriptionId}/history`,
+    LIST: '/mall/subscriptions',
+    CREATE: '/mall/subscriptions',
+    DETAIL: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}`,
+    UPDATE: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}`,
+    PAUSE: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}/pause`,
+    RESUME: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}/resume`,
+    CANCEL: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}/cancel`,
+    HISTORY: (subscriptionId: number) => `/mall/subscriptions/${subscriptionId}/history`,
+  },
+
+  // 리뷰 관련
+  REVIEWS: {
+    CREATE: '/reviews',
+    UPDATE: (reviewId: number) => `/reviews/${reviewId}`,
+    DELETE: (reviewId: number) => `/reviews/${reviewId}`,
+    GET_PRODUCT_REVIEWS: (productId: number) => `/reviews/products/${productId}`,
+    GET_MY_REVIEWS: '/reviews/my',
+    GET_REVIEW_SUMMARY: (productId: number) => `/reviews/products/${productId}/summary`,
+    VOTE_HELPFUL: (reviewId: number) => `/reviews/${reviewId}/helpful`,
   },
 
   // 알림 관련
@@ -258,6 +271,12 @@ export const API_ENDPOINTS = {
     EMERGENCY: (userId: number) => `/notifications/emergency/${userId}`,
     TEST: '/notifications/test',
     SYNC: '/notifications/sync',
+  },
+
+  // FCM 푸시 알림 관련
+  FCM: {
+    SEND: '/fcm/send',
+    TEST: '/fcm/test',
   },
 } as const;
 

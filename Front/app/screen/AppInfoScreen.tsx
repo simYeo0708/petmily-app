@@ -22,9 +22,9 @@ const AppInfoScreen: React.FC<Props> = ({ navigation }) => {
   const buildNumber = Constants.expoConfig?.ios?.buildNumber || "1";
 
   const handleOpenURL = (url: string) => {
-    Linking.openURL(url).catch((err) =>
-      console.error("Failed to open URL:", err)
-    );
+    Linking.openURL(url).catch((err) => {
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
+    });
   };
 
   return (

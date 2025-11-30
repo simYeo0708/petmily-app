@@ -60,15 +60,14 @@ export const useHelperStatus = () => {
         }
       }
     } catch (error) {
-      console.error('워커 상태 로드 실패:', error);
-      // 에러 시 로컬 스토리지에서 로드
+      // 에러 시 로컬 스토리지에서 로드 (콘솔 로그 없이 조용히 처리)
       try {
         const statusData = await AsyncStorage.getItem(HELPER_STATUS_KEY);
         if (statusData) {
           setHelperStatus(JSON.parse(statusData));
         }
       } catch (storageError) {
-        console.error('로컬 스토리지 로드 실패:', storageError);
+        // 로컬 스토리지 로드 실패도 조용히 처리
       }
     } finally {
       setIsLoading(false);

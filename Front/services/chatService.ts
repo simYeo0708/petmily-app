@@ -103,10 +103,9 @@ class ChatService {
 
   async createInquiryChatRoom(request: CreateChatRoomRequest): Promise<ChatRoomResponse> {
     try {
-      const response = await apiClient.post('/api/chat-rooms/room/inquiry', request);
+      const response = await apiClient.post(API_ENDPOINTS.CHAT.CREATE_INQUIRY, request);
       return response.data;
     } catch (error: any) {
-      console.error('Create inquiry chat room failed:', error);
       throw new Error(error.response?.data?.message || '문의 채팅방 생성에 실패했습니다.');
     }
   }
@@ -135,9 +134,8 @@ class ChatService {
 
   async markMessagesAsRead(roomId: string): Promise<void> {
     try {
-      await apiClient.put(`/api/chat-rooms/${roomId}/messages/read`);
+      await apiClient.put(API_ENDPOINTS.CHAT.MARK_READ(roomId));
     } catch (error: any) {
-      console.error('Mark messages as read failed:', error);
       throw new Error(error.response?.data?.message || '메시지 읽음 처리에 실패했습니다.');
     }
   }

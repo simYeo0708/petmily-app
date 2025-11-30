@@ -13,16 +13,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 const { width } = Dimensions.get('window');
 
 interface Walker {
-  id: string;
+  id: string | number;
   name: string;
   rating: number;
   reviewCount: number;
-  profileImage: string;
-  bio: string;
-  experience: string;
+  profileImage?: string;
+  bio?: string;
+  introduction?: string;
+  experience?: string | number;
   hourlyRate: number;
-  isAvailable: boolean;
-  location: string;
+  isAvailable?: boolean;
+  location?: string;
+  distance?: number;
 }
 
 interface WalkerCardProps {
@@ -74,13 +76,19 @@ const WalkerCard: React.FC<WalkerCardProps> = ({ walker, cardColor, onPress, sty
         {/* 프로필 이미지 영역 */}
         <View style={styles.profileImageContainer}>
           <View style={[styles.profileImageWrapper, { borderColor: cardColor }]}>
-            <Image
-              source={{ uri: walker.profileImage }}
-              style={styles.profileImage}
-              defaultSource={require('../../assets/images/dog-paw.png')}
-            />
+            {walker.profileImage ? (
+              <Image
+                source={{ uri: walker.profileImage }}
+                style={styles.profileImage}
+                defaultSource={require('../../assets/images/dog-paw.png')}
+              />
+            ) : (
+              <View style={[styles.profileImage, { backgroundColor: cardColor, justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="person" size={24} color="#fff" />
+              </View>
+            )}
           </View>
-          {walker.isAvailable && (
+          {walker.isAvailable !== false && (
             <View style={styles.availableIndicator}>
               <View style={[styles.availableDot, { backgroundColor: '#4CAF50' }]} />
             </View>
@@ -103,17 +111,23 @@ const WalkerCard: React.FC<WalkerCardProps> = ({ walker, cardColor, onPress, sty
           </View>
 
           {/* 경력 정보 */}
-          <Text style={styles.experience} numberOfLines={1}>
-            {walker.experience}
-          </Text>
+          {(walker.experience || walker.experience === 0) && (
+            <Text style={styles.experience} numberOfLines={1}>
+              {typeof walker.experience === 'number' ? `${walker.experience}년` : walker.experience}
+            </Text>
+          )}
 
           {/* 위치 정보 */}
-          <View style={styles.locationContainer}>
-            <Ionicons name="location" size={10} color="#666" />
-            <Text style={styles.location} numberOfLines={1}>
-              {walker.location}
-            </Text>
-          </View>
+          {(walker.location || walker.distance !== undefined) && (
+            <View style={styles.locationContainer}>
+              <Ionicons name="location" size={10} color="#666" />
+              <Text style={styles.location} numberOfLines={1}>
+                {walker.distance !== undefined 
+                  ? `${walker.distance.toFixed(1)}km`
+                  : walker.location || '위치 정보 없음'}
+              </Text>
+            </View>
+          )}
 
           {/* 가격 정보 */}
           <Text style={styles.price} numberOfLines={1}>

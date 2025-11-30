@@ -74,12 +74,22 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                       lowerUserAgent.contains("android") || 
                       lowerUserAgent.contains("iphone") ||
                       lowerUserAgent.contains("ipad") ||
-                      lowerUserAgent.contains("expo");
+                      lowerUserAgent.contains("expo") ||
+                      lowerUserAgent.contains("simulator"); // 시뮬레이터 감지 추가
         }
         
         // Origin이 없거나 특정 패턴인 경우도 모바일로 간주
         if (!isMobile && (origin == null || origin.isEmpty())) {
             isMobile = true;
+        }
+        
+        // Referer에 특정 패턴이 있으면 모바일로 간주 (시뮬레이터 대응)
+        if (!isMobile && referer != null) {
+            String lowerReferer = referer.toLowerCase();
+            if (lowerReferer.contains("localhost") || lowerReferer.contains("127.0.0.1")) {
+                // 로컬호스트에서 온 요청은 모바일로 간주 (시뮬레이터 환경)
+                isMobile = true;
+            }
         }
         
         if (isMobile) {

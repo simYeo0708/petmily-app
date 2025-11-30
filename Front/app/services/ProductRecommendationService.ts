@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config/api';
+import AuthService from './AuthService';
 
 export interface ProductRecommendation {
   id: number;
@@ -11,23 +12,21 @@ export interface ProductRecommendation {
   salesCount: number;
   imageUrl?: string;
   reason: string; // 추천 이유
+  ingredients?: string[]; // 상품 성분 목록
+  allergyIngredients?: string[]; // 알레르기 성분 목록 (사용자 반려동물의 알레르기와 매칭된 것)
 }
 
-const getAuthToken = async (): Promise<string> => {
+/**
+ * 사용자 조회 이력 개수 확인
+ */
+export const getViewHistoryCount = async (): Promise<{ count: number; hasEnoughHistory: boolean } | null> => {
   try {
-    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-    const token = await AsyncStorage.getItem('authToken');
-    return token || 'test-token-for-user-1';
-  } catch (error) {
-    return 'test-token-for-user-1';
-  }
-};
-
-export const getProductRecommendations = async (petId: number): Promise<ProductRecommendation[]> => {
-  try {
-    const token = await getAuthToken();
+    const token = await AuthService.getAuthToken();
+    if (!token) {
+      return null;
+    }
     
-    const response = await fetch(`${API_BASE_URL}/products/recommendations/pet/${petId}`, {
+    const response = await fetch(`${API_BASE_URL}/products/recommendations/user/view-history-count`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -36,14 +35,41 @@ export const getProductRecommendations = async (petId: number): Promise<ProductR
     });
 
     if (!response.ok) {
-      console.error('상품 추천 조회 실패:', response.status);
+      return null;
+    }
+
+    const data = await response.json() as { count: number; hasEnoughHistory: boolean };
+    return data;
+  } catch (error) {
+    return null;
+  }
+};
+
+/**
+ * 사용자 행동 기반 상품 추천 (구매 이력, 좋아요, 장바구니 활용)
+ */
+export const getProductRecommendations = async (): Promise<ProductRecommendation[]> => {
+  try {
+    const token = await AuthService.getAuthToken();
+    if (!token) {
+      return [];
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/products/recommendations/user`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
       return [];
     }
 
     const data = await response.json() as ProductRecommendation[];
     return data || [];
   } catch (error) {
-    console.error('상품 추천 조회 중 오류:', error);
     return [];
   }
 };

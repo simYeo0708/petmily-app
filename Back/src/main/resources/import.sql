@@ -1,7 +1,8 @@
 -- 테스트용 사용자 생성 (username: asdf, 비밀번호: asdf)
 -- H2는 ddl-auto=create로 테이블을 새로 만들므로 INSERT 사용
+-- asdf 계정은 관리자(ADMIN) 권한으로 설정
 INSERT INTO users (username, email, password, name, role) VALUES 
-('asdf', 'asdf@test.com', '$2a$10$JcfBzfaJRJPUexJl7FZv0OBdmvgxMFxXJjDKn8OyONyRdvOl0WfSu', 'asdf', 'USER');
+('asdf', 'asdf@test.com', '$2a$10$JcfBzfaJRJPUexJl7FZv0OBdmvgxMFxXJjDKn8OyONyRdvOl0WfSu', 'asdf', 'ADMIN');
 
 -- 테스트용 반려동물 생성 (프로필 사진 없음으로 초기화)
 INSERT INTO pets (user_id, name, species, breed, age, weight, gender, is_neutered, description, photo_uri, has_photo) VALUES 

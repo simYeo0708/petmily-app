@@ -136,8 +136,7 @@ const PetInfoHeader: React.FC = () => {
         style={styles.petInfoCard}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
-        onPress={handleImagePress}
-        android_ripple={{ color: 'rgba(197, 145, 114, 0.2)' }}>
+        onPress={handleImagePress}>
         <View style={[styles.cardContent, isPressed && styles.cardPressed]}>
           <Pressable 
             style={styles.petImageContainer}

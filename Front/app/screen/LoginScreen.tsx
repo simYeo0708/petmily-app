@@ -15,10 +15,13 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { RootStackParamList } from "../index";
 import AuthService from "../services/AuthService";
 import GoogleAuthService from "../services/GoogleAuthService";
+import KakaoAuthService from "../services/KakaoAuthService";
+import NaverAuthService from "../services/NaverAuthService";
 import DevTools from "../utils/DevTools";
 import { Ionicons } from "@expo/vector-icons";
 import { IconImage } from "../components/IconImage";
@@ -158,8 +161,53 @@ const LoginScreen = ({ navigation }: Props) => {
         Alert.alert("로그인 실패", "구글 로그인에 실패했습니다.");
       }
     } catch (error) {
-      console.error("Google login error:", error);
       Alert.alert("로그인 실패", "구글 로그인 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKakaoLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await KakaoAuthService.loginWithKakao();
+      
+      if (result) {
+        Alert.alert("로그인 성공", "카카오 계정으로 로그인했습니다.", [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Main"),
+          },
+        ]);
+      } else {
+        Alert.alert("로그인 실패", "카카오 로그인에 실패했습니다.\n시뮬레이터에서는 OAuth가 제한될 수 있습니다.");
+      }
+    } catch (error: any) {
+      console.error("Kakao login error:", error);
+      Alert.alert("로그인 실패", `카카오 로그인 중 오류가 발생했습니다.\n${error.message || '알 수 없는 오류'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNaverLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await NaverAuthService.loginWithNaver();
+      
+      if (result) {
+        Alert.alert("로그인 성공", "네이버 계정으로 로그인했습니다.", [
+          {
+            text: "확인",
+            onPress: () => navigation.navigate("Main"),
+          },
+        ]);
+      } else {
+        Alert.alert("로그인 실패", "네이버 로그인에 실패했습니다.\n시뮬레이터에서는 OAuth가 제한될 수 있습니다.");
+      }
+    } catch (error: any) {
+      console.error("Naver login error:", error);
+      Alert.alert("로그인 실패", `네이버 로그인 중 오류가 발생했습니다.\n${error.message || '알 수 없는 오류'}`);
     } finally {
       setIsLoading(false);
     }
@@ -331,7 +379,33 @@ const LoginScreen = ({ navigation }: Props) => {
                   onPress={handleGoogleLogin}
                   disabled={isLoading}
                 >
-                  <Ionicons name="logo-google" size={24} color="#4285F4" />
+                  <Image 
+                    source={require('../../assets/images/google-new-logo-04-1536x1152.jpg')}
+                    style={styles.socialLogo}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.socialButton, { backgroundColor: "#FEE500" }]}
+                  onPress={handleKakaoLogin}
+                  disabled={isLoading}
+                >
+                  <Image 
+                    source={require('../../assets/images/logo-kakao-1.png.avif')}
+                    style={styles.socialLogo}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.socialButton, { backgroundColor: "#03C75A" }]}
+                  onPress={handleNaverLogin}
+                  disabled={isLoading}
+                >
+                  <Image 
+                    source={require('../../assets/images/images-2.jpeg')}
+                    style={styles.socialLogo}
+                    resizeMode="contain"
+                  />
                 </TouchableOpacity>
               </View>
 
@@ -529,6 +603,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E0E0E0",
+    overflow: "hidden",
+  },
+  socialLogo: {
+    width: 32,
+    height: 32,
   },
   socialIcon: {
     fontSize: 20,

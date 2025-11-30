@@ -10,9 +10,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ProductRecommendation, getProductRecommendations } from '../services/ProductRecommendationService';
-import { usePet } from '../contexts/PetContext';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ProductRecommendation, getProductRecommendations, getViewHistoryCount } from '../services/ProductRecommendationService';
 import { homeScreenStyles } from '../styles/HomeScreenStyles';
+import { RootStackParamList } from '../index';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.85;
@@ -22,31 +24,56 @@ interface RecommendedProductsCarouselProps {
   onProductPress?: (product: ProductRecommendation) => void;
 }
 
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselProps> = ({
   onProductPress,
 }) => {
-  const { petInfo } = usePet();
+  const navigation = useNavigation<NavigationProp>();
   const [recommendations, setRecommendations] = useState<ProductRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [viewHistoryCount, setViewHistoryCount] = useState<number | null>(null);
+  const [hasEnoughHistory, setHasEnoughHistory] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     loadRecommendations();
-  }, [petInfo?.id]);
+  }, []);
+
+  // 화면이 포커스될 때마다 추천 상품 다시 로드
+  useFocusEffect(
+    React.useCallback(() => {
+      loadRecommendations();
+    }, [])
+  );
 
   const loadRecommendations = async () => {
-    if (!petInfo?.id) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
-      const data = await getProductRecommendations(parseInt(petInfo.id));
-      setRecommendations(data);
+      setHasError(false);
+      
+      // 1. 조회 이력 개수 확인
+      const historyInfo = await getViewHistoryCount();
+      if (historyInfo) {
+        setViewHistoryCount(historyInfo.count);
+        setHasEnoughHistory(historyInfo.hasEnoughHistory);
+        
+        // 조회 이력이 충분하지 않으면 추천 상품을 불러오지 않음
+        if (!historyInfo.hasEnoughHistory) {
+          setRecommendations([]);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      // 2. 사용자 행동 기반 추천 (구매 이력, 좋아요, 장바구니 활용)
+      const data = await getProductRecommendations();
+      setRecommendations(data || []);
     } catch (error) {
-      console.error('추천 상품 로드 실패:', error);
+      setHasError(true);
+      setRecommendations([]);
     } finally {
       setIsLoading(false);
     }
@@ -90,9 +117,10 @@ export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselPr
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {petInfo?.name ? `${petInfo.name}을 위한 추천 상품` : '추천 상품'}
-          </Text>
+          <View style={styles.titleContainer}>
+            <Ionicons name="sparkles" size={20} color="#C59172" />
+                 <Text style={styles.title}>맞춤 추천 상품</Text>
+          </View>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#C59172" />
@@ -102,33 +130,128 @@ export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselPr
     );
   }
 
-  if (recommendations.length === 0) {
-    return null;
+
+  // 추천 상품이 없는 경우
+  if (recommendations.length === 0 && !hasError && !isLoading) {
+    // 조회 이력이 부족한 경우
+    if (viewHistoryCount !== null && viewHistoryCount < 3) {
+      return (
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.titleContainer}>
+              <Ionicons name="sparkles" size={20} color="#C59172" />
+              <Text style={styles.title}>맞춤 추천 상품</Text>
+            </View>
+          </View>
+          <View style={styles.emptyContainer}>
+            <Ionicons name="cube-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyTitle}>맞춤 추천을 준비 중이에요</Text>
+            <Text style={styles.emptyDescription}>
+              {viewHistoryCount === 0 
+                ? '상품을 둘러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요'
+                : `더 많은 상품을 둘러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요\n\n(현재 ${viewHistoryCount}개 상품 조회)`}
+            </Text>
+            <TouchableOpacity
+              style={styles.browseButton}
+              onPress={() => navigation.navigate('Shop', { category: '전체' })}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="storefront-outline" size={18} color="#fff" />
+              <Text style={styles.browseButtonText}>상품 둘러보기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+    
+    // 조회 이력은 충분하지만 추천 상품이 없는 경우
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <Ionicons name="sparkles" size={20} color="#C59172" />
+            <Text style={styles.title}>맞춤 추천 상품</Text>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="cube-outline" size={48} color="#ccc" />
+          <Text style={styles.emptyTitle}>추천된 상품이 없습니다</Text>
+          <Text style={styles.emptyDescription}>
+            상품을 둘러보고 좋아요를 눌러보시면{'\n'}맞춤 추천 상품을 받아볼 수 있어요
+          </Text>
+          <TouchableOpacity
+            style={styles.browseButton}
+            onPress={() => navigation.navigate('Shop', { category: '전체' })}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="storefront-outline" size={18} color="#fff" />
+            <Text style={styles.browseButtonText}>상품 둘러보기</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // 에러가 발생한 경우
+  if (hasError) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <Ionicons name="sparkles" size={20} color="#C59172" />
+                 <Text style={styles.title}>맞춤 추천 상품</Text>
+          </View>
+        </View>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color="#ccc" />
+          <Text style={styles.emptyTitle}>추천 상품을 불러올 수 없습니다</Text>
+          <Text style={styles.emptyDescription}>
+            잠시 후 다시 시도해주세요
+          </Text>
+          <TouchableOpacity
+            style={styles.browseButton}
+            onPress={() => navigation.navigate('Shop', { category: '전체' })}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="storefront-outline" size={18} color="#fff" />
+            <Text style={styles.browseButtonText}>상품 둘러보기</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Ionicons name="sparkles" size={20} color="#C59172" />
-          <Text style={styles.title}>
-            {petInfo?.name ? `${petInfo.name}을 위한 추천 상품` : '추천 상품'}
-          </Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <Ionicons name="sparkles" size={20} color="#C59172" />
+            <Text style={styles.title}>맞춤 추천 상품</Text>
+          </View>
+          {recommendations.length > 1 && (
+            <View style={styles.indicatorContainer}>
+              {recommendations.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.indicator,
+                    index === currentIndex && styles.indicatorActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
         </View>
-        {recommendations.length > 1 && (
-          <View style={styles.indicatorContainer}>
-            {recommendations.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  index === currentIndex && styles.indicatorActive,
-                ]}
-              />
-            ))}
+        
+        {/* 추천 이유 설명 */}
+        {hasEnoughHistory && recommendations.length > 0 && (
+          <View style={styles.recommendationInfoContainer}>
+            <Ionicons name="information-circle-outline" size={16} color="#C59172" />
+            <Text style={styles.recommendationInfoText}>
+              최근에 본 상품을 기반으로 추천해드려요
+            </Text>
           </View>
         )}
-      </View>
 
       <ScrollView
         ref={scrollViewRef}
@@ -178,6 +301,47 @@ export const RecommendedProductsCarousel: React.FC<RecommendedProductsCarouselPr
                   </Text>
                 </View>
                 <Text style={styles.price}>{formatPrice(product.price)}</Text>
+                
+                {/* 알레르기 성분 표시 */}
+                {product.allergyIngredients && product.allergyIngredients.length > 0 && (
+                  <View style={styles.allergyWarningContainer}>
+                    <Ionicons name="warning" size={14} color="#FF6B6B" />
+                    <View style={styles.allergyIngredientsContainer}>
+                      <Text style={styles.allergyWarningText}>주의: 알레르기 성분 포함 - </Text>
+                      {product.allergyIngredients.map((ingredient, idx) => (
+                        <Text key={idx} style={styles.allergyIngredient}>
+                          {ingredient}
+                          {idx < product.allergyIngredients!.length - 1 ? ', ' : ''}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                
+                {/* 성분 목록 표시 */}
+                {product.ingredients && product.ingredients.length > 0 && (
+                  <View style={styles.ingredientsContainer}>
+                    <Text style={styles.ingredientsTitle}>주요 성분:</Text>
+                    <View style={styles.ingredientsList}>
+                      {product.ingredients.map((ingredient, idx) => {
+                        const isAllergy = product.allergyIngredients?.includes(ingredient);
+                        return (
+                          <Text
+                            key={idx}
+                            style={[
+                              styles.ingredientText,
+                              isAllergy && styles.allergyIngredientText,
+                            ]}
+                          >
+                            {ingredient}
+                            {idx < product.ingredients!.length - 1 ? ', ' : ''}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+                
                 <View style={styles.reasonContainer}>
                   <Ionicons name="chatbubble-ellipses" size={14} color="#C59172" />
                   <Text style={styles.reasonText} numberOfLines={2}>
@@ -326,6 +490,56 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 16,
   },
+  allergyWarningContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: '#FFF5F5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFE0E0',
+  },
+  allergyWarningText: {
+    fontSize: 11,
+    color: '#FF6B6B',
+    fontWeight: '600',
+  },
+  allergyIngredientsContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  allergyIngredient: {
+    fontSize: 11,
+    color: '#FF0000',
+    fontWeight: '700',
+  },
+  ingredientsContainer: {
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+  },
+  ingredientsTitle: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  ingredientsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  ingredientText: {
+    fontSize: 11,
+    color: '#666',
+  },
+  allergyIngredientText: {
+    color: '#FF0000',
+    fontWeight: '700',
+  },
   loadingContainer: {
     padding: 40,
     alignItems: 'center',
@@ -335,6 +549,60 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 14,
     color: '#999',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    minHeight: 200,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyDescription: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  browseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#C59172',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    gap: 8,
+  },
+  browseButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  recommendationInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    paddingVertical: 8,
+    backgroundColor: '#FFF9F0',
+    borderRadius: 8,
+    marginHorizontal: 16,
+  },
+  recommendationInfoText: {
+    fontSize: 12,
+    color: '#C59172',
+    flex: 1,
   },
 });
 

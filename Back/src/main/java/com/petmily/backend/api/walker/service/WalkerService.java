@@ -14,8 +14,6 @@ import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walker.entity.Walker;
 import com.petmily.backend.domain.walker.repository.WalkerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,23 +34,55 @@ public class WalkerService {
 
     @Transactional
     public WalkerResponse registerWalker(Long userId, WalkerCreateRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
-        if (walkerRepository.findByUserId(user.getId()).isPresent()) {
-            throw new CustomException(ErrorCode.INVALID_REQUEST, "User is already registered as a walker.");
+            if (walkerRepository.findByUserId(user.getId()).isPresent()) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "User is already registered as a walker.");
+            }
+
+            // 입력값 검증
+            if (request.getDetailDescription() == null || request.getDetailDescription().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "자기소개를 입력해주세요.");
+            }
+            if (request.getServiceArea() == null || request.getServiceArea().trim().isEmpty()) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "서비스 지역을 입력해주세요.");
+            }
+
+            // 빌더로 객체 생성
+            Walker walker = Walker.builder()
+                    .userId(user.getId())
+                    .detailDescription(request.getDetailDescription().trim())
+                    .status(WalkerStatus.PENDING)
+                    .serviceArea(request.getServiceArea().trim())
+                    .user(user)
+                    .build();
+            
+            // hourlyRate는 빌더 후 명시적으로 설정 (빌더의 @Builder.Default가 제대로 작동하지 않을 수 있음)
+            walker.setHourlyRate(java.math.BigDecimal.valueOf(15000));
+            
+            // 검증: hourlyRate가 null이 아니고 양수인지 확인
+            if (walker.getHourlyRate() == null || walker.getHourlyRate().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                throw new CustomException(ErrorCode.INVALID_REQUEST, "시간당 요금이 올바르지 않습니다.");
+            }
+
+            walker = walkerRepository.save(walker);
+            
+            // 저장 후 user 관계를 명시적으로 로드하여 LazyInitializationException 방지
+            if (walker.getUser() == null) {
+                // user가 로드되지 않은 경우 다시 조회
+                walker = walkerRepository.findById(walker.getId())
+                        .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "워커 정보를 찾을 수 없습니다."));
+            }
+            
+            return WalkerResponse.from(walker);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            // 예상치 못한 예외를 CustomException으로 변환하여 더 명확한 에러 메시지 제공
+            throw new CustomException(ErrorCode.INVALID_REQUEST, "워커 등록 중 오류가 발생했습니다: " + e.getMessage());
         }
-
-        Walker walker = Walker.builder()
-                .userId(user.getId())
-                .detailDescription(request.getDetailDescription())
-                .status(WalkerStatus.PENDING)
-                .serviceArea(request.getServiceArea())
-                .user(user)
-                .build();
-
-        walkerRepository.save(walker);
-        return WalkerResponse.from(walker);
     }
 
     @Transactional
@@ -183,6 +213,16 @@ public class WalkerService {
     }
 
     @Transactional
+    /**
+     * PENDING 상태의 워커 목록 조회 (관리자 전용)
+     */
+    public List<WalkerResponse> getPendingWalkers() {
+        List<Walker> pendingWalkers = walkerRepository.findByStatus(WalkerStatus.PENDING);
+        return pendingWalkers.stream()
+                .map(WalkerResponse::from)
+                .collect(Collectors.toList());
+    }
+
     public WalkerResponse updateWalkerStatus(long walkerId, WalkerStatus status) {
         Walker walker = walkerRepository.findById(walkerId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND, "Walker profile not found."));

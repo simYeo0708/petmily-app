@@ -25,28 +25,92 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Response interceptor to handle errors and refresh tokens
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: any) => void;
+  reject: (error?: any) => void;
+}> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (typeof window !== 'undefined' && error.response?.status === 401) {
-      // Clear authentication data
-      localStorage.removeItem('petmily_token');
-      localStorage.removeItem('petmily_user');
-      
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        // Use a more gentle approach - dispatch a custom event
-        window.dispatchEvent(new CustomEvent('auth:logout'));
-        
-        // Fallback to redirect after a short delay
-        setTimeout(() => {
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }, 100);
+  async (error) => {
+    const originalRequest = error.config;
+
+    // 401 에러이고, 아직 재시도하지 않은 요청인 경우
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // 이미 refresh 중이면 대기열에 추가
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = localStorage.getItem('petmily_refresh_token');
+        if (!refreshToken) {
+          throw new Error('No refresh token');
+        }
+
+        // Refresh token으로 새 access token 요청
+        const response = await api.post('/auth/refresh', { refreshToken });
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+        // 새 토큰 저장
+        localStorage.setItem('petmily_token', accessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('petmily_refresh_token', newRefreshToken);
+        }
+
+        // 대기 중인 요청들 처리
+        processQueue(null, accessToken);
+
+        // 원래 요청 재시도
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        // Refresh 실패 시 로그아웃 처리
+        processQueue(refreshError, null);
+        localStorage.removeItem('petmily_token');
+        localStorage.removeItem('petmily_refresh_token');
+        localStorage.removeItem('petmily_user');
+
+        if (window.location.pathname !== '/login') {
+          window.dispatchEvent(new CustomEvent('auth:logout'));
+          setTimeout(() => {
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+          }, 100);
+        }
+
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
+
     return Promise.reject(error);
   }
 );

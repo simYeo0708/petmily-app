@@ -7,7 +7,6 @@
     "dev": "node scripts/start-dev.js",
     "update-ip": "node scripts/auto-detect-ip.js",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "npm run update-ip && expo run:android",
     "ios": "npm run update-ip && expo run:ios --no-build-cache",
     "ios:build": "npm run update-ip && expo run:ios --no-bundler",
     "web": "expo start --web",
@@ -53,6 +52,7 @@
     "react-native-reanimated": "~4.1.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-svg": "^15.15.0",
     "react-native-web": "^0.21.0",
     "react-native-webview": "13.15.0",
     "react-native-worklets": "0.5.1"

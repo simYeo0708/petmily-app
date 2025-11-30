@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   StatusBar,
   Image,
   Modal,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -52,10 +53,112 @@ const WalkingRequestScreen: React.FC = () => {
 
   const selectedWalker = getSelectedPreviousWalker();
 
-  const handleSubmitAndNavigate = () => {
-    handleSubmit().then(() => {
+  // 필드별 에러 상태
+  const [errors, setErrors] = useState<{
+    timeSlot?: string;
+    duration?: string;
+    address?: string;
+  }>({});
+
+  // 흔들림 애니메이션 refs
+  const timeSlotShake = useRef(new Animated.Value(0)).current;
+  const durationShake = useRef(new Animated.Value(0)).current;
+  const addressShake = useRef(new Animated.Value(0)).current;
+
+  // 흔들림 애니메이션 함수
+  const shakeAnimation = (animatedValue: Animated.Value) => {
+    Animated.sequence([
+      Animated.timing(animatedValue, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(animatedValue, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(animatedValue, { toValue: 10, duration: 50, useNativeDriver: true }),
+      Animated.timing(animatedValue, { toValue: -10, duration: 50, useNativeDriver: true }),
+      Animated.timing(animatedValue, { toValue: 0, duration: 50, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // 필드별 에러 메시지 가져오기
+  const getFieldErrorMessage = (fieldName: string): string => {
+    switch (fieldName) {
+      case 'timeSlot':
+        return '시간대를 입력해주세요';
+      case 'duration':
+        return '산책 시간을 입력해주세요';
+      case 'address':
+        return '산책 주소를 입력해주세요';
+      default:
+        return '';
+    }
+  };
+
+  const handleSubmitAndNavigate = async () => {
+    // 필드별 검증
+    const newErrors: {
+      timeSlot?: string;
+      duration?: string;
+      address?: string;
+    } = {};
+
+    if (!requestData.timeSlot) {
+      newErrors.timeSlot = getFieldErrorMessage('timeSlot');
+      shakeAnimation(timeSlotShake);
+    }
+
+    // duration이 기본값 '60'이고 사용자가 명시적으로 선택하지 않은 경우 확인
+    // getSelectedDurationLabel()이 '산책 시간 선택'이면 선택하지 않은 것으로 간주
+    const durationLabel = getSelectedDurationLabel();
+    if (!requestData.duration || durationLabel === '산책 시간 선택') {
+      newErrors.duration = getFieldErrorMessage('duration');
+      shakeAnimation(durationShake);
+    }
+
+    if (!requestData.address || !requestData.address.trim()) {
+      newErrors.address = getFieldErrorMessage('address');
+      shakeAnimation(addressShake);
+    }
+
+    // 에러가 있으면 표시하고 제출 중단
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // 에러가 없으면 기존 로직 실행
+    setErrors({});
+    try {
+      await handleSubmit();
       navigation.navigate('WalkerMatching', { bookingData: { timeSlot: '', address: '' } });
-    });
+    } catch (error) {
+      // handleSubmit에서 이미 Alert를 표시하므로 여기서는 처리하지 않음
+    }
+  };
+
+  // 필드 값이 변경되면 해당 필드의 에러 제거
+  const handleTimeSlotSelectWithErrorClear = (timeSlot: string) => {
+    handleTimeSlotSelect(timeSlot);
+    if (errors.timeSlot) {
+      setErrors(prev => ({ ...prev, timeSlot: undefined }));
+    }
+  };
+
+  const handleDurationSelectWithErrorClear = (duration: string) => {
+    handleDurationSelect(duration);
+    if (errors.duration) {
+      setErrors(prev => ({ ...prev, duration: undefined }));
+    }
+  };
+
+  const handleAddressInputWithErrorClear = (address: string) => {
+    handleAddressInput(address);
+    if (errors.address) {
+      setErrors(prev => ({ ...prev, address: undefined }));
+    }
+  };
+
+  const handleAddressSelectWithErrorClear = (address: string) => {
+    handleAddressSelect(address);
+    if (errors.address) {
+      setErrors(prev => ({ ...prev, address: undefined }));
+    }
   };
 
   return (
@@ -97,42 +200,84 @@ const WalkingRequestScreen: React.FC = () => {
         {/* 시간대 선택 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>시간대 *</Text>
-          <TouchableOpacity
-            style={styles.selectorButton}
-            onPress={() => setShowTimeSlotModal(true)}
+          <Animated.View
+            style={{
+              transform: [{ translateX: timeSlotShake }],
+            }}
           >
-            <Text style={styles.selectorButtonText}>
-              {getSelectedTimeSlotLabel()}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.selectorButton,
+                errors.timeSlot && styles.selectorButtonError,
+              ]}
+              onPress={() => setShowTimeSlotModal(true)}
+            >
+              <Text style={[
+                styles.selectorButtonText,
+                errors.timeSlot && styles.selectorButtonTextError,
+              ]}>
+                {getSelectedTimeSlotLabel()}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={errors.timeSlot ? "#FF6B6B" : "#666"} />
+            </TouchableOpacity>
+          </Animated.View>
+          {errors.timeSlot && (
+            <Text style={styles.errorText}>{errors.timeSlot}</Text>
+          )}
         </View>
 
         {/* 산책 시간 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>산책 시간 *</Text>
-          <TouchableOpacity
-            style={styles.selectorButton}
-            onPress={() => setShowDurationModal(true)}
+          <Animated.View
+            style={{
+              transform: [{ translateX: durationShake }],
+            }}
           >
-            <Text style={styles.selectorButtonText}>
-              {getSelectedDurationLabel()}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#666" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.selectorButton,
+                errors.duration && styles.selectorButtonError,
+              ]}
+              onPress={() => setShowDurationModal(true)}
+            >
+              <Text style={[
+                styles.selectorButtonText,
+                errors.duration && styles.selectorButtonTextError,
+              ]}>
+                {getSelectedDurationLabel()}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color={errors.duration ? "#FF6B6B" : "#666"} />
+            </TouchableOpacity>
+          </Animated.View>
+          {errors.duration && (
+            <Text style={styles.errorText}>{errors.duration}</Text>
+          )}
         </View>
 
         {/* 주소 입력 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>산책 주소 *</Text>
-          <TextInput
-            style={styles.textInput}
-            value={requestData.address}
-            onChangeText={handleAddressInput}
-            placeholder="산책할 주소를 입력해주세요"
-            placeholderTextColor="#999"
-            multiline
-          />
+          <Animated.View
+            style={{
+              transform: [{ translateX: addressShake }],
+            }}
+          >
+            <TextInput
+              style={[
+                styles.textInput,
+                errors.address && styles.textInputError,
+              ]}
+              value={requestData.address}
+              onChangeText={handleAddressInputWithErrorClear}
+              placeholder="산책할 주소를 입력해주세요"
+              placeholderTextColor="#999"
+              multiline
+            />
+          </Animated.View>
+          {errors.address && (
+            <Text style={styles.errorText}>{errors.address}</Text>
+          )}
           
           {savedAddresses.length > 0 && (
             <TouchableOpacity
@@ -235,7 +380,7 @@ const WalkingRequestScreen: React.FC = () => {
                     styles.modalOption,
                     requestData.timeSlot === timeSlot.value && styles.selectedModalOption,
                   ]}
-                  onPress={() => handleTimeSlotSelect(timeSlot.value)}
+                  onPress={() => handleTimeSlotSelectWithErrorClear(timeSlot.value)}
                 >
                   <Text
                     style={[
@@ -281,7 +426,7 @@ const WalkingRequestScreen: React.FC = () => {
                     styles.modalOption,
                     requestData.duration === duration.value && styles.selectedModalOption,
                   ]}
-                  onPress={() => handleDurationSelect(duration.value)}
+                  onPress={() => handleDurationSelectWithErrorClear(duration.value)}
                 >
                   <Text
                     style={[
@@ -321,7 +466,7 @@ const WalkingRequestScreen: React.FC = () => {
                 <TouchableOpacity
                   key={index}
                   style={styles.modalOption}
-                  onPress={() => handleAddressSelect(address)}
+                  onPress={() => handleAddressSelectWithErrorClear(address)}
                 >
                   <Ionicons name="location-outline" size={20} color="#4CAF50" />
                   <Text style={[styles.modalOptionText, styles.addressOptionText]}>
@@ -640,6 +785,23 @@ const styles = StyleSheet.create({
   modalWalkerStats: {
     fontSize: 12,
     color: '#999',
+  },
+  selectorButtonError: {
+    borderColor: '#FF6B6B',
+    borderWidth: 2,
+  },
+  selectorButtonTextError: {
+    color: '#FF6B6B',
+  },
+  textInputError: {
+    borderColor: '#FF6B6B',
+    borderWidth: 2,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    marginTop: 6,
+    marginLeft: 4,
   },
 });
 

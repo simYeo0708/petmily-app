@@ -9,11 +9,14 @@ import {
     Switch,
     Text,
     TouchableOpacity,
-    View
+    View,
+    ActivityIndicator
 } from "react-native";
 import Header from "../components/Header";
 import { RootStackParamList } from "../index";
 import { homeScreenStyles } from "../styles/HomeScreenStyles";
+import DashboardService, { DashboardResponse } from "../services/DashboardService";
+import AuthService from "../services/AuthService";
 
 type MyScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,10 +38,26 @@ const MyScreen = () => {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
   const [marketingEmails, setMarketingEmails] = useState(false);
+  const [dashboardData, setDashboardData] = useState<DashboardResponse | null>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     loadPetInfo();
+    loadDashboard();
+    loadUserRole();
   }, []);
+
+  const loadUserRole = async () => {
+    try {
+      const user = await AuthService.getCurrentUser();
+      if (user && user.role) {
+        setUserRole(user.role);
+      }
+    } catch (error) {
+      // 에러는 UI로만 처리
+    }
+  };
 
   useEffect(() => {
     // 펫 정보가 로드된 후 확인하여 없으면 MyPet 화면으로 이동
@@ -47,10 +66,10 @@ const MyScreen = () => {
       return;
     }
     
-    // petInfo가 빈 객체이거나 필수 정보가 없으면 MyPet으로 이동
+    // petInfo가 빈 객체이거나 필수 정보가 없으면 PetInfoInput으로 이동
     if (!petInfo || !petInfo.name || !petInfo.breed) {
       setTimeout(() => {
-        navigation.navigate("MyPet");
+        navigation.navigate("PetInfoInput");
       }, 500); // 화면이 렌더링된 후 이동
     }
   }, [petInfo, navigation]);
@@ -76,7 +95,7 @@ const MyScreen = () => {
         });
       }
     } catch (error) {
-      console.error("Failed to load pet info:", error);
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
       // 오류 시에도 빈 정보로 설정
       setPetInfo({
         name: "",
@@ -96,19 +115,34 @@ const MyScreen = () => {
     try {
       await AsyncStorage.clear();
       console.log("AsyncStorage cleared successfully");
-    } catch (error) {
-      console.error("Failed to clear AsyncStorage:", error);
+      } catch (error) {
+        // 에러는 UI로만 처리 (콘솔 로그 없이)
       Alert.alert("오류", "로그아웃 중 문제가 발생했습니다.");
     }
   };
 
-  const handleLogout = () => {
+  const loadDashboard = async () => {
+    try {
+      setIsLoadingDashboard(true);
+      const data = await DashboardService.getDashboard();
+      if (data) {
+        setDashboardData(data);
+      }
+    } catch (error) {
+      // 에러는 UI로만 처리
+    } finally {
+      setIsLoadingDashboard(false);
+    }
+  };
+
+  const handleLogout = async () => {
     Alert.alert("로그아웃", "정말 로그아웃하시겠습니까?", [
       { text: "취소", style: "cancel" },
       {
         text: "로그아웃",
         style: "destructive",
         onPress: async () => {
+          await AuthService.logout();
           await clearAsyncStorage();
           navigation.navigate("Login");
         },
@@ -117,8 +151,14 @@ const MyScreen = () => {
   };
 
   const navigateToMyPet = () => {
-    navigation.navigate("MyPet");
+    navigation.navigate("PetInfoInput");
   };
+
+  const navigateToWalkerVerification = () => {
+    navigation.navigate("WalkerVerification");
+  };
+
+  const isAdmin = userRole === 'ADMIN' || userRole === 'ROLE_ADMIN';
 
   const myMenuSections = [
     {
@@ -200,6 +240,21 @@ const MyScreen = () => {
         { title: "앱 정보", icon: "ℹ️", action: () => console.log("앱 정보") },
       ],
     },
+    // 관리자 전용 메뉴
+    ...(isAdmin
+      ? [
+          {
+            title: "관리자",
+            items: [
+              {
+                title: "워커 검증",
+                icon: "✅",
+                action: navigateToWalkerVerification,
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -234,12 +289,42 @@ const MyScreen = () => {
                 color: "#4A4A4A",
                 marginBottom: 4,
               }}>
-              안녕하세요!
+              {dashboardData?.userInfo?.name ? `${dashboardData.userInfo.name}님` : '안녕하세요!'}
             </Text>
-            {petInfo && (
+            {dashboardData?.userInfo?.email && (
+              <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+                {dashboardData.userInfo.email}
+              </Text>
+            )}
+            {petInfo && petInfo.name && (
               <Text style={{ fontSize: 14, color: "#666" }}>
                 {petInfo.name}의 보호자
               </Text>
+            )}
+            {dashboardData && (
+              <View style={{ marginTop: 12, flexDirection: 'row', gap: 16 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#4A90E2' }}>
+                    {dashboardData.walkingStats?.totalCompletedWalks || 0}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>완료한 산책</Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#4CAF50' }}>
+                    {dashboardData.petStats?.totalPets || 0}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>반려동물</Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#FF9800' }}>
+                    {dashboardData.shoppingOverview?.totalOrders || 0}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>주문 내역</Text>
+                </View>
+              </View>
+            )}
+            {isLoadingDashboard && (
+              <ActivityIndicator size="small" color="#4A90E2" style={{ marginTop: 12 }} />
             )}
           </View>
         </View>

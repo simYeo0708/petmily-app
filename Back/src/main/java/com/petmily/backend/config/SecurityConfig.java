@@ -163,10 +163,17 @@ public class SecurityConfig {
             clientSecret = "dummy-google-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String googleRedirectUri = ngrokUrl + "/login/oauth2/code/google";
+        
         return ClientRegistration.withRegistrationId("google")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/google")
+                .redirectUri(googleRedirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("email", "profile")
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
@@ -189,10 +196,17 @@ public class SecurityConfig {
             clientSecret = "dummy-kakao-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String kakaoRedirectUri = ngrokUrl + "/login/oauth2/code/kakao";
+        
         return ClientRegistration.withRegistrationId("kakao")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/kakao")
+                .redirectUri(kakaoRedirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("account_email", "profile_nickname", "profile_image")
                 .authorizationUri("https://kauth.kakao.com/oauth/authorize")
@@ -213,10 +227,17 @@ public class SecurityConfig {
             clientSecret = "dummy-naver-client-secret";
         }
         
+        // ngrok URL 사용 (환경 변수에서 가져오거나 기본값 사용)
+        String ngrokUrl = System.getenv("NGROK_URL");
+        if (ngrokUrl == null || ngrokUrl.isEmpty()) {
+            ngrokUrl = "https://superoccipital-nonsolubly-lelah.ngrok-free.dev";
+        }
+        String redirectUri = ngrokUrl + "/login/oauth2/code/naver";
+        
         return ClientRegistration.withRegistrationId("naver")
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .redirectUri("http://localhost:8083/login/oauth2/code/naver")
+                .redirectUri(redirectUri)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .scope("name", "email", "profile_image")
                 .authorizationUri("https://nid.naver.com/oauth2.0/authorize")

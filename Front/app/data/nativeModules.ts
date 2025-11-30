@@ -22,8 +22,7 @@ export const DEFAULT_MAP_CONFIG: KakaoMapConfig = {
 /**
  * 네이티브 모듈 사용 가이드:
  * 
- * 1. iOS - KakaoMapsSDK 설치됨
- * 2. Android - 향후 추가 예정
+ * iOS - KakaoMapsSDK 설치됨
  * 
  * 사용 예시:
  * ```typescript

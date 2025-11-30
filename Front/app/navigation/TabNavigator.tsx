@@ -70,6 +70,18 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
     }
   }, [isGuideActive, currentGuideStep]);
   
+  // initialTab이 변경되면 해당 탭으로 이동
+  const tabNavigationRef = useRef<any>(null);
+  
+  useEffect(() => {
+    if (initialTab && tabNavigationRef.current) {
+      // 약간의 지연을 두어 TabNavigator가 완전히 마운트된 후 이동
+      setTimeout(() => {
+        tabNavigationRef.current?.navigate(initialTab);
+      }, 100);
+    }
+  }, [initialTab]);
+  
   return (
     <Tab.Navigator
       id={undefined}
@@ -79,7 +91,12 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
         tabBarStyle: navigationStyles.bottomNav,
         tabBarShowLabel: false,
       }}
-      tabBar={({ state, descriptors, navigation }) => (
+      tabBar={({ state, descriptors, navigation }) => {
+        // navigation ref 저장
+        if (!tabNavigationRef.current) {
+          tabNavigationRef.current = navigation;
+        }
+        return (
         <View style={navigationStyles.bottomNav}>
           {state.routes.map((route, index) => {
             const isFocused = state.index === index;
@@ -225,7 +242,8 @@ const TabNavigator = ({ initialTab = "HomeTab" }: TabNavigatorProps) => {
             );
           })}
         </View>
-      )}>
+        );
+      }}>
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Text, View, TouchableOpacity, Alert, StyleSheet, Image } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModeConfig } from "../constants/ServiceModes";
@@ -55,6 +55,13 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
     loadCurrentWalking();
   }, []);
 
+  // 화면이 포커스될 때마다 저장된 산책 시간 정보 다시 로드 (지도 화면과 동기화)
+  useFocusEffect(
+    useCallback(() => {
+      loadCurrentWalking();
+    }, [])
+  );
+
   const loadWalkingRequests = async () => {
     try {
       // TODO: 실제 API 호출로 대체
@@ -91,10 +98,21 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
   const loadCurrentWalking = async () => {
     try {
-      // TODO: 실제 API 호출로 대체
-      // 중앙 관리 샘플 데이터 사용
-      setCurrentWalking(CURRENT_WALKING);
+      // 저장된 산책 시작 시간과 duration 가져오기 (지도 화면과 동일한 값 사용)
+      const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+      const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+      
+      // 저장된 값이 있으면 사용, 없으면 기본값 사용
+      const walkingData = {
+        ...CURRENT_WALKING,
+        startTime: savedStartTime || CURRENT_WALKING.startTime,
+        duration: savedDuration || CURRENT_WALKING.duration,
+      };
+      
+      setCurrentWalking(walkingData);
     } catch (error) {
+      // 에러 시 기본값 사용
+      setCurrentWalking(CURRENT_WALKING);
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -21,11 +22,13 @@ import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as TaskManager from 'expo-task-manager';
 import { IconImage } from '../components/IconImage';
-import MapService, { MapConfigResponse, LocationResponse, WalkSessionResponse, RouteResponse } from '../services/MapService';
+import MapService, { MapConfigResponse, LocationResponse, WalkSessionResponse, RouteResponse, AddressInfo } from '../services/MapService';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
 import { KAKAO_MAP_API_KEY } from '../config/api';
 import { useWalkerRouteSimulation } from '../hooks/useWalkerRouteSimulation';
 import { WalkingRoute, WALKING_ROUTES } from '../data/walkingRoutes';
+import WalkerService from '../services/WalkerService';
+import WalkerBookingService from '../services/WalkerBookingService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -89,6 +92,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [isTracking, setIsTracking] = useState(false);
   const [walkingDistance, setWalkingDistance] = useState(0);
   const [walkingTime, setWalkingTime] = useState(0);
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
+  const lastGeocodeTimeRef = useRef<number>(0);
+  const GEOCODE_UPDATE_INTERVAL = 10 * 1000; // 10초마다 주소 업데이트
   const startTime = useRef<number | null>(null);
   const [customTime, setCustomTime] = useState('');
   const [selectedAddress, setSelectedAddress] = useState('');
@@ -122,6 +128,13 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   
   // 시뮬레이션 리스트 모달 상태
   const [showSimulationListModal, setShowSimulationListModal] = useState(false);
+  
+  // 워커 전용 산책 요청 모달 상태
+  const [isWalker, setIsWalker] = useState(false);
+  const [showWalkerRequestModal, setShowWalkerRequestModal] = useState(false);
+  const [walkerBookings, setWalkerBookings] = useState<any[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const [isLoadingBookings, setIsLoadingBookings] = useState(false);
   
   // 지도 설정 및 위치 정보
   const [mapConfig, setMapConfig] = useState<MapConfigResponse | null>(null);
@@ -222,6 +235,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     loadMapConfig();
     requestLocationPermission();
     loadCurrentWalking();
+    checkWalkerStatus();
     return () => {
       (async () => {
         try {
@@ -234,6 +248,13 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       })();
     };
   }, []);
+
+  // 화면이 포커스될 때마다 저장된 산책 시간 정보 다시 로드 (홈 화면과 동기화)
+  useFocusEffect(
+    useCallback(() => {
+      loadCurrentWalking();
+    }, [currentLocation]) // currentLocation이 변경되면 주소도 업데이트
+  );
 
   useEffect(() => {
     if (showGuide) {
@@ -260,6 +281,29 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
 
   const loadCurrentWalking = async () => {
     try {
+      // 실제 위치 기반으로 주소 가져오기
+      let locationAddress = '위치 정보 없음';
+      if (currentLocation) {
+        try {
+          const addressInfo = await mapService.reverseGeocode(
+            currentLocation.latitude,
+            currentLocation.longitude
+          );
+          if (addressInfo) {
+            locationAddress = addressInfo.roadAddress || addressInfo.jibunAddress || 
+              (addressInfo.region2depth && addressInfo.region3depth 
+                ? `${addressInfo.region2depth} ${addressInfo.region3depth}` 
+                : '위치 정보 없음');
+          }
+        } catch (error) {
+          // 주소 가져오기 실패 시 기본값 유지
+        }
+      }
+      
+      // 저장된 산책 시작 시간과 duration 가져오기 (홈 화면과 동일한 값 사용)
+      const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+      const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+      
       // 실제로는 API에서 현재 워킹 정보를 가져옴
       // 샘플 데이터
       const sampleWalking = {
@@ -276,12 +320,12 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           name: '홍길동',
           profileImage: 'https://via.placeholder.com/100',
         },
-        startTime: new Date().toISOString(),
-        duration: 120, // 분
-        location: '서울시 강남구 테헤란로 123',
+        startTime: savedStartTime || new Date().toISOString(), // 저장된 시간 사용, 없으면 현재 시간
+        duration: savedDuration || 120, // 저장된 duration 사용, 없으면 기본 120분
+        location: locationAddress, // 실제 위치 기반 주소 사용
         status: 'in_progress',
         distance: 2.5,
-        currentLocation: {
+        currentLocation: currentLocation || {
           latitude: 37.5665,
           longitude: 126.9780,
         },
@@ -291,6 +335,65 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       setHasActiveService(true);
       setShowTopModal(true);
     } catch (error) {
+    }
+  };
+
+  // 워커 여부 확인
+  const checkWalkerStatus = async () => {
+    try {
+      const walker = await WalkerService.getCurrentWalker();
+      if (walker) {
+        setIsWalker(true);
+        // 워커인 경우 산책 요청 목록 로드
+        loadWalkerBookings();
+      }
+    } catch (error) {
+      setIsWalker(false);
+    }
+  };
+
+  // 워커 산책 요청 목록 로드
+  const loadWalkerBookings = async () => {
+    try {
+      setIsLoadingBookings(true);
+      const bookings = await WalkerBookingService.getWalkBookings();
+      setWalkerBookings(bookings);
+      
+      // 요청이 있으면 모달 표시
+      if (bookings.length > 0) {
+        setShowWalkerRequestModal(true);
+      }
+    } catch (error) {
+      setWalkerBookings([]);
+    } finally {
+      setIsLoadingBookings(false);
+    }
+  };
+
+  // 요청 선택 시 해당 지역으로 지도 이동
+  const handleSelectBooking = async (booking: any) => {
+    try {
+      setSelectedBooking(booking);
+      
+      // 요청자의 주소를 좌표로 변환
+      if (booking.pickupAddress) {
+        const coordinates = await mapService.geocodeAddress(booking.pickupAddress);
+        if (coordinates && mapViewRef.current) {
+          // 지도를 해당 위치로 이동
+          mapViewRef.current.animateCamera({
+            center: {
+              latitude: coordinates.latitude,
+              longitude: coordinates.longitude,
+            },
+            zoom: 15,
+          }, { duration: 1000 });
+        }
+      }
+      
+      // 모달 닫기
+      setShowWalkerRequestModal(false);
+    } catch (error) {
+      Alert.alert('오류', '위치를 불러올 수 없습니다.');
     }
   };
 
@@ -313,6 +416,9 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       setLocationHistory([newLocation]);
       locationHistoryRef.current = [newLocation];
       lastLocationRef.current = newLocation;
+      
+      // 현재 위치의 주소 가져오기
+      updateCurrentAddress(newLocation.latitude, newLocation.longitude);
       
       // 백엔드에 위치 업데이트
       await updateUserLocation(location.coords.latitude, location.coords.longitude);
@@ -343,6 +449,24 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     setRouteCoordinates(coordinates);
     setDrawnRouteCoordinates(coordinates); // 전체 경로 표시
   }, [buildRouteCoordinates]);
+
+  // 역지오코딩으로 주소 가져오기
+  const updateCurrentAddress = useCallback(async (latitude: number, longitude: number) => {
+    try {
+      const addressInfo = await mapService.reverseGeocode(latitude, longitude);
+      if (addressInfo) {
+        // 도로명 주소가 있으면 도로명, 없으면 지번 주소 사용
+        const address = addressInfo.roadAddress || addressInfo.jibunAddress || 
+                       (addressInfo.region2depth && addressInfo.region3depth 
+                         ? `${addressInfo.region2depth} ${addressInfo.region3depth}` 
+                         : '주소 정보 없음');
+        setCurrentAddress(address);
+      }
+    } catch (error) {
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
+      // 에러 발생 시에도 null로 설정하지 않고 이전 주소 유지
+    }
+  }, []);
 
   const handleLocationEvent = useCallback(
     (location: Location.LocationObject) => {
@@ -407,12 +531,18 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         ).catch(() => {});
       }
 
+      // 주소 업데이트 (10초마다)
+      if (now - lastGeocodeTimeRef.current >= GEOCODE_UPDATE_INTERVAL) {
+        lastGeocodeTimeRef.current = now;
+        updateCurrentAddress(newLocation.latitude, newLocation.longitude);
+      }
+
       if (now - lastLiveRouteUpdateRef.current >= LIVE_ROUTE_UPDATE_INTERVAL) {
         lastLiveRouteUpdateRef.current = now;
         updateLiveRouteOnMap();
       }
     },
-    [updateLiveRouteOnMap]
+    [updateLiveRouteOnMap, updateCurrentAddress]
   );
 
   useEffect(() => {
@@ -463,10 +593,13 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           };
           setCurrentLocation(newLocation);
           
+          // 현재 위치의 주소 가져오기
+          updateCurrentAddress(newLocation.latitude, newLocation.longitude);
+          
           // 백엔드에 위치 업데이트
           await updateUserLocation(location.coords.latitude, location.coords.longitude);
         } catch (locationError) {
-          console.error('[위치 추적] 현재 위치 가져오기 실패:', locationError);
+          // 에러는 UI로만 처리 (콘솔 로그 없이)
           Alert.alert(
             '위치 정보 오류',
             '현재 위치를 가져올 수 없습니다. GPS가 켜져 있는지 확인해주세요.',
@@ -521,7 +654,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           walkSessionIdRef.current = session.id;
           console.log('[위치 추적] 산책 세션 생성 성공:', session.id);
         } catch (error) {
-          console.warn('[위치 추적] 산책 세션 생성 실패 (계속 진행):', error);
+          // 에러는 UI로만 처리 (콘솔 로그 없이)
           // 세션 생성 실패해도 위치 추적은 계속 진행
         }
       }
@@ -595,7 +728,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           }
         }
       } catch (locationUpdateError: any) {
-        console.error('[위치 추적] 위치 업데이트 시작 실패:', locationUpdateError);
+        // 에러는 UI로만 처리 (콘솔 로그 없이)
         
         // UIBackgroundModes 설정 오류인 경우 명확한 메시지 표시
         if (locationUpdateError?.message?.includes('UIBackgroundModes') || 
@@ -620,8 +753,8 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
             );
             (globalThis as any).__PETMILY_LOCATION_SUBSCRIPTION__ = subscription;
             console.log('[위치 추적] 전경 위치 추적으로 폴백 성공');
-          } catch (fallbackError) {
-            console.error('[위치 추적] 전경 위치 추적 폴백 실패:', fallbackError);
+            } catch (fallbackError) {
+              // 에러는 UI로만 처리 (콘솔 로그 없이)
             throw locationUpdateError;
           }
         } else {
@@ -889,10 +1022,28 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const handleStartWalking = async () => {
     try {
       setIsWalking(true);
+      
+      // 산책 시작 시간과 duration 저장 (홈 화면과 공유)
+      const walkingStartTime = new Date().toISOString();
+      const walkingDuration = currentWalking?.duration || 120; // 기본 120분
+      
+      // AsyncStorage에 저장
+      const { saveCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+      await saveCurrentWalkingStartTime(walkingStartTime, walkingDuration);
+      
+      // currentWalking 업데이트
+      if (currentWalking) {
+        setCurrentWalking({
+          ...currentWalking,
+          startTime: walkingStartTime,
+          duration: walkingDuration,
+        });
+      }
+      
       await startLocationTracking();
       // startLocationTracking에서 오류가 발생하면 setIsWalking(false)가 호출됨
-    } catch (error) {
-      console.error('[산책 시작] 오류:', error);
+      } catch (error) {
+        // 에러는 UI로만 처리 (콘솔 로그 없이)
       setIsWalking(false);
       // 오류 메시지는 startLocationTracking에서 표시됨
     }
@@ -906,6 +1057,10 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     
     // 종료된 경로를 저장 (재생용)
     setCompletedRouteData([...locationHistoryRef.current]);
+    
+    // 산책 종료 시 저장된 시작 시간 정보 삭제
+    const { clearCurrentWalking } = require('../utils/WalkingUtils');
+    await clearCurrentWalking();
   };
 
   // 완료된 경로 재생 (산책 종료 후 주인이 볼 수 있는 기능)
@@ -1182,12 +1337,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                       })}
                     </Text>
                   </View>
-                  <View style={styles.topModalInfoRow}>
-                    <Ionicons name="location" size={14} color="#4A90E2" />
-                    <Text style={styles.topModalInfoText} numberOfLines={1}>
-                      {currentWalking.location}
-                    </Text>
-                  </View>
+                  {/* 주소는 walkingInfoOverlay에서만 표시하므로 여기서는 제거 */}
                 </View>
               )}
             </View>
@@ -1222,39 +1372,50 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.walkingStats} pointerEvents="none">
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>거리</Text>
-                    <Text style={styles.statValue}>
-                      {isPlayingRoute 
-                        ? (simulationStats.distance / 1000).toFixed(2)
-                        : (walkingDistance / 1000).toFixed(2)} km
-                    </Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>시간</Text>
-                    <Text style={styles.statValue}>
-                      {isPlayingRoute ? (
-                        <>
-                          {Math.floor(simulationStats.duration / 60)}:
-                          {(simulationStats.duration % 60).toString().padStart(2, '0')}
-                        </>
-                      ) : (
-                        <>
-                          {Math.floor(walkingTime / 60)}:
-                          {(walkingTime % 60).toString().padStart(2, '0')}
-                        </>
-                      )}
-                    </Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statLabel}>속도</Text>
-                    <Text style={styles.statValue}>
-                      {isPlayingRoute
-                        ? simulationStats.averageSpeed.toFixed(1)
-                        : walkingTime > 0 
-                          ? ((walkingDistance / 1000) / (walkingTime / 3600)).toFixed(1) 
-                          : '0.0'} km/h
-                    </Text>
+                  {/* 현재 위치 주소 표시 */}
+                  {currentAddress && (
+                    <View style={styles.addressContainer}>
+                      <Ionicons name="location" size={14} color="#4A90E2" style={styles.addressIcon} />
+                      <Text style={styles.addressText} numberOfLines={2}>
+                        {currentAddress}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>거리</Text>
+                      <Text style={styles.statValue}>
+                        {isPlayingRoute 
+                          ? (simulationStats.distance / 1000).toFixed(2)
+                          : (walkingDistance / 1000).toFixed(2)} km
+                      </Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>시간</Text>
+                      <Text style={styles.statValue}>
+                        {isPlayingRoute ? (
+                          <>
+                            {Math.floor(simulationStats.duration / 60)}:
+                            {(simulationStats.duration % 60).toString().padStart(2, '0')}
+                          </>
+                        ) : (
+                          <>
+                            {Math.floor(walkingTime / 60)}:
+                            {(walkingTime % 60).toString().padStart(2, '0')}
+                          </>
+                        )}
+                      </Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>속도</Text>
+                      <Text style={styles.statValue}>
+                        {isPlayingRoute
+                          ? simulationStats.averageSpeed.toFixed(1)
+                          : walkingTime > 0 
+                            ? ((walkingDistance / 1000) / (walkingTime / 3600)).toFixed(1) 
+                            : '0.0'} km/h
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </Animated.View>
@@ -1668,6 +1829,102 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {/* 워커 전용 산책 요청 모달 */}
+      {isWalker && (
+        <Modal
+          visible={showWalkerRequestModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowWalkerRequestModal(false)}
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity
+                onPress={() => setShowWalkerRequestModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>받은 산책 요청</Text>
+            </View>
+
+            <View style={styles.modalContent}>
+              {isLoadingBookings ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>요청 목록을 불러오는 중...</Text>
+                </View>
+              ) : walkerBookings.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="walk-outline" size={48} color="#ccc" />
+                  <Text style={styles.emptyText}>받은 산책 요청이 없습니다</Text>
+                </View>
+              ) : (
+                <ScrollView 
+                  style={styles.modalScrollView}
+                  showsVerticalScrollIndicator={true}
+                  contentContainerStyle={styles.modalScrollContent}
+                >
+                  {walkerBookings.map((booking) => (
+                    <TouchableOpacity
+                      key={booking.id}
+                      style={[
+                        styles.bookingItem,
+                        selectedBooking?.id === booking.id && styles.bookingItemSelected
+                      ]}
+                      onPress={() => handleSelectBooking(booking)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.bookingContent}>
+                        <View style={styles.bookingHeader}>
+                          <View style={styles.bookingStatusBadge}>
+                            <Text style={styles.bookingStatusText}>
+                              {booking.status === 'PENDING' ? '대기중' : 
+                               booking.status === 'ACCEPTED' ? '수락됨' :
+                               booking.status === 'IN_PROGRESS' ? '진행중' :
+                               booking.status === 'COMPLETED' ? '완료' : booking.status}
+                            </Text>
+                          </View>
+                          <Text style={styles.bookingDate}>{booking.date}</Text>
+                        </View>
+                        
+                        <View style={styles.bookingInfo}>
+                          <View style={styles.bookingInfoRow}>
+                            <Ionicons name="location" size={16} color="#C59172" />
+                            <Text style={styles.bookingAddress} numberOfLines={2}>
+                              {booking.pickupAddress || '주소 정보 없음'}
+                            </Text>
+                          </View>
+                          
+                          {booking.duration && (
+                            <View style={styles.bookingInfoRow}>
+                              <Ionicons name="time-outline" size={16} color="#666" />
+                              <Text style={styles.bookingDuration}>
+                                {booking.duration}분
+                              </Text>
+                            </View>
+                          )}
+                          
+                          {booking.notes && (
+                            <View style={styles.bookingInfoRow}>
+                              <Ionicons name="document-text-outline" size={16} color="#666" />
+                              <Text style={styles.bookingNotes} numberOfLines={2}>
+                                {booking.notes}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                      
+                      <Ionicons name="chevron-forward" size={20} color="#999" />
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          </SafeAreaView>
+        </Modal>
+      )}
       </View>
     </View>
   );
@@ -2188,11 +2445,31 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   walkingStats: {
+    gap: 8,
+  },
+  addressContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#F0F8FF',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  addressIcon: {
+    marginRight: 6,
+  },
+  addressText: {
+    fontSize: 13,
+    color: '#333',
+    flex: 1,
+    lineHeight: 18,
   },
   statItem: {
     alignItems: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   statLabel: {
     fontSize: 12,
@@ -2301,6 +2578,97 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
+  },
+  // 워커 요청 모달 스타일
+  bookingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  bookingItemSelected: {
+    borderColor: '#C59172',
+    borderWidth: 2,
+    backgroundColor: '#FFF9F5',
+  },
+  bookingContent: {
+    flex: 1,
+  },
+  bookingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  bookingStatusBadge: {
+    backgroundColor: '#C59172',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  bookingStatusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  bookingDate: {
+    fontSize: 12,
+    color: '#666',
+  },
+  bookingInfo: {
+    gap: 8,
+  },
+  bookingInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  bookingAddress: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  bookingDuration: {
+    fontSize: 13,
+    color: '#666',
+  },
+  bookingNotes: {
+    flex: 1,
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 12,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 16,
   },
 });
 

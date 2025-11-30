@@ -1,6 +1,6 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,10 +14,12 @@ import {
   StatusBar,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Product } from "../constants/ProductData";
 import { RootStackParamList } from "../index";
 import { rf } from "../utils/responsive";
 import { useCart } from "../contexts/CartContext";
+import { getProductById } from "../services/ProductService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -43,6 +45,25 @@ const ProductDetailScreen = () => {
 
   // 이미지 갤러리 (실제로는 여러 이미지가 있을 것임)
   const productImages = [product.image, product.image, product.image];
+
+  // 상품 상세 페이지 진입 시 조회 이력 저장
+  useEffect(() => {
+    const saveViewHistory = async () => {
+      try {
+        // product.id가 숫자 또는 문자열일 수 있으므로 변환
+        const productId = typeof product.id === 'string' ? parseInt(product.id) : product.id;
+        if (productId && !isNaN(productId)) {
+          // 백엔드 API 호출 (자동으로 조회 이력 저장됨)
+          await getProductById(productId);
+        }
+      } catch (error) {
+        // 조회 이력 저장 실패는 무시 (사용자 경험에 영향 없음)
+        console.log('조회 이력 저장 실패:', error);
+      }
+    };
+
+    saveViewHistory();
+  }, [product.id]);
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -106,16 +127,20 @@ const ProductDetailScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar backgroundColor="#fff" barStyle="dark-content" />
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.headerButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          activeOpacity={0.7}
+        >
           <Text style={styles.headerIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>상품 상세</Text>
-        <TouchableOpacity style={styles.headerButton}>
-        </TouchableOpacity>
+        <View style={styles.headerButton} />
       </View>
 
       <ScrollView ref={scrollViewRef} style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -362,7 +387,7 @@ const ProductDetailScreen = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -370,7 +395,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    paddingTop: StatusBar.currentHeight || 0,
   },
   header: {
     flexDirection: "row",
@@ -381,10 +405,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
     backgroundColor: "#fff",
+    zIndex: 10,
   },
   headerButton: {
-    width: 40,
-    height: 40,
+    minWidth: 44,
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },

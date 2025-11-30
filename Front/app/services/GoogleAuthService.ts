@@ -23,15 +23,17 @@ const GoogleAuthService = {
    */
   async loginWithGoogle(): Promise<GoogleAuthResponse | null> {
     try {
-      // API_BASE_URL에서 /api를 제거하여 백엔드 기본 URL 얻기
-      const backendUrl = API_BASE_URL.replace('/api', '');
+      // ngrok URL 사용 (개발 환경)
+      // 프로덕션에서는 실제 도메인 사용
+      const ngrokUrl = process.env.EXPO_PUBLIC_NGROK_URL || 'https://superoccipital-nonsolubly-lelah.ngrok-free.dev';
+      const backendUrl = ngrokUrl;
       // 백엔드의 OAuth2 엔드포인트로 리다이렉트
       // 백엔드가 구글 OAuth를 처리하고 모바일 앱으로 리다이렉트
       const oauthUrl = `${backendUrl}/oauth2/authorization/google`;
       
       console.log('🔐 Starting Google OAuth');
       console.log('🔐 API_BASE_URL:', API_BASE_URL);
-      console.log('🔐 Backend URL:', backendUrl);
+      console.log('🔐 Backend URL (ngrok):', backendUrl);
       console.log('🔐 OAuth URL:', oauthUrl);
       
       // WebBrowser로 OAuth 페이지 열기

@@ -63,7 +63,11 @@ const SettingsScreen = () => {
         {
           title: "반려동물 정보",
           icon: "dog",
-          action: () => navigation.navigate("Main", { initialTab: "MyPetTab" }),
+          action: () => {
+            // Main 화면으로 이동하면서 MyPetTab을 초기 탭으로 설정
+            // 이렇게 하면 하단바의 MyPet 탭을 터치한 것과 동일한 화면으로 이동
+            navigation.navigate("Main", { initialTab: "MyPetTab" });
+          },
         },
         {
           title: "비밀번호 변경",

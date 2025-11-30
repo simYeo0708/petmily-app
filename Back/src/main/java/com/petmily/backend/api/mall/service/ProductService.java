@@ -10,8 +10,10 @@ import com.petmily.backend.domain.mall.product.entity.Product;
 import com.petmily.backend.domain.mall.product.entity.ProductCategory;
 import com.petmily.backend.domain.mall.product.entity.ProductLike;
 import com.petmily.backend.domain.mall.product.entity.ProductStatus;
+import com.petmily.backend.domain.mall.product.entity.ProductViewHistory;
 import com.petmily.backend.domain.mall.product.repository.ProductLikeRepository;
 import com.petmily.backend.domain.mall.product.repository.ProductRepository;
+import com.petmily.backend.domain.mall.product.repository.ProductViewHistoryRepository;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,7 +32,10 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductLikeRepository productLikeRepository;
+    private final ProductViewHistoryRepository productViewHistoryRepository;
     private final UserRepository userRepository;
+    
+    private static final int MAX_VIEW_HISTORY_COUNT = 100; // 최대 조회 이력 개수
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
@@ -130,10 +136,44 @@ public class ProductService {
             User user = userRepository.findById(userId).orElse(null);
             if(user != null) {
                 isLiked = productLikeRepository.existsByUserAndProduct(user, product);
+                // 조회 이력 저장
+                saveProductViewHistory(user, product);
             }
         }
 
         return ProductResponse.from(product, isLiked);
+    }
+    
+    // 상품 조회 이력 저장
+    @Transactional
+    public void saveProductViewHistory(User user, Product product) {
+        Optional<ProductViewHistory> existingHistory = 
+            productViewHistoryRepository.findByUserAndProduct(user, product);
+        
+        if (existingHistory.isPresent()) {
+            // 기존 이력이 있으면 조회 횟수 증가 및 업데이트 시간 갱신
+            ProductViewHistory history = existingHistory.get();
+            history.incrementViewCount();
+            productViewHistoryRepository.save(history);
+        } else {
+            // 새 이력 생성
+            ProductViewHistory newHistory = ProductViewHistory.builder()
+                    .user(user)
+                    .product(product)
+                    .viewCount(1)
+                    .build();
+            productViewHistoryRepository.save(newHistory);
+        }
+        
+        // 최대치 초과 시 오래된 이력 삭제
+        List<ProductViewHistory> allHistories = 
+            productViewHistoryRepository.findAllByUserOrderByUpdatedAtDesc(user, 
+                org.springframework.data.domain.PageRequest.of(0, MAX_VIEW_HISTORY_COUNT + 1));
+        
+        if (allHistories.size() > MAX_VIEW_HISTORY_COUNT) {
+            List<ProductViewHistory> toDelete = allHistories.subList(MAX_VIEW_HISTORY_COUNT, allHistories.size());
+            productViewHistoryRepository.deleteAll(toDelete);
+        }
     }
 
     // 상품 목록 조회 (카테고리, 검색, 정렬)

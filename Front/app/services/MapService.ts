@@ -206,6 +206,91 @@ class MapService {
       throw error;
     }
   }
+
+  /**
+   * 좌표 -> 주소 변환 (역지오코딩)
+   * @param latitude 위도
+   * @param longitude 경도
+   * @returns 주소 정보
+   */
+  async reverseGeocode(latitude: number, longitude: number): Promise<AddressInfo | null> {
+    try {
+      // 좌표 유효성 검사
+      if (isNaN(latitude) || isNaN(longitude)) {
+        throw new Error('유효하지 않은 좌표입니다.');
+      }
+
+      if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+        throw new Error('좌표 범위가 유효하지 않습니다.');
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/map/reverse-geocode?lat=${latitude}&lng=${longitude}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        let errorMessage = `역지오코딩 실패: ${response.status}`;
+        
+        if (response.status === 400) {
+          errorMessage = '잘못된 좌표입니다.';
+        } else if (response.status === 404) {
+          errorMessage = '해당 좌표의 주소를 찾을 수 없습니다.';
+        } else if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json() as AddressInfo;
+      
+      // 응답 데이터 유효성 검사
+      if (!data || (!data.roadAddress && !data.jibunAddress && !data.region2depth)) {
+        throw new Error('주소 정보를 찾을 수 없습니다.');
+      }
+      
+      return data;
+    } catch (error: any) {
+      // 에러를 다시 throw하여 호출자가 처리할 수 있도록 함
+      throw error;
+    }
+  }
+
+  /**
+   * 주소 -> 좌표 변환 (지오코딩)
+   * @param address 주소 문자열
+   * @returns 좌표 정보 (latitude, longitude)
+   */
+  async geocodeAddress(address: string): Promise<{ latitude: number; longitude: number } | null> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/map/geocode?address=${encodeURIComponent(address)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`지오코딩 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as { latitude: number; longitude: number };
+      return data;
+    } catch (error) {
+      // 에러는 UI로만 처리 (콘솔 로그 없이)
+      return null;
+    }
+  }
 }
 
 export interface WalkSessionResponse {
@@ -239,6 +324,15 @@ export interface RoutePoint {
   accuracy?: number;
   speed?: number;
   altitude?: number;
+}
+
+export interface AddressInfo {
+  roadAddress?: string;      // 도로명 주소
+  jibunAddress?: string;     // 지번 주소
+  region1depth?: string;     // 시 도
+  region2depth?: string;     // 시 군 구
+  region3depth?: string;     // 읍 면 동
+  buildingName?: string;     // 건물명
 }
 
 export default MapService;
