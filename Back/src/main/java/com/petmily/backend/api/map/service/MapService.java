@@ -148,7 +148,7 @@ public class MapService {
 
     @Transactional
     public WalkSessionResponse endWalkSession(Long walkSessionId, Double endLatitude, Double endLongitude,
-                                              Double totalDistance, Long durationSeconds, UserDetails userDetails) {
+                                              Double totalDistance, Long durationSeconds, String notes, UserDetails userDetails) {
         Long userId = SecurityUtils.getUserId(userDetails);
 
         WalkSession session = walkSessionRepository.findById(walkSessionId)
@@ -170,7 +170,7 @@ public class MapService {
             walkTrackRepository.save(endTrack);
         }
 
-        session.complete(LocalDateTime.now(), endLatitude, endLongitude, totalDistance, durationSeconds);
+        session.complete(LocalDateTime.now(), endLatitude, endLongitude, totalDistance, durationSeconds, notes);
         session = walkSessionRepository.save(session);
 
         return convertToResponse(session);
@@ -223,6 +223,7 @@ public class MapService {
                 .startLongitude(session.getStartLongitude())
                 .endLatitude(session.getEndLatitude())
                 .endLongitude(session.getEndLongitude())
+                .notes(session.getNotes())
                 .build();
     }
     

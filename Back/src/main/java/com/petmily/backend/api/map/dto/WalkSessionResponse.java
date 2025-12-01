@@ -24,6 +24,7 @@ public class WalkSessionResponse {
     private Double startLongitude;
     private Double endLatitude;
     private Double endLongitude;
+    private String notes; // 워커가 입력한 산책 특이사항
 }
 
 

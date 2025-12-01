@@ -22,9 +22,6 @@ prepare_react_native_project!
 
 target 'Petmily' do
   use_expo_modules!
-  
-  # Kakao Maps SDK
-  pod 'KakaoMapsSDK', '2.12.10'
 
   if ENV['EXPO_USE_COMMUNITY_AUTOLINKING'] == '1'
     config_command = ['node', '-e', "process.argv=['', '', 'config'];require('@react-native-community/cli').run()"];

@@ -28,7 +28,15 @@
       "resizeMode": "contain"
     },
     "icon": "./assets/images/paw.png",
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/paw.png",
+          "color": "#C59172"
+        }
+      ]
+    ],
     "experiments": {
       "reactCompiler": true
     }

@@ -17,6 +17,7 @@ import CheckoutScreen from "./screen/CheckoutScreen";
 import OrderCompleteScreen from "./screen/OrderCompleteScreen";
 import SplashScreen from "./screen/SplashScreen";
 import WalkingMapScreen from "./screen/WalkingMapScreen";
+import WalkerMapScreen from "./screen/WalkerMapScreen";
 import WalkingMapScreenEnhanced from "./screen/WalkingMapScreenEnhanced";
 import WalkingSimulationScreen from "./screen/WalkingSimulationScreen";
 import WalkingRequestScreen from "./screen/WalkingRequestScreen";
@@ -39,7 +40,9 @@ import { PetProvider } from "./contexts/PetContext";
 import { GuideProvider } from "./contexts/GuideContext";
 import { PortalProvider } from "./contexts/PortalContext";
 import { CartProvider } from "./contexts/CartContext";
+import { WalkerProvider } from "./contexts/WalkerContext";
 import { Product } from "./constants/ProductData";
+import FcmService from "./services/FcmService";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -75,6 +78,7 @@ export type RootStackParamList = {
   };
   MatchingScreen: undefined;
   WalkingMap: undefined;
+  WalkerMap: undefined;
   WalkingMapEnhanced: {
     bookingId?: number;
     walkerName?: string;
@@ -118,6 +122,20 @@ export default function App() {
       try {
         // 자동 로그인 비활성화 - 수동으로 로그인하도록 함
         // await DevTools.loginAsAsdf();
+        
+        // FCM 토큰 등록 및 알림 리스너 설정
+        // 주의: Expo Go에서는 원격 푸시 알림이 제한적입니다.
+        // 실제 푸시 알림 테스트를 위해서는 개발 빌드(development build)를 사용해야 합니다.
+        try {
+          FcmService.setupNotificationListeners();
+          const token = await FcmService.registerToken();
+          if (!token) {
+            console.warn('⚠️ FCM 토큰 등록 실패 - Expo Go에서는 원격 푸시 알림이 제한적입니다.');
+            console.warn('📱 개발 빌드를 사용하거나 실제 기기에서 테스트하세요.');
+          }
+        } catch (error) {
+          console.error('FCM 초기화 실패:', error);
+        }
       } catch (error) {
         // 에러 처리
       } finally {
@@ -143,7 +161,8 @@ export default function App() {
           <PortalProvider>
             <GuideProvider>
               <PetProvider>
-                <CartProvider>
+                <WalkerProvider>
+                  <CartProvider>
                 <Stack.Navigator
                 id={undefined}
                 initialRouteName="Login" // 로그인 스크린부터 시작
@@ -169,6 +188,7 @@ export default function App() {
                 <Stack.Screen name="WalkerBookingDetail" component={WalkerBookingDetailScreen} />
                 <Stack.Screen name="MatchingScreen" component={MatchingScreen} />
                 <Stack.Screen name="WalkingMap" component={WalkingMapScreen} />
+                <Stack.Screen name="WalkerMap" component={WalkerMapScreen} />
                 <Stack.Screen name="WalkingMapEnhanced" component={WalkingMapScreenEnhanced} />
                 <Stack.Screen name="WalkingSimulation" component={WalkingSimulationScreen} />
                 <Stack.Screen name="WalkingRequest" component={WalkingRequestScreen} />
@@ -188,7 +208,8 @@ export default function App() {
                 <Stack.Screen name="WalkerVerification" component={WalkerVerificationScreen} />
                 <Stack.Screen name="ReviewWrite" component={ReviewWriteScreen} />
                 </Stack.Navigator>
-                </CartProvider>
+                  </CartProvider>
+                </WalkerProvider>
               </PetProvider>
             </GuideProvider>
           </PortalProvider>

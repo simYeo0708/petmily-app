@@ -15,8 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../index';
 import AdminWalkerService, { PendingWalker, WalkerStatus } from '../services/AdminWalkerService';
-import { homeScreenStyles } from '../styles/HomeScreenStyles';
-import Header from '../components/Header';
+import { StatusBar } from 'react-native';
 
 type WalkerVerificationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -129,8 +128,18 @@ const WalkerVerificationScreen = () => {
 
   if (isLoading && pendingWalkers.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Header title="워커 검증" />
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>워커 등록자 관리</Text>
+          <View style={styles.headerPlaceholder} />
+        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4A90E2" />
           <Text style={styles.loadingText}>워커 목록을 불러오는 중...</Text>
@@ -140,8 +149,18 @@ const WalkerVerificationScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title="워커 검증" />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>워커 등록자 관리</Text>
+        <View style={styles.headerPlaceholder} />
+      </View>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -150,63 +169,107 @@ const WalkerVerificationScreen = () => {
         }>
         {pendingWalkers.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons name="checkmark-circle-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>대기 중인 워커가 없습니다</Text>
+            <View style={styles.emptyIconContainer}>
+              <Ionicons name="checkmark-circle-outline" size={80} color="#E0E0E0" />
+            </View>
+            <Text style={styles.emptyTitle}>대기 중인 워커가 없습니다</Text>
+            <Text style={styles.emptySubtitle}>새로운 워커 등록 요청이 없습니다</Text>
           </View>
         ) : (
           <>
-            <View style={styles.infoContainer}>
-              <Ionicons name="information-circle" size={20} color="#4A90E2" />
-              <Text style={styles.infoText}>
-                총 {pendingWalkers.length}명의 워커가 검증을 기다리고 있습니다.
-              </Text>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryIconContainer}>
+                <Ionicons name="people-outline" size={24} color="#4A90E2" />
+              </View>
+              <View style={styles.summaryContent}>
+                <Text style={styles.summaryTitle}>검증 대기 중</Text>
+                <Text style={styles.summaryCount}>{pendingWalkers.length}명</Text>
+              </View>
             </View>
-            {pendingWalkers.map((walker) => (
+
+            {pendingWalkers.map((walker, index) => (
               <View key={walker.id} style={styles.walkerCard}>
-                <View style={styles.walkerHeader}>
-                  <View style={styles.walkerInfo}>
-                    <Text style={styles.walkerName}>
-                      {walker.user?.name || '이름 없음'}
-                    </Text>
-                    <Text style={styles.walkerEmail}>{walker.user?.email || ''}</Text>
-                    {walker.user?.phone && (
-                      <Text style={styles.walkerPhone}>{walker.user.phone}</Text>
-                    )}
+                <View style={styles.cardHeader}>
+                  <View style={styles.walkerProfileSection}>
+                    <View style={styles.profileIconContainer}>
+                      <Ionicons name="person" size={24} color="#4A90E2" />
+                    </View>
+                    <View style={styles.walkerInfo}>
+                      <Text style={styles.walkerName}>
+                        {walker.user?.name || '이름 없음'}
+                      </Text>
+                      <View style={styles.walkerContactInfo}>
+                        <Ionicons name="mail-outline" size={14} color="#999" />
+                        <Text style={styles.walkerEmail}>{walker.user?.email || ''}</Text>
+                      </View>
+                      {walker.user?.phone && (
+                        <View style={styles.walkerContactInfo}>
+                          <Ionicons name="call-outline" size={14} color="#999" />
+                          <Text style={styles.walkerPhone}>{walker.user.phone}</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                   <View style={styles.statusBadge}>
+                    <View style={styles.statusDot} />
                     <Text style={styles.statusText}>대기중</Text>
                   </View>
                 </View>
 
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>자기소개</Text>
-                  <Text style={styles.sectionContent}>{walker.detailDescription}</Text>
-                </View>
+                <View style={styles.divider} />
 
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>서비스 지역</Text>
-                  <Text style={styles.sectionContent}>{walker.serviceArea}</Text>
-                </View>
-
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>시간당 요금</Text>
-                  <Text style={styles.sectionContent}>
-                    {walker.hourlyRate?.toLocaleString() || '15,000'}원
-                  </Text>
-                </View>
-
-                {walker.createdAt && (
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>등록 일시</Text>
-                    <Text style={styles.sectionContent}>{formatDate(walker.createdAt)}</Text>
+                <View style={styles.detailsContainer}>
+                  <View style={styles.detailItem}>
+                    <View style={styles.detailIconContainer}>
+                      <Ionicons name="document-text-outline" size={18} color="#4A90E2" />
+                    </View>
+                    <View style={styles.detailContent}>
+                      <Text style={styles.detailLabel}>자기소개</Text>
+                      <Text style={styles.detailValue}>{walker.detailDescription}</Text>
+                    </View>
                   </View>
-                )}
+
+                  <View style={styles.detailItem}>
+                    <View style={styles.detailIconContainer}>
+                      <Ionicons name="location-outline" size={18} color="#4A90E2" />
+                    </View>
+                    <View style={styles.detailContent}>
+                      <Text style={styles.detailLabel}>서비스 지역</Text>
+                      <Text style={styles.detailValue}>{walker.serviceArea}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.detailItem}>
+                    <View style={styles.detailIconContainer}>
+                      <Ionicons name="cash-outline" size={18} color="#4A90E2" />
+                    </View>
+                    <View style={styles.detailContent}>
+                      <Text style={styles.detailLabel}>시간당 요금</Text>
+                      <Text style={styles.detailValue}>
+                        {walker.hourlyRate?.toLocaleString() || '15,000'}원
+                      </Text>
+                    </View>
+                  </View>
+
+                  {walker.createdAt && (
+                    <View style={styles.detailItem}>
+                      <View style={styles.detailIconContainer}>
+                        <Ionicons name="time-outline" size={18} color="#4A90E2" />
+                      </View>
+                      <View style={styles.detailContent}>
+                        <Text style={styles.detailLabel}>등록 일시</Text>
+                        <Text style={styles.detailValue}>{formatDate(walker.createdAt)}</Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
                     style={[styles.button, styles.rejectButton]}
                     onPress={() => handleReject(walker)}
-                    disabled={processingId === walker.id}>
+                    disabled={processingId === walker.id}
+                    activeOpacity={0.7}>
                     {processingId === walker.id ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
@@ -219,7 +282,8 @@ const WalkerVerificationScreen = () => {
                   <TouchableOpacity
                     style={[styles.button, styles.approveButton]}
                     onPress={() => handleApprove(walker)}
-                    disabled={processingId === walker.id}>
+                    disabled={processingId === walker.id}
+                    activeOpacity={0.7}>
                     {processingId === walker.id ? (
                       <ActivityIndicator size="small" color="#fff" />
                     ) : (
@@ -242,13 +306,38 @@ const WalkerVerificationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF5F0',
+    backgroundColor: '#F8F9FA',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  backButton: {
+    padding: 8,
+    marginLeft: -8,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    textAlign: 'center',
+  },
+  headerPlaceholder: {
+    width: 40,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -264,82 +353,165 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
   },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#999',
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E3F2FD',
-    padding: 12,
-    borderRadius: 8,
+  emptyIconContainer: {
     marginBottom: 20,
   },
-  infoText: {
-    marginLeft: 8,
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
     fontSize: 14,
-    color: '#1976D2',
+    color: '#999',
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  summaryIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  summaryContent: {
+    flex: 1,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  summaryCount: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4A90E2',
   },
   walkerCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
-  walkerHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  walkerProfileSection: {
+    flexDirection: 'row',
+    flex: 1,
+  },
+  profileIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   walkerInfo: {
     flex: 1,
   },
   walkerName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 8,
+  },
+  walkerContactInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 4,
   },
   walkerEmail: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 2,
+    marginLeft: 6,
   },
   walkerPhone: {
     fontSize: 14,
     color: '#666',
+    marginLeft: 6,
   },
   statusBadge: {
-    backgroundColor: '#FFA726',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FFB74D',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF9800',
+    marginRight: 6,
   },
   statusText: {
-    color: '#fff',
+    color: '#E65100',
     fontSize: 12,
     fontWeight: '600',
   },
-  section: {
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginBottom: 20,
+  },
+  detailsContainer: {
+    marginBottom: 20,
+  },
+  detailItem: {
+    flexDirection: 'row',
     marginBottom: 16,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 6,
+  detailIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
-  sectionContent: {
+  detailContent: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#999',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  detailValue: {
     fontSize: 15,
     color: '#333',
     lineHeight: 22,
@@ -354,10 +526,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   rejectButton: {
     backgroundColor: '#F44336',

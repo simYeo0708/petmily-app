@@ -209,9 +209,11 @@ const AuthService = {
     try {
       const token = await AsyncStorage.getItem('authToken');
       if (!token) {
+        console.log('🔍 [AuthService] getCurrentUser: 토큰이 없습니다');
         return null;
       }
 
+      console.log('🔍 [AuthService] getCurrentUser: API 호출 시작', `${API_BASE_URL}/auth/me`);
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
@@ -219,14 +221,20 @@ const AuthService = {
         },
       });
 
+      console.log('[AuthService] getCurrentUser: 응답 상태', response.status, response.statusText);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[AuthService] getCurrentUser: 응답 실패', errorText);
         throw new Error('사용자 정보 조회 실패');
       }
 
       const user = await response.json() as User;
+      console.log('[AuthService] getCurrentUser: 사용자 정보', JSON.stringify(user, null, 2));
+      console.log('[AuthService] getCurrentUser: user.role', user.role);
       return user;
     } catch (error) {
-      // 
+      console.error('[AuthService] getCurrentUser: 에러 발생', error);
       return null;
     }
   },

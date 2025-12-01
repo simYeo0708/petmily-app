@@ -11,6 +11,7 @@ import { RootStackParamList } from "../index";
 import { usePet } from "../contexts/PetContext";
 import { WALKING_REQUESTS, CURRENT_WALKING, type WalkingRequest } from "../data";
 import { IconImage, IconName } from "./IconImage";
+import { WalkerPreviewSlider } from "./WalkerPreviewSlider";
 
 type RequestTabKey = 'mine' | 'pending' | 'accepted' | 'in_progress' | 'completed';
 
@@ -98,21 +99,74 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
 
   const loadCurrentWalking = async () => {
     try {
-      // 저장된 산책 시작 시간과 duration 가져오기 (지도 화면과 동일한 값 사용)
-      const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
-      const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+      // API에서 현재 진행 중인 산책 조회
+      const WalkerBookingService = require('../services/WalkerBookingService').default;
+      const currentBooking = await WalkerBookingService.getCurrentWalking();
       
-      // 저장된 값이 있으면 사용, 없으면 기본값 사용
-      const walkingData = {
-        ...CURRENT_WALKING,
-        startTime: savedStartTime || CURRENT_WALKING.startTime,
-        duration: savedDuration || CURRENT_WALKING.duration,
-      };
-      
-      setCurrentWalking(walkingData);
+      if (currentBooking && currentBooking.status === 'IN_PROGRESS') {
+        // 저장된 산책 시작 시간과 duration 가져오기 (지도 화면과 동일한 값 사용)
+        const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+        const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+        
+        // API 데이터와 저장된 데이터를 결합
+        const walkingData = {
+          id: currentBooking.id.toString(),
+          walker: {
+            id: currentBooking.walkerId?.toString() || '1',
+            walkerId: currentBooking.walkerId,
+            name: currentBooking.walkerName || '워커',
+            profileImage: 'https://via.placeholder.com/100',
+            rating: 4.8,
+            reviewCount: 127,
+          },
+          user: {
+            id: currentBooking.userId?.toString() || '1',
+            name: currentBooking.username || '사용자',
+            profileImage: 'https://via.placeholder.com/100',
+          },
+          startTime: savedStartTime || currentBooking.actualStartTime || new Date().toISOString(),
+          duration: savedDuration || currentBooking.duration || 120,
+          location: currentBooking.pickupAddress || '위치 정보 없음',
+          status: 'in_progress',
+          distance: 0,
+        };
+        
+        setCurrentWalking(walkingData);
+      } else {
+        // 저장된 값이 있으면 사용, 없으면 기본값 사용
+        const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+        const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+        
+        if (savedStartTime) {
+          const walkingData = {
+            ...CURRENT_WALKING,
+            startTime: savedStartTime,
+            duration: savedDuration || CURRENT_WALKING.duration,
+          };
+          setCurrentWalking(walkingData);
+        } else {
+          setCurrentWalking(null);
+        }
+      }
     } catch (error) {
-      // 에러 시 기본값 사용
-      setCurrentWalking(CURRENT_WALKING);
+      // 에러 시 저장된 값 확인
+      try {
+        const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+        const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+        
+        if (savedStartTime) {
+          const walkingData = {
+            ...CURRENT_WALKING,
+            startTime: savedStartTime,
+            duration: savedDuration || CURRENT_WALKING.duration,
+          };
+          setCurrentWalking(walkingData);
+        } else {
+          setCurrentWalking(null);
+        }
+      } catch (e) {
+        setCurrentWalking(null);
+      }
     }
   };
 
@@ -205,17 +259,40 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
   return (
     <>
       {/* 현재 진행 중인 워킹 */}
-      {currentWalking && (
-        <View style={homeScreenStyles.section}>
-          <View style={styles.sectionTitleRow}>
-            <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
-            <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 산책</Text>
-          </View>
+      <View style={homeScreenStyles.section}>
+        <View style={styles.sectionTitleRow}>
+          <IconImage name="walker" size={20} style={styles.sectionTitleIcon} />
+          <Text style={homeScreenStyles.sectionTitle}>현재 진행 중인 산책</Text>
+        </View>
+        {currentWalking ? (
           <View style={styles.currentWalkingCard}>
             <View style={styles.walkingParticipants}>
-              <View style={styles.participantInfo}>
+              <TouchableOpacity 
+                style={styles.participantInfo}
+                onPress={() => {
+                  // 프로필 모달 표시를 위한 콜백 전달 필요
+                  // 임시로 Alert로 처리
+                  Alert.alert(
+                    currentWalking.walker.name,
+                    '프로필 정보 보기 또는 1:1 채팅하기를 선택하세요.',
+                    [
+                      { text: '취소', style: 'cancel' },
+                      { text: '프로필 보기', onPress: () => {} },
+                      { text: '1:1 채팅', onPress: () => {} },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
                 <View style={styles.participantImage}>
-                  <Ionicons name="person-circle" size={40} color="#C59172" />
+                  {currentWalking.walker.name !== 'asdf' ? (
+                    <Image
+                      source={require('../../assets/images/user1.png')}
+                      style={styles.participantProfileImage}
+                    />
+                  ) : (
+                    <Ionicons name="person-circle" size={40} color="#C59172" />
+                  )}
                 </View>
                 <View style={styles.participantDetails}>
                   <Text style={styles.participantName}>{currentWalking.walker.name}</Text>
@@ -226,19 +303,42 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
                     <Text style={styles.participantReviewCount}>({currentWalking.walker.reviewCount})</Text>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
               
               <View style={styles.participantDivider} />
               
-              <View style={styles.participantInfo}>
+              <TouchableOpacity 
+                style={styles.participantInfo}
+                onPress={() => {
+                  // 프로필 모달 표시를 위한 콜백 전달 필요
+                  // 임시로 Alert로 처리
+                  Alert.alert(
+                    currentWalking.user.name,
+                    '프로필 정보 보기 또는 1:1 채팅하기를 선택하세요.',
+                    [
+                      { text: '취소', style: 'cancel' },
+                      { text: '프로필 보기', onPress: () => {} },
+                      { text: '1:1 채팅', onPress: () => {} },
+                    ]
+                  );
+                }}
+                activeOpacity={0.7}
+              >
                 <View style={styles.participantImage}>
-                  <Ionicons name="person-circle" size={40} color="#4A90E2" />
+                  {currentWalking.user.name !== 'asdf' ? (
+                    <Image
+                      source={require('../../assets/images/user1.png')}
+                      style={styles.participantProfileImage}
+                    />
+                  ) : (
+                    <Ionicons name="person-circle" size={40} color="#4A90E2" />
+                  )}
                 </View>
                 <View style={styles.participantDetails}>
                   <Text style={styles.participantName}>{currentWalking.user.name}</Text>
                   <Text style={styles.participantRole}>사용자</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
             
             <View style={styles.walkingDetails}>
@@ -279,8 +379,19 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
+        ) : (
+          <View style={styles.noWalkingCard}>
+            <Ionicons name="walk-outline" size={48} color="#ccc" />
+            <Text style={styles.noWalkingText}>현재 진행 중인 산책이 없습니다</Text>
+            <Text style={styles.noWalkingSubtext}>산책 요청을 등록하여 워커와 매칭해보세요</Text>
+          </View>
+        )}
+      </View>
+
+      {/* 워커 미리보기 슬라이더 */}
+      <View style={homeScreenStyles.section}>
+        <WalkerPreviewSlider />
+      </View>
 
       {/* 산책 요청 버튼 */}
       <View 
@@ -320,7 +431,7 @@ export const PetWalkerContent: React.FC<PetWalkerContentProps> = ({
           }
         ]}
       >
-        <Text style={homeScreenStyles.sectionTitle}>📋 산책 요청 목록</Text>
+        <Text style={[homeScreenStyles.sectionTitle, { marginBottom: 12 }]}>📋 산책 요청 목록</Text>
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>로딩 중...</Text>
@@ -466,7 +577,7 @@ const styles = StyleSheet.create({
   sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom : 12
   },
   sectionTitleIcon: {
     marginRight: 8,
@@ -707,6 +818,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  participantProfileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   participantDetails: {
     flex: 1,
@@ -790,6 +908,35 @@ const styles = StyleSheet.create({
   },
   mapButtonText: {
     color: 'white',
+  },
+  // 산책 없음 관련 스타일
+  noWalkingCard: {
+    backgroundColor: 'white',
+    borderRadius: 0,
+    padding: 32,
+    marginTop: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    minHeight: 150,
+  },
+  noWalkingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  noWalkingSubtext: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
   },
 });
 

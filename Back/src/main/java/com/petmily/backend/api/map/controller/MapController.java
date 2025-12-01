@@ -62,6 +62,7 @@ public class MapController {
                 request.getEndLongitude(),
                 request.getTotalDistance(),
                 request.getDurationSeconds(),
+                request.getNotes(),
                 userDetails
         );
         return ResponseEntity.ok(response);

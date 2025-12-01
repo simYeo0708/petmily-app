@@ -24,11 +24,12 @@ import * as TaskManager from 'expo-task-manager';
 import { IconImage } from '../components/IconImage';
 import MapService, { MapConfigResponse, LocationResponse, WalkSessionResponse, RouteResponse, AddressInfo } from '../services/MapService';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
-import { KAKAO_MAP_API_KEY } from '../config/api';
 import { useWalkerRouteSimulation } from '../hooks/useWalkerRouteSimulation';
 import { WalkingRoute, WALKING_ROUTES } from '../data/walkingRoutes';
 import WalkerService from '../services/WalkerService';
 import WalkerBookingService from '../services/WalkerBookingService';
+import { getOrCreateChatRoomWithWalker } from '../services/ChatRoomService';
+import { useWalker } from '../contexts/WalkerContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -130,11 +131,39 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   const [showSimulationListModal, setShowSimulationListModal] = useState(false);
   
   // 워커 전용 산책 요청 모달 상태
-  const [isWalker, setIsWalker] = useState(false);
+  const { isWalker, refreshWalkerStatus } = useWalker(); // 전역 Context에서 워커 여부 가져오기
   const [showWalkerRequestModal, setShowWalkerRequestModal] = useState(false);
   const [walkerBookings, setWalkerBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [isLoadingBookings, setIsLoadingBookings] = useState(false);
+  
+  // 지도 모드 토글 (일반 모드 / 워커 모드)
+  const [mapMode, setMapMode] = useState<'general' | 'walker'>('general');
+  const toggleAnimation = useRef(new Animated.Value(0)).current; // 0: 일반, 1: 워커
+  
+  // 워커 등록 권유 모달
+  const [showWalkerRegistrationModal, setShowWalkerRegistrationModal] = useState(false);
+  
+  // 산책 종료 특이사항 입력 모달
+  const [showWalkEndNotesModal, setShowWalkEndNotesModal] = useState(false);
+  const [walkEndNotes, setWalkEndNotes] = useState('');
+  
+  // 일반 사용자 모드: 주변 워커 및 이전 산책 정보
+  const [nearbyWalkers, setNearbyWalkers] = useState<any[]>([]);
+  const [previousWalkers, setPreviousWalkers] = useState<any[]>([]);
+  const [completedWalks, setCompletedWalks] = useState<any[]>([]);
+  const [isLoadingWalkers, setIsLoadingWalkers] = useState(false);
+  
+  // 채팅 관련 상태
+  const [showChatButton, setShowChatButton] = useState(false);
+  
+  // 프로필 모달 상태
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<{ id: string; name: string; role: 'walker' | 'user' } | null>(null);
+  
+  // 플로팅 버튼 펼치기 애니메이션 상태
+  const [isFloatingMenuExpanded, setIsFloatingMenuExpanded] = useState(false);
+  const floatingMenuAnimation = useRef(new Animated.Value(0)).current;
   
   // 지도 설정 및 위치 정보
   const [mapConfig, setMapConfig] = useState<MapConfigResponse | null>(null);
@@ -235,7 +264,18 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     loadMapConfig();
     requestLocationPermission();
     loadCurrentWalking();
-    checkWalkerStatus();
+    // 워커 여부는 Context에서 가져오므로 별도 확인 불필요
+    // 워커인 경우 기본 모드를 워커 모드로 설정
+    if (isWalker) {
+      setMapMode('walker');
+      toggleAnimation.setValue(1);
+      loadWalkerBookings();
+    } else {
+      setMapMode('general');
+      toggleAnimation.setValue(0);
+      loadNearbyWalkers();
+      loadCompletedWalks();
+    }
     return () => {
       (async () => {
         try {
@@ -247,13 +287,19 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         }
       })();
     };
-  }, []);
+  }, [isWalker]); // isWalker가 변경될 때마다 모드 설정
 
   // 화면이 포커스될 때마다 저장된 산책 시간 정보 다시 로드 (홈 화면과 동기화)
   useFocusEffect(
     useCallback(() => {
       loadCurrentWalking();
-    }, [currentLocation]) // currentLocation이 변경되면 주소도 업데이트
+      if (mapMode === 'general') {
+        loadNearbyWalkers();
+        loadCompletedWalks();
+      } else if (mapMode === 'walker' && isWalker) {
+        loadWalkerBookings();
+      }
+    }, [currentLocation, mapMode, isWalker]) // currentLocation이 변경되면 주소도 업데이트
   );
 
   useEffect(() => {
@@ -339,17 +385,153 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   };
 
   // 워커 여부 확인
-  const checkWalkerStatus = async () => {
+  // checkWalkerStatus 함수 제거 - useWalker 훅에서 관리
+
+  const loadNearbyWalkers = async () => {
     try {
-      const walker = await WalkerService.getCurrentWalker();
-      if (walker) {
-        setIsWalker(true);
-        // 워커인 경우 산책 요청 목록 로드
-        loadWalkerBookings();
-      }
+      setIsLoadingWalkers(true);
+      
+      // 샘플 데이터: 주변 워커들
+      const sampleNearbyWalkers = [
+        {
+          id: 'walker-1',
+          name: '김워커',
+          rating: 4.8,
+          reviewCount: 48,
+          profileImage: '',
+          bio: '안녕하세요! 3년 경력의 워커입니다.',
+          experience: '3년',
+          hourlyRate: 15000,
+          isAvailable: true,
+          location: '서울시 강남구',
+          distance: 1.2,
+          specialties: ['대형견', '산책 훈련'],
+          latitude: currentLocation ? currentLocation.latitude + 0.005 : 37.5715,
+          longitude: currentLocation ? currentLocation.longitude + 0.005 : 126.9830,
+        },
+        {
+          id: 'walker-2',
+          name: '이워커',
+          rating: 4.9,
+          reviewCount: 95,
+          profileImage: '',
+          bio: '사랑으로 돌보겠습니다!',
+          experience: '5년',
+          hourlyRate: 20000,
+          isAvailable: true,
+          location: '서울시 서초구',
+          distance: 0.8,
+          specialties: ['소형견', '노견 케어'],
+          latitude: currentLocation ? currentLocation.latitude - 0.003 : 37.5635,
+          longitude: currentLocation ? currentLocation.longitude + 0.003 : 126.9810,
+        },
+        {
+          id: 'walker-3',
+          name: '박워커',
+          rating: 4.7,
+          reviewCount: 32,
+          profileImage: '',
+          bio: '반려동물 전문 케어 서비스',
+          experience: '2년',
+          hourlyRate: 18000,
+          isAvailable: true,
+          location: '서울시 송파구',
+          distance: 2.1,
+          specialties: ['중형견', '산책'],
+          latitude: currentLocation ? currentLocation.latitude + 0.008 : 37.5745,
+          longitude: currentLocation ? currentLocation.longitude - 0.004 : 126.9750,
+        },
+      ];
+      
+      setNearbyWalkers(sampleNearbyWalkers);
     } catch (error) {
-      setIsWalker(false);
+      setNearbyWalkers([]);
+    } finally {
+      setIsLoadingWalkers(false);
     }
+  };
+
+  const loadCompletedWalks = async () => {
+    try {
+      // 샘플 데이터: 이전에 맡긴 워커들
+      const samplePreviousWalkers = [
+        {
+          id: 'previous-walker-1',
+          name: '최워커',
+          rating: 5.0,
+          reviewCount: 127,
+          profileImage: '',
+          bio: '10년 경력의 베테랑 워커',
+          experience: '10년',
+          hourlyRate: 25000,
+          isAvailable: true,
+          location: '서울시 강동구',
+          distance: 1.5,
+          specialties: ['대형견', '훈련', '케어'],
+          latitude: currentLocation ? currentLocation.latitude - 0.006 : 37.5605,
+          longitude: currentLocation ? currentLocation.longitude - 0.006 : 126.9720,
+          walkCount: 5,
+          lastWalkDate: '2024-01-10',
+        },
+        {
+          id: 'previous-walker-2',
+          name: '정워커',
+          rating: 4.6,
+          reviewCount: 28,
+          profileImage: '',
+          bio: '친절하고 책임감 있는 워커',
+          experience: '1년',
+          hourlyRate: 16000,
+          isAvailable: true,
+          location: '서울시 마포구',
+          distance: 0.5,
+          specialties: ['소형견', '산책'],
+          latitude: currentLocation ? currentLocation.latitude + 0.004 : 37.5705,
+          longitude: currentLocation ? currentLocation.longitude + 0.007 : 126.9850,
+          walkCount: 3,
+          lastWalkDate: '2024-01-05',
+        },
+      ];
+      
+      // 샘플 완료된 산책 데이터
+      const sampleCompletedWalks = [
+        {
+          id: 1,
+          walkerId: 1,
+          walkerName: '최워커',
+          date: '2024-01-10',
+          duration: 60,
+          status: 'COMPLETED',
+        },
+        {
+          id: 2,
+          walkerId: 2,
+          walkerName: '정워커',
+          date: '2024-01-05',
+          duration: 90,
+          status: 'COMPLETED',
+        },
+      ];
+      
+      setCompletedWalks(sampleCompletedWalks);
+      setPreviousWalkers(samplePreviousWalkers);
+    } catch (error) {
+      setCompletedWalks([]);
+      setPreviousWalkers([]);
+    }
+  };
+  
+  // 플로팅 메뉴 토글 애니메이션
+  const toggleFloatingMenu = () => {
+    const toValue = isFloatingMenuExpanded ? 0 : 1;
+    setIsFloatingMenuExpanded(!isFloatingMenuExpanded);
+    
+    Animated.spring(floatingMenuAnimation, {
+      toValue,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 7,
+    }).start();
   };
 
   // 워커 산책 요청 목록 로드
@@ -394,6 +576,41 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       setShowWalkerRequestModal(false);
     } catch (error) {
       Alert.alert('오류', '위치를 불러올 수 없습니다.');
+    }
+  };
+
+  // 워커 모드에서 산책 시작 처리
+  const handleStartWalkingAsWalker = async () => {
+    if (!selectedBooking) {
+      Alert.alert('알림', '산책 요청을 선택해주세요.');
+      return;
+    }
+    
+    try {
+      // 선택된 예약을 currentWalking으로 설정
+      const walkingData = {
+        id: selectedBooking.id.toString(),
+        walker: {
+          id: selectedBooking.walkerId?.toString() || '1',
+          name: '나',
+          profileImage: '',
+        },
+        user: {
+          id: selectedBooking.userId?.toString() || '1',
+          name: selectedBooking.username || '사용자',
+          profileImage: '',
+        },
+        startTime: new Date().toISOString(),
+        duration: selectedBooking.duration || 120,
+        location: selectedBooking.pickupAddress || '위치 정보 없음',
+        status: 'in_progress',
+        distance: 0,
+      };
+      
+      setCurrentWalking(walkingData);
+      await handleStartWalking();
+    } catch (error) {
+      Alert.alert('오류', '산책을 시작할 수 없습니다.');
     }
   };
 
@@ -753,7 +970,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
             );
             (globalThis as any).__PETMILY_LOCATION_SUBSCRIPTION__ = subscription;
             console.log('[위치 추적] 전경 위치 추적으로 폴백 성공');
-            } catch (fallbackError) {
+          } catch (fallbackError) {
               // 에러는 UI로만 처리 (콘솔 로그 없이)
             throw locationUpdateError;
           }
@@ -813,7 +1030,8 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
             currentLocation.latitude,
             currentLocation.longitude,
             totalDistanceMeters,
-            durationSeconds
+            durationSeconds,
+            undefined // 이 부분은 performWalkEnd에서 처리
           );
 
           // 저장된 경로 조회 및 표시
@@ -1042,7 +1260,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
       
       await startLocationTracking();
       // startLocationTracking에서 오류가 발생하면 setIsWalking(false)가 호출됨
-      } catch (error) {
+    } catch (error) {
         // 에러는 UI로만 처리 (콘솔 로그 없이)
       setIsWalking(false);
       // 오류 메시지는 startLocationTracking에서 표시됨
@@ -1050,17 +1268,58 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
   };
 
   const handleStopWalking = async () => {
-    setIsWalking(false);
-    await stopLocationTracking();
-    updateLiveRouteOnMap();
-    showFullRouteOnMap();
-    
-    // 종료된 경로를 저장 (재생용)
-    setCompletedRouteData([...locationHistoryRef.current]);
-    
-    // 산책 종료 시 저장된 시작 시간 정보 삭제
-    const { clearCurrentWalking } = require('../utils/WalkingUtils');
-    await clearCurrentWalking();
+    // 워커 모드이고 산책 중일 때만 특이사항 입력 모달 표시
+    if (mapMode === 'walker' && isWalker && isWalking) {
+      setShowWalkEndNotesModal(true);
+    } else {
+      // 일반 사용자이거나 모달 없이 바로 종료
+      await performWalkEnd();
+    }
+  };
+
+  // 실제 산책 종료 처리
+  const performWalkEnd = async () => {
+    try {
+      setIsWalking(false);
+      await stopLocationTracking();
+      updateLiveRouteOnMap();
+      showFullRouteOnMap();
+      
+      // 산책 세션 종료 (백엔드에 전송)
+      if (walkSessionIdRef.current && currentLocation) {
+        try {
+          const totalDistanceMeters = walkingDistance;
+          const durationSeconds = startTime.current
+            ? Math.floor((Date.now() - startTime.current) / 1000)
+            : 0;
+
+          await mapService.endWalkSession(
+            walkSessionIdRef.current,
+            currentLocation.latitude,
+            currentLocation.longitude,
+            totalDistanceMeters,
+            durationSeconds,
+            walkEndNotes.trim() || undefined // 특이사항 전송 (워커인 경우에만)
+          );
+        } catch (error) {
+          console.error('산책 세션 종료 실패:', error);
+        }
+      }
+      
+      // 종료된 경로를 저장 (재생용)
+      setCompletedRouteData([...locationHistoryRef.current]);
+      
+      // 산책 종료 시 저장된 시작 시간 정보 삭제
+      const { clearCurrentWalking } = require('../utils/WalkingUtils');
+      await clearCurrentWalking();
+      
+      // 특이사항 입력 모달 닫기
+      setShowWalkEndNotesModal(false);
+      setWalkEndNotes('');
+    } catch (error) {
+      console.error('산책 종료 처리 실패:', error);
+      Alert.alert('오류', '산책 종료 중 오류가 발생했습니다.');
+    }
   };
 
   // 완료된 경로 재생 (산책 종료 후 주인이 볼 수 있는 기능)
@@ -1193,17 +1452,20 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
     setShowBookingModal(false);
   };
 
+  // 지도 모드에 따른 스타일 결정 (일반 모드는 밝은 화면)
+  const mapStyleMode = mapMode === 'general' ? 'user' : 'walker';
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
-      <View style={styles.content}>
+    <View style={[styles.container, mapStyleMode === 'user' && styles.containerLight]}>
+      <StatusBar barStyle={mapStyleMode === 'user' ? "dark-content" : "light-content"} backgroundColor="transparent" translucent={true} />
+      <View style={[styles.content, mapStyleMode === 'user' && styles.contentLight]}>
       
       {/* 지도 영역 */}
-      <View style={styles.mapContainer}>
+      <View style={[styles.mapContainer, mapStyleMode === 'user' && styles.mapContainerLight]}>
         <MapView
           ref={mapViewRef}
           provider={PROVIDER_DEFAULT}
-          style={styles.map}
+          style={[styles.map, mapStyleMode === 'user' && styles.mapLight]}
           initialRegion={{
             latitude: mapLatitude,
             longitude: mapLongitude,
@@ -1238,6 +1500,130 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
               title="현재 위치"
             />
           )}
+          
+          {/* 워커 위치 마커 (대리 산책자 위치) */}
+          {currentWalking?.walker?.currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentWalking.walker.currentLocation.latitude,
+                longitude: currentWalking.walker.currentLocation.longitude,
+              }}
+              title="워커 위치"
+              pinColor="#C59172"
+            >
+              <View style={{ alignItems: 'center' }}>
+                {currentWalking?.walker?.name !== 'asdf' ? (
+                  <Image
+                    source={require('../../assets/images/user1.png')}
+                    style={{ width: 32, height: 32, borderRadius: 16 }}
+                  />
+                ) : (
+                  <Ionicons name="person-circle" size={32} color="#C59172" />
+                )}
+              </View>
+            </Marker>
+          )}
+          
+          {/* 사용자 위치 마커 (산책 중인 경우) */}
+          {currentWalking?.user?.currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentWalking.user.currentLocation.latitude,
+                longitude: currentWalking.user.currentLocation.longitude,
+              }}
+              title="사용자 위치"
+              pinColor="#4A90E2"
+            >
+              <View style={{ alignItems: 'center' }}>
+                {currentWalking?.user?.name !== 'asdf' ? (
+                  <Image
+                    source={require('../../assets/images/user1.png')}
+                    style={{ width: 32, height: 32, borderRadius: 16 }}
+                  />
+                ) : (
+                  <Ionicons name="person-circle" size={32} color="#4A90E2" />
+                )}
+              </View>
+            </Marker>
+          )}
+          
+          {/* 일반 사용자 모드: 이전에 맡긴 워커 마커 (주황색) */}
+          {mapMode === 'general' && !currentWalking && previousWalkers.map((walker, index) => (
+            <Marker
+              key={`previous-walker-${walker.id}-${index}`}
+              coordinate={{
+                latitude: walker.latitude || (currentLocation ? currentLocation.latitude : 37.5665),
+                longitude: walker.longitude || (currentLocation ? currentLocation.longitude : 126.9780),
+              }}
+              title={walker.name}
+              description={`이전 산책 ${walker.walkCount || 0}회 | 평점: ${walker.rating} | ${walker.experience} 경력`}
+              pinColor="#FF9800"
+            >
+              <View style={{ alignItems: 'center' }}>
+                {walker.name !== 'asdf' ? (
+                  <Image
+                    source={require('../../assets/images/user1.png')}
+                    style={{ 
+                      width: 36, 
+                      height: 36, 
+                      borderRadius: 18,
+                      borderWidth: 2,
+                      borderColor: '#FF9800',
+                    }}
+                  />
+                ) : (
+                  <Ionicons 
+                    name="person-circle" 
+                    size={36} 
+                    color="#FF9800" 
+                  />
+                )}
+              </View>
+            </Marker>
+          ))}
+          
+          {/* 일반 사용자 모드: 주변 워커 마커 (파란색) */}
+          {mapMode === 'general' && !currentWalking && nearbyWalkers.map((walker, index) => {
+            // 이전에 산책을 맡긴 워커인지 확인
+            const isPreviousWalker = previousWalkers.some(pw => pw.id === walker.id);
+            
+            // 이전 워커는 이미 표시했으므로 건너뛰기
+            if (isPreviousWalker) {
+              return null;
+            }
+            
+            return (
+              <Marker
+                key={`walker-${walker.id}-${index}`}
+                coordinate={{
+                  latitude: walker.latitude || (currentLocation ? currentLocation.latitude : 37.5665),
+                  longitude: walker.longitude || (currentLocation ? currentLocation.longitude : 126.9780),
+                }}
+                title={walker.name}
+                description={`평점: ${walker.rating} | ${walker.experience} 경력`}
+                pinColor="#4A90E2"
+              >
+                <View style={{ alignItems: 'center' }}>
+                  {walker.name !== 'asdf' ? (
+                    <Image
+                      source={require('../../assets/images/user1.png')}
+                      style={{ 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: 16,
+                      }}
+                    />
+                  ) : (
+                    <Ionicons 
+                      name="person-circle" 
+                      size={32} 
+                      color="#4A90E2" 
+                    />
+                  )}
+                </View>
+              </Marker>
+            );
+          })}
           
           {/* 산책 경로 (순차적으로 그려지는 경로) */}
           {drawnRouteCoordinates.length > 1 && (
@@ -1298,9 +1684,21 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                     </Text>
                   )}
                   {!isModalMinimized && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSelectedProfile({
+                          id: currentWalking.walker.id,
+                          name: currentWalking.walker.name,
+                          role: 'walker',
+                        });
+                        setShowProfileModal(true);
+                      }}
+                      activeOpacity={0.7}
+                    >
                     <Text style={styles.topModalSubtitle}>
                       {currentWalking.walker.name} • {currentWalking.distance}km
                     </Text>
+                    </TouchableOpacity>
                   )}
                 </View>
                 <View style={styles.topModalButtons}>
@@ -1345,6 +1743,14 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         )}
         
         {/* 산책 정보 오버레이 */}
+        {/* 일반 사용자 모드에서 현재 산책 중인 서비스가 없을 때 */}
+        {mapMode === 'general' && !currentWalking && !isWalking && !isPlayingRoute && (
+          <View style={styles.noServiceOverlay}>
+            <Text style={styles.noServiceOverlayText}>현재 이용 중인 서비스가 없습니다</Text>
+          </View>
+        )}
+        
+        {/* 산책 중이거나 시뮬레이션 중일 때 */}
         {(isWalking || isPlayingRoute) && (
           <>
             {!isOverlayMinimized ? (
@@ -1371,7 +1777,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                     <Ionicons name="chevron-down" size={20} color="#666" />
                   </TouchableOpacity>
                 </View>
-                <View style={styles.walkingStats} pointerEvents="none">
+            <View style={styles.walkingStats} pointerEvents="none">
                   {/* 현재 위치 주소 표시 */}
                   {currentAddress && (
                     <View style={styles.addressContainer}>
@@ -1382,42 +1788,42 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                     </View>
                   )}
                   <View style={styles.statsRow}>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>거리</Text>
-                      <Text style={styles.statValue}>
-                        {isPlayingRoute 
-                          ? (simulationStats.distance / 1000).toFixed(2)
-                          : (walkingDistance / 1000).toFixed(2)} km
-                      </Text>
-                    </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>시간</Text>
-                      <Text style={styles.statValue}>
-                        {isPlayingRoute ? (
-                          <>
-                            {Math.floor(simulationStats.duration / 60)}:
-                            {(simulationStats.duration % 60).toString().padStart(2, '0')}
-                          </>
-                        ) : (
-                          <>
-                            {Math.floor(walkingTime / 60)}:
-                            {(walkingTime % 60).toString().padStart(2, '0')}
-                          </>
-                        )}
-                      </Text>
-                    </View>
-                    <View style={styles.statItem}>
-                      <Text style={styles.statLabel}>속도</Text>
-                      <Text style={styles.statValue}>
-                        {isPlayingRoute
-                          ? simulationStats.averageSpeed.toFixed(1)
-                          : walkingTime > 0 
-                            ? ((walkingDistance / 1000) / (walkingTime / 3600)).toFixed(1) 
-                            : '0.0'} km/h
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>거리</Text>
+                <Text style={styles.statValue}>
+                  {isPlayingRoute 
+                    ? (simulationStats.distance / 1000).toFixed(2)
+                    : (walkingDistance / 1000).toFixed(2)} km
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>시간</Text>
+                <Text style={styles.statValue}>
+                  {isPlayingRoute ? (
+                    <>
+                      {Math.floor(simulationStats.duration / 60)}:
+                      {(simulationStats.duration % 60).toString().padStart(2, '0')}
+                    </>
+                  ) : (
+                    <>
+                      {Math.floor(walkingTime / 60)}:
+                      {(walkingTime % 60).toString().padStart(2, '0')}
+                    </>
+                  )}
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>속도</Text>
+                <Text style={styles.statValue}>
+                  {isPlayingRoute
+                    ? simulationStats.averageSpeed.toFixed(1)
+                    : walkingTime > 0 
+                      ? ((walkingDistance / 1000) / (walkingTime / 3600)).toFixed(1) 
+                      : '0.0'} km/h
+                </Text>
+              </View>
+            </View>
+          </View>
               </Animated.View>
             ) : (
               <TouchableOpacity
@@ -1511,43 +1917,131 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>산책 지도</Text>
-          <TouchableOpacity
-            style={styles.simulationListButton}
-            onPress={() => setShowSimulationListModal(true)}
+          <Text 
+            style={styles.headerTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit={true}
+            minimumFontScale={0.7}
           >
-            <Ionicons name="list" size={24} color="#fff" />
-          </TouchableOpacity>
+            산책 지도
+          </Text>
+          
+          {/* 모드 토글 버튼 */}
+          <View style={styles.modeToggleWrapper}>
+            {/* 텍스트 레이어 (토글 위에 표시) */}
+            <View style={styles.modeToggleTextContainer}>
+              <Text style={[
+                styles.modeToggleText,
+                mapMode === 'general' && styles.modeToggleTextActive
+              ]}>
+                일반
+              </Text>
+              {isWalker && (
+                <Text style={[
+                  styles.modeToggleText,
+                  mapMode === 'walker' && styles.modeToggleTextActive
+                ]}>
+                  워커
+                </Text>
+              )}
+            </View>
+            
+            {/* 토글 버튼 컨테이너 */}
+            <Animated.View 
+              style={[
+                styles.modeToggleContainer, 
+                { 
+                  width: isWalker ? 100 : 60, // 워커는 항상 양쪽 모드 지원, 일반 사용자는 일반 모드만
+                  backgroundColor: toggleAnimation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['rgba(0, 0, 0, 0.3)', '#4A90E2'], // 일반: 반투명 검정, 워커: 파란색
+                  }),
+                }
+              ]}
+            >
+              {/* 슬라이더 버튼 (이동) */}
+              <Animated.View
+                style={[
+                  styles.modeToggleSlider,
+                  {
+                    transform: [
+                      {
+                        translateX: toggleAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [2, isWalker ? 63 : 23], // 워커는 양쪽 끝단(2, 63), 일반 사용자는 일반 모드만(2, 23)
+                          extrapolate: 'clamp',
+                        }),
+                      },
+                    ],
+                    // translateX는 useNativeDriver: true를 사용할 수 있지만, backgroundColor와 함께 사용하므로 false로 통일
+                  },
+                ]}
+              />
+              
+              {/* 터치 영역 */}
+              <TouchableOpacity
+                style={styles.modeToggleTouchArea}
+                onPress={() => {
+                  // 현재 모드의 반대 모드로 전환
+                  const newMode = mapMode === 'general' ? 'walker' : 'general';
+                  
+                  // 워커가 아닌 일반 사용자가 워커 모드로 전환하려고 할 때만 등록 권유 모달 표시
+                  // 워커로 등록된 사용자는 일반 모드와 워커 모드를 자유롭게 전환 가능
+                  if (newMode === 'walker' && !isWalker) {
+                    setShowWalkerRegistrationModal(true);
+                    return;
+                  }
+                  
+                  // 애니메이션 값 계산 (일반: 0, 워커: 1)
+                  const targetValue = newMode === 'general' ? 0 : 1;
+                  
+                  // 애니메이션 실행 (상태 변경 전에 실행)
+                  Animated.spring(toggleAnimation, {
+                    toValue: targetValue,
+                    useNativeDriver: false, // backgroundColor는 native driver 사용 불가
+                    tension: 50,
+                    friction: 7,
+                  }).start();
+                  
+                  // 모드 변경
+                  setMapMode(newMode);
+                  
+                  // 워커 모드로 전환 시 요청 목록 로드 및 모달 표시
+                  if (newMode === 'walker') {
+                    if (walkerBookings.length > 0) {
+                      setShowWalkerRequestModal(true);
+                    } else {
+                      loadWalkerBookings();
+                    }
+                  } else {
+                    // 일반 모드로 전환 시 (워커도 일반 사용자 모드로 전환 가능)
+                    // 주변 워커 및 완료된 산책 정보 로드
+                    loadNearbyWalkers();
+                    loadCompletedWalks();
+                  }
+                }}
+                activeOpacity={0.8}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              />
+            </Animated.View>
+          </View>
+          
+          {/* 시뮬레이션 리스트 버튼 (일반 모드에서만 표시) */}
+          {mapMode === 'general' && (
+            <TouchableOpacity
+              style={styles.simulationListButton}
+              onPress={() => setShowSimulationListModal(true)}
+            >
+              <Ionicons name="list" size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
         </View>
-
-        {/* 줌 리셋 버튼 */}
-        <TouchableOpacity
-          style={styles.resetZoomButton}
-          onPress={handleResetZoom}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="locate" size={24} color="#4A90E2" />
-        </TouchableOpacity>
 
         {/* 하단 액션 버튼 */}
         {!isWalking && !isPlayingRoute ? (
           <View style={styles.bottomActionContainer}>
-            {hasActiveService && currentWalking ? (
-              // 산책 시작 버튼 (워커가 산책을 시작할 때)
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={handleStartWalking}
-              >
-                <LinearGradient
-                  colors={['#4CAF50', '#45A049']}
-                  style={styles.requestButtonGradient}
-                >
-                  <Ionicons name="play" size={24} color="#fff" />
-                  <Text style={styles.requestButtonText}>산책 시작</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : (
-              // 산책 맡기러 가기 버튼
+            {/* 일반 모드: 산책 맡기러 가기 버튼 */}
+            {mapMode === 'general' && !hasActiveService && (
               <TouchableOpacity
                 style={styles.requestButton}
                 onPress={handleRequestWalker}
@@ -1560,6 +2054,29 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
                   <Text style={styles.requestButtonText}>산책 맡기러 가기</Text>
                 </LinearGradient>
               </TouchableOpacity>
+            )}
+            
+            {/* 워커 모드: 산책 시작 버튼 */}
+            {mapMode === 'walker' && selectedBooking && !hasActiveService && (
+              <TouchableOpacity
+                style={styles.requestButton}
+                onPress={handleStartWalkingAsWalker}
+              >
+                <LinearGradient
+                  colors={['#28a745', '#20c997']}
+                  style={styles.requestButtonGradient}
+                >
+                  <Ionicons name="play-circle" size={24} color="#fff" />
+                  <Text style={styles.requestButtonText}>산책 시작</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+            
+            {/* 워커 모드: 선택된 예약이 없을 때 */}
+            {mapMode === 'walker' && !selectedBooking && !hasActiveService && (
+              <View style={styles.noBookingContainer}>
+                <Text style={styles.noBookingText}>산책 요청을 선택해주세요</Text>
+              </View>
             )}
           </View>
         ) : isWalking ? (
@@ -1616,7 +2133,270 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         ) : null}
+        
+        {/* 플로팅 메뉴 버튼들 */}
+        <View style={styles.floatingMenuContainer}>
+          {/* 펼쳐진 버튼들 */}
+          {isFloatingMenuExpanded && (
+            <>
+              {/* 채팅 버튼 */}
+              {hasActiveService && currentWalking && (
+                <Animated.View
+                  style={[
+                    styles.floatingSubButton,
+                    {
+                      transform: [
+                        {
+                          translateY: floatingMenuAnimation.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, -70],
+                          }),
+                        },
+                        {
+                          scale: floatingMenuAnimation,
+                        },
+                      ],
+                      opacity: floatingMenuAnimation,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[styles.floatingSubButtonInner, { backgroundColor: '#4A90E2' }]}
+                    onPress={async () => {
+                      try {
+                        const walkerId = currentWalking.walker?.walkerId || currentWalking.walker?.id;
+                        if (walkerId) {
+                          const chatRoom = await getOrCreateChatRoomWithWalker(
+                            typeof walkerId === 'string' ? parseInt(walkerId) : walkerId
+                          );
+                          Alert.alert('알림', '채팅방이 준비되었습니다. 채팅 화면으로 이동합니다.');
+                        }
+                        toggleFloatingMenu();
+                      } catch (error: any) {
+                        Alert.alert('오류', error.message || '채팅방을 열 수 없습니다.');
+                      }
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
+              
+              {/* 줌 리셋 버튼 */}
+              <Animated.View
+                style={[
+                  styles.floatingSubButton,
+                  {
+                    transform: [
+                      {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -140],
+                        }),
+                      },
+                      {
+                        scale: floatingMenuAnimation,
+                      },
+                    ],
+                    opacity: floatingMenuAnimation,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[styles.floatingSubButtonInner, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]}
+                  onPress={() => {
+                    if (mapViewRef.current && defaultRegionRef.current) {
+                      mapViewRef.current.animateToRegion(defaultRegionRef.current, 500);
+                    }
+                    toggleFloatingMenu();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="resize-outline" size={24} color="#333" />
+                </TouchableOpacity>
+              </Animated.View>
+            </>
+          )}
+          
+          {/* 메인 플로팅 버튼 */}
+          <TouchableOpacity
+            style={styles.floatingMainButton}
+            onPress={toggleFloatingMenu}
+            activeOpacity={0.8}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: floatingMenuAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '45deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Ionicons 
+                name={isFloatingMenuExpanded ? "close" : "add"} 
+                size={28} 
+                color="#fff" 
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
       </View>
+      
+      {/* 프로필 모달 */}
+      <Modal
+        visible={showProfileModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.profileModalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowProfileModal(false)}
+        >
+          <View style={styles.profileModalContent}>
+            {selectedProfile && (
+              <>
+                <View style={styles.profileModalHeader}>
+                  <Text style={styles.profileModalTitle}>{selectedProfile.name}</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowProfileModal(false)}
+                    style={styles.profileModalCloseButton}
+                  >
+                    <Ionicons name="close" size={24} color="#333" />
+                  </TouchableOpacity>
+                </View>
+                
+                <TouchableOpacity
+                  style={styles.profileModalOption}
+                  onPress={() => {
+                    setShowProfileModal(false);
+                    // 프로필 정보 보기 화면으로 이동
+                    Alert.alert('알림', '프로필 정보 화면으로 이동합니다.');
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="person-circle-outline" size={24} color="#333" />
+                  <Text style={styles.profileModalOptionText}>프로필 정보 보기</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.profileModalOption}
+                  onPress={async () => {
+                    try {
+                      setShowProfileModal(false);
+                      const walkerId = selectedProfile.role === 'walker' 
+                        ? (currentWalking?.walker?.walkerId || currentWalking?.walker?.id)
+                        : null;
+                      if (walkerId) {
+                        const chatRoom = await getOrCreateChatRoomWithWalker(
+                          typeof walkerId === 'string' ? parseInt(walkerId) : walkerId
+                        );
+                        Alert.alert('알림', '채팅방이 준비되었습니다. 채팅 화면으로 이동합니다.');
+                        // TODO: ChatRoomScreen으로 이동하는 로직 추가 필요
+                      } else {
+                        Alert.alert('알림', '1:1 채팅을 시작합니다.');
+                        // TODO: 일반 사용자와의 채팅방 생성 로직 추가 필요
+                      }
+                    } catch (error: any) {
+                      Alert.alert('오류', error.message || '채팅방을 열 수 없습니다.');
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chatbubble-outline" size={24} color="#333" />
+                  <Text style={styles.profileModalOptionText}>1:1 채팅하기</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* 산책 종료 특이사항 입력 모달 (워커 전용) */}
+      <Modal
+        visible={showWalkEndNotesModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowWalkEndNotesModal(false);
+          setWalkEndNotes('');
+        }}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowWalkEndNotesModal(false);
+            setWalkEndNotes('');
+          }}
+        >
+          <View style={styles.walkEndNotesModalContent}>
+            <View style={styles.walkEndNotesModalHeader}>
+              <Text style={styles.walkEndNotesModalTitle}>산책 종료</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowWalkEndNotesModal(false);
+                  setWalkEndNotes('');
+                }}
+                style={styles.walkEndNotesModalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.walkEndNotesModalBody}>
+              <Text style={styles.walkEndNotesModalLabel}>
+                산책 중 특이사항을 입력해주세요 (선택사항)
+              </Text>
+              <TextInput
+                style={styles.walkEndNotesInput}
+                placeholder="예: 반려동물이 잘 산책했고, 특별한 문제는 없었습니다."
+                value={walkEndNotes}
+                onChangeText={setWalkEndNotes}
+                placeholderTextColor="#999"
+                multiline={true}
+                numberOfLines={6}
+                textAlignVertical="top"
+                maxLength={500}
+              />
+              <Text style={styles.walkEndNotesCharCount}>
+                {walkEndNotes.length}/500
+              </Text>
+            </View>
+            
+            <View style={styles.walkEndNotesModalFooter}>
+              <TouchableOpacity
+                style={[styles.walkEndNotesButton, styles.walkEndNotesCancelButton]}
+                onPress={() => {
+                  setShowWalkEndNotesModal(false);
+                  setWalkEndNotes('');
+                }}
+              >
+                <Text style={styles.walkEndNotesCancelButtonText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.walkEndNotesButton, styles.walkEndNotesSubmitButton]}
+                onPress={performWalkEnd}
+              >
+                <LinearGradient
+                  colors={['#4A90E2', '#357ABD']}
+                  style={styles.walkEndNotesSubmitButtonGradient}
+                >
+                  <Text style={styles.walkEndNotesSubmitButtonText}>종료하기</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* 예약 요청 모달 */}
       <Modal
@@ -1773,7 +2553,7 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>산책 시뮬레이션 경로</Text>
-          </View>
+      </View>
 
           <View 
             style={[
@@ -1788,9 +2568,63 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
           >
             <ScrollView 
               style={styles.modalScrollView}
-              showsVerticalScrollIndicator={WALKING_ROUTES.length > 2}
+              showsVerticalScrollIndicator={(WALKING_ROUTES.length + completedWalks.length) > 2}
               contentContainerStyle={styles.modalScrollContent}
             >
+              {/* 완료된 산책 경로 */}
+              {completedWalks.map((walk) => {
+                // 완료된 산책에서 경로 데이터 생성 (실제로는 백엔드에서 가져와야 함)
+                const routeFromWalk: WalkingRoute = {
+                  id: `completed-${walk.id}`,
+                  name: `${walk.walkerName || '워커'}와의 산책`,
+                  description: `${new Date(walk.date).toLocaleDateString('ko-KR')} | ${walk.duration}분`,
+                  estimatedDuration: (walk.duration || 60) * 60,
+                  estimatedDistance: 2000,
+                  points: [
+                    // 임시 경로 데이터 (실제로는 백엔드에서 가져와야 함)
+                    { latitude: 37.5665, longitude: 126.9780, timestamp: 0 },
+                    { latitude: 37.5670, longitude: 126.9785, timestamp: 60 },
+                    { latitude: 37.5675, longitude: 126.9790, timestamp: 120 },
+                    { latitude: 37.5680, longitude: 126.9795, timestamp: 180 },
+                  ],
+                };
+                
+                return (
+                  <TouchableOpacity
+                    key={`completed-${walk.id}`}
+                    style={[styles.simulationRouteItem, { borderLeftColor: '#FF9800', borderLeftWidth: 4 }]}
+                    onPress={() => {
+                      setShowSimulationListModal(false);
+                      navigation.navigate('WalkingSimulation', { route: routeFromWalk });
+                    }}
+                  >
+                    <View style={styles.simulationRouteContent}>
+                      <View style={styles.simulationRouteHeader}>
+                        <Ionicons name="walk" size={20} color="#FF9800" />
+                        <Text style={styles.simulationRouteName}>{routeFromWalk.name}</Text>
+                      </View>
+                      <Text style={styles.simulationRouteDescription}>{routeFromWalk.description}</Text>
+                      <View style={styles.simulationRouteStats}>
+                        <View style={styles.simulationRouteStatItem}>
+                          <Ionicons name="walk-outline" size={14} color="#666" />
+                          <Text style={styles.simulationRouteStatText}>
+                            거리: {(routeFromWalk.estimatedDistance / 1000).toFixed(1)}km
+                          </Text>
+                        </View>
+                        <View style={styles.simulationRouteStatItem}>
+                          <Ionicons name="time-outline" size={14} color="#666" />
+                          <Text style={styles.simulationRouteStatText}>
+                            시간: {Math.floor(routeFromWalk.estimatedDuration / 60)}분
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#999" />
+                  </TouchableOpacity>
+                );
+              })}
+              
+              {/* 기본 시뮬레이션 경로 */}
               {WALKING_ROUTES.map((route) => (
                 <TouchableOpacity
                   key={route.id}
@@ -1830,8 +2664,59 @@ const WalkingMapScreen: React.FC<WalkingMapScreenProps> = ({ navigation }) => {
         </SafeAreaView>
       </Modal>
 
+      {/* 워커 등록 권유 모달 */}
+      <Modal
+        visible={showWalkerRegistrationModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowWalkerRegistrationModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.walkerRegistrationModalContent}>
+            <View style={styles.walkerRegistrationModalHeader}>
+              <Text style={styles.walkerRegistrationModalTitle}>워커로 활동하고 싶으신가요?</Text>
+              <TouchableOpacity
+                style={styles.walkerRegistrationModalCloseButton}
+                onPress={() => setShowWalkerRegistrationModal(false)}
+              >
+                <Ionicons name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.walkerRegistrationModalBody}>
+              <Ionicons name="walk-outline" size={64} color="#4A90E2" style={styles.walkerRegistrationModalIcon} />
+              <Text style={styles.walkerRegistrationModalDescription}>
+                워커로 등록하시면 반려동물 산책 서비스를 제공하고{'\n'}
+                수익을 얻을 수 있습니다.
+              </Text>
+              <Text style={styles.walkerRegistrationModalSubDescription}>
+                지금 바로 워커로 등록해보세요!
+              </Text>
+            </View>
+            
+            <View style={styles.walkerRegistrationModalFooter}>
+              <TouchableOpacity
+                style={styles.walkerRegistrationModalCancelButton}
+                onPress={() => setShowWalkerRegistrationModal(false)}
+              >
+                <Text style={styles.walkerRegistrationModalCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.walkerRegistrationModalRegisterButton}
+                onPress={() => {
+                  setShowWalkerRegistrationModal(false);
+                  navigation.navigate('WalkerRegistration');
+                }}
+              >
+                <Text style={styles.walkerRegistrationModalRegisterText}>워커 등록하기</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* 워커 전용 산책 요청 모달 */}
-      {isWalker && (
+      {mapMode === 'walker' && isWalker && (
         <Modal
           visible={showWalkerRequestModal}
           animationType="slide"
@@ -1935,15 +2820,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
+  containerLight: {
+    backgroundColor: '#f8f9fa',
+  },
   content: {
     flex: 1,
+  },
+  contentLight: {
+    backgroundColor: '#f8f9fa',
   },
   mapContainer: {
     flex: 1,
     position: 'relative',
   },
+  mapContainerLight: {
+    backgroundColor: '#f8f9fa',
+  },
   map: {
     flex: 1,
+  },
+  mapLight: {
+    // 밝은 지도 스타일 (필요시 추가)
   },
   darkOverlay: {
     position: 'absolute',
@@ -2064,7 +2961,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 1000,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  headerOverlayLight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   backButton: {
     marginRight: 15,
@@ -2080,12 +2980,87 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
     flex: 1,
+    flexShrink: 1,
+    marginRight: 8,
+  },
+  headerTitleLight: {
+    color: '#333',
+    textShadowColor: 'transparent',
   },
   simulationListButton: {
     marginLeft: 10,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: 20,
     padding: 8,
+  },
+  modeToggleWrapper: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    marginRight: 10,
+  },
+  modeToggleTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    width: '100%',
+    gap: 4,
+  },
+  modeToggleContainer: {
+    flexDirection: 'row',
+    borderRadius: 20,
+    padding: 2,
+    position: 'relative',
+    overflow: 'visible',
+    height: 32,
+    zIndex: 10,
+  },
+  modeToggleTouchArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+    backgroundColor: 'transparent',
+  },
+  modeToggleSlider: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    width: 35,
+    height: 28,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    zIndex: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  modeToggleText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    minWidth: 30,
+  },
+  modeToggleTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  noBookingContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    padding: 16,
+    alignItems: 'center',
+  },
+  noBookingText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
   },
   simulationRouteItem: {
     backgroundColor: '#fff',
@@ -2384,6 +3359,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   // 산책 정보 오버레이 스타일
+  noServiceOverlay: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  noServiceOverlayText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
   walkingInfoOverlay: {
     position: 'absolute',
     width: 300,
@@ -2669,6 +3664,284 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginTop: 16,
+  },
+  chatFloatingButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4A90E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  profileModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    width: '80%',
+    maxWidth: 300,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  profileModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  profileModalCloseButton: {
+    padding: 4,
+  },
+  profileModalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  profileModalOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+  },
+  floatingMenuContainer: {
+    position: 'absolute',
+    right: 20,
+    bottom: 200,
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  floatingMainButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4A90E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  floatingSubButton: {
+    position: 'absolute',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginBottom: 10,
+  },
+  floatingSubButtonInner: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  walkerRegistrationModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    width: width * 0.85,
+    maxWidth: 400,
+    padding: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  walkerRegistrationModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  walkerRegistrationModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+  },
+  walkerRegistrationModalCloseButton: {
+    padding: 4,
+  },
+  walkerRegistrationModalBody: {
+    padding: 30,
+    alignItems: 'center',
+  },
+  walkerRegistrationModalIcon: {
+    marginBottom: 20,
+  },
+  walkerRegistrationModalDescription: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  walkerRegistrationModalSubDescription: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  walkEndNotesModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    width: width * 0.9,
+    maxWidth: 500,
+    maxHeight: height * 0.7,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  walkEndNotesModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  walkEndNotesModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  walkEndNotesModalCloseButton: {
+    padding: 4,
+  },
+  walkEndNotesModalBody: {
+    padding: 20,
+  },
+  walkEndNotesModalLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  walkEndNotesInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: '#333',
+    minHeight: 120,
+    textAlignVertical: 'top',
+    backgroundColor: '#f9f9f9',
+  },
+  walkEndNotesCharCount: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    marginTop: 8,
+  },
+  walkEndNotesModalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  walkEndNotesButton: {
+    flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  walkEndNotesCancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  walkEndNotesCancelButtonText: {
+    textAlign: 'center',
+    padding: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  walkEndNotesSubmitButton: {
+    overflow: 'hidden',
+  },
+  walkEndNotesSubmitButtonGradient: {
+    padding: 16,
+  },
+  walkEndNotesSubmitButtonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  walkerRegistrationModalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  walkerRegistrationModalCancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkerRegistrationModalCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  walkerRegistrationModalRegisterButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#4A90E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkerRegistrationModalRegisterText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Alert,
   ScrollView,
@@ -19,6 +19,7 @@ import { IconImage, IconName } from "../components/IconImage";
 import { usePet } from "../contexts/PetContext";
 import { useSettings } from "../hooks/useSettings";
 import { rf } from "../utils/responsive";
+import AuthService from "../services/AuthService";
 
 type SettingsScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
@@ -34,6 +35,35 @@ const SettingsScreen = () => {
     marketingEmails,
     setMarketingEmails,
   } = useSettings();
+
+  // 관리자 여부 확인
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const user = await AuthService.getCurrentUser();
+      console.log('🔍 [Settings] getCurrentUser 결과:', user);
+      console.log('🔍 [Settings] user.role:', user?.role);
+      console.log('🔍 [Settings] user 전체:', JSON.stringify(user, null, 2));
+      
+      if (user && user.role) {
+        setUserRole(user.role);
+        const isAdminUser = user.role === 'ADMIN' || user.role === 'ROLE_ADMIN';
+        setIsAdmin(isAdminUser);
+        console.log('🔍 [Settings] isAdmin 설정:', isAdminUser);
+      } else {
+        console.log('⚠️ [Settings] user 또는 role이 없습니다');
+      }
+    } catch (error) {
+      console.error('❌ [Settings] checkUserRole 에러:', error);
+      // 에러는 UI로만 처리
+    }
+  };
 
   // 스위치 애니메이션을 위한 상태
   const [switchAnimations] = useState({
@@ -187,6 +217,22 @@ const SettingsScreen = () => {
         },
       ],
     },
+    // 관리자 전용 메뉴
+    ...(isAdmin
+      ? [
+          {
+            title: "관리자",
+            items: [
+              {
+                title: "워커 등록자 관리",
+                icon: "paw" as IconName,
+                action: () => navigation.navigate("WalkerVerification"),
+                description: "워커 등록 승인 및 관리",
+              },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const clearAsyncStorage = async () => {

@@ -22,7 +22,14 @@ public class RateLimitConfig implements WebMvcConfigurer {
         // API별 다른 제한 적용
         registry.addInterceptor(new RateLimitInterceptor(MAX_REQUESTS_PER_MINUTE))
                 .addPathPatterns("/**")
-                .excludePathPatterns("/walker/*/location"); // 위치 업데이트 제외
+                .excludePathPatterns(
+                    "/walker/*/location",  // 위치 업데이트 제외
+                    "/api/walkers",        // 워커 등록 API 제외 (POST만, context-path 포함)
+                    "/walkers",            // 워커 등록 API 제외 (context-path 없는 경우)
+                    "/api/auth/**",        // 인증 관련 API 제외
+                    "/auth/**",            // 인증 관련 API 제외
+                    "/error"               // 에러 핸들링 제외
+                );
                 
         registry.addInterceptor(new RateLimitInterceptor(MAX_LOCATION_UPDATES_PER_MINUTE))
                 .addPathPatterns("/walker/*/location");
