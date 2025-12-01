@@ -40,7 +40,6 @@ export const homeScreenStyles = StyleSheet.create({
     fontSize: rf(20),
     fontWeight: "bold",
     color: "#4A4A4A",
-    marginBottom: hp(15),
   },
   modeContainer: {
     flexDirection: "row",

@@ -48,6 +48,9 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "fcm_token", length = 500)
+    private String fcmToken; // FCM 푸시 알림 토큰
+
     public User update(String name, String profile) {
         this.name = name;
         this.profile = profile;

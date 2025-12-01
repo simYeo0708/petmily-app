@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import { LocationCoords } from '../hooks/useLocationTracking';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT } from 'react-native-maps';
-import { KAKAO_MAP_API_KEY } from '../config/api';
 
 interface WalkingMiniMapProps {
   currentLocation: LocationCoords | null;

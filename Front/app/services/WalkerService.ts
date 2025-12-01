@@ -212,21 +212,47 @@ const WalkerService = {
         let errorMessage = `워커 등록 실패: ${response.status}`;
         
         try {
-          errorData = await response.json();
-          
-          // ApiResponse 형식인 경우 (success: false, message: "...")
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
+          const responseText = await response.text();
+          if (responseText) {
+            try {
+              errorData = JSON.parse(responseText);
+              
+              // ApiResponse 형식인 경우 (success: false, message: "...")
+              if (errorData.message) {
+                // 메시지가 깨져있을 수 있으므로 429 에러는 우리가 정의한 메시지 사용
+                if (response.status === 429) {
+                  errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+                } else {
+                  errorMessage = errorData.message;
+                  
+                  // "already registered" 또는 "이미 등록" 관련 메시지 감지
+                  const messageLower = errorMessage.toLowerCase();
+                  if (messageLower.includes('already registered') || 
+                      messageLower.includes('이미 등록') ||
+                      messageLower.includes('already registered as a walker')) {
+                    errorMessage = '이미 워커로 등록되어 있습니다.';
+                  }
+                }
+              } else if (errorData.error) {
+                errorMessage = errorData.error;
+              }
+            } catch (jsonError) {
+              // JSON 파싱 실패 시 텍스트 그대로 사용 (인코딩 문제일 수 있음)
+              if (response.status === 429) {
+                errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+              }
+            }
           }
         } catch (parseError) {
-          // JSON 파싱 실패 시 기본 메시지 사용
+          // 응답 읽기 실패 시 기본 메시지 사용
           errorMessage = `서버 오류가 발생했습니다. (${response.status})`;
         }
         
-        // HTTP 상태 코드별 에러 메시지 개선
-        if (response.status === 401) {
+        // HTTP 상태 코드별 에러 메시지 개선 (우선순위: 상태 코드 기반 메시지)
+        if (response.status === 429) {
+          // 429 Too Many Requests 에러 처리 (항상 우리가 정의한 메시지 사용)
+          errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+        } else if (response.status === 401) {
           errorMessage = '인증에 실패하였습니다. 다시 로그인해주세요.';
         } else if (response.status === 403) {
           errorMessage = '권한이 없습니다.';

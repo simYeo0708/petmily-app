@@ -1,7 +1,6 @@
 import Expo
 import React
 import ReactAppDependencyProvider
-import KakaoMapsSDK
 
 @UIApplicationMain
 public class AppDelegate: ExpoAppDelegate {
@@ -14,18 +13,6 @@ public class AppDelegate: ExpoAppDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    // Kakao Maps SDK 초기화
-    // .env.local 파일에서 API 키를 읽어옵니다
-    if let apiKey = Bundle.main.object(forInfoDictionaryKey: "KAKAO_APP_KEY") as? String,
-       !apiKey.isEmpty {
-      SDKInitializer.InitSDK(appKey: apiKey)
-      NSLog("Kakao Maps SDK 초기화 완료 (AppDelegate)")
-    } else {
-      // 환경 변수에서 읽기 (React Native에서 설정된 경우)
-      // Info.plist에서 읽거나, 나중에 KakaoMapView에서 초기화
-      NSLog("Kakao Maps SDK: AppDelegate에서 API 키를 찾을 수 없습니다. KakaoMapView에서 초기화됩니다.")
-    }
-    
     let delegate = ReactNativeDelegate()
     let factory = ExpoReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()

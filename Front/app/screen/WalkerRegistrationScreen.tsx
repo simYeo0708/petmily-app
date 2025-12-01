@@ -20,11 +20,13 @@ import { RootStackParamList } from '../index';
 import WalkerService from '../services/WalkerService';
 import * as Location from 'expo-location';
 import MapService, { AddressInfo } from '../services/MapService';
+import { useWalker } from '../contexts/WalkerContext';
 
 type WalkerRegistrationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WalkerRegistration'>;
 
 const WalkerRegistrationScreen = () => {
   const navigation = useNavigation<WalkerRegistrationScreenNavigationProp>();
+  const { refreshWalkerStatus } = useWalker(); // 워커 상태 갱신을 위한 훅
   const [detailDescription, setDetailDescription] = useState('');
   const [serviceArea, setServiceArea] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -198,6 +200,9 @@ const WalkerRegistrationScreen = () => {
         serviceArea: serviceArea.trim(),
       });
 
+      // 워커 상태 갱신
+      await refreshWalkerStatus();
+      
       Alert.alert(
         '등록 완료',
         '워커로 등록되었습니다.\n관리자 승인 후 활동을 시작할 수 있습니다.',
@@ -211,7 +216,14 @@ const WalkerRegistrationScreen = () => {
         ]
       );
     } catch (error: any) {
-      Alert.alert('등록 실패', error.message || '워커 등록 중 오류가 발생했습니다.');
+      let errorMessage = error.message || '워커 등록 중 오류가 발생했습니다.';
+      
+      // 429 에러인 경우 특별한 메시지 표시
+      if (error.message && (error.message.includes('요청이 너무 많습니다') || error.message.includes('429'))) {
+        errorMessage = '요청이 너무 많습니다.\n잠시 후 다시 시도해주세요.';
+      }
+      
+      Alert.alert('등록 실패', errorMessage);
     } finally {
       setIsLoading(false);
     }

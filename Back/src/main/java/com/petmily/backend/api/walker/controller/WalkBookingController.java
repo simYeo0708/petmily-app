@@ -55,6 +55,19 @@ public class WalkBookingController {
     }
 
     /**
+     * 사용자의 현재 진행 중인 산책 조회
+     */
+    @GetMapping({"/walker/bookings/current", "/walker-bookings/current"})
+    public ResponseEntity<WalkerBookingResponse> getCurrentWalking(Authentication authentication) {
+        Long userId = SecurityUtils.getUserId(authentication);
+        WalkerBookingResponse currentBooking = directBookingService.getCurrentWalkingByUser(userId);
+        if (currentBooking == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(currentBooking);
+    }
+
+    /**
      * 워커의 예약 목록 조회
      */
     @GetMapping({"/walker/bookings/walker", "/walker-bookings/walker"})

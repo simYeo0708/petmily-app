@@ -5,6 +5,7 @@ import com.petmily.backend.api.auth.dto.request.LoginRequest;
 import com.petmily.backend.api.auth.dto.request.SignupRequest;
 import com.petmily.backend.api.auth.dto.request.RefreshTokenRequest;
 import com.petmily.backend.api.auth.dto.response.TokenResponse;
+import com.petmily.backend.api.auth.dto.response.UserResponse;
 import com.petmily.backend.api.auth.service.AuthService;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
@@ -16,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -85,12 +88,13 @@ public class AuthController {
     
     // 프론트엔드 호환성을 위한 /me 엔드포인트 추가
     @GetMapping("/me")
-    public ResponseEntity<User> getCurrentUser() {
+    public ResponseEntity<UserResponse> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String username = authentication.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return ResponseEntity.ok(user);
+        UserResponse response = UserResponse.from(user);
+        return ResponseEntity.ok(response);
     }
 
     // 테스트용 사용자 생성 및 로그인 API
@@ -152,6 +156,33 @@ public class AuthController {
         }
     }
     
+    /**
+     * FCM 토큰 등록/업데이트
+     */
+    @PutMapping("/fcm-token")
+    public ResponseEntity<Map<String, String>> registerFcmToken(
+            @RequestBody Map<String, String> request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            String fcmToken = request.get("fcmToken");
+            if (fcmToken == null || fcmToken.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "FCM 토큰이 필요합니다."));
+            }
+
+            String username = userDetails.getUsername();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+            user.setFcmToken(fcmToken);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "FCM 토큰이 등록되었습니다."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "FCM 토큰 등록 실패: " + e.getMessage()));
+        }
+    }
+
     // API 연결 테스트용 간단한 엔드포인트
     @GetMapping("/test")
     public ResponseEntity<Map<String, Object>> test() {

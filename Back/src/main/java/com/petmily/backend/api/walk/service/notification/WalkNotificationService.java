@@ -1,5 +1,9 @@
 package com.petmily.backend.api.walk.service.notification;
 
+import com.petmily.backend.api.fcm.dto.FcmSendDto;
+import com.petmily.backend.api.fcm.service.FcmService;
+import com.petmily.backend.domain.user.entity.User;
+import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walk.entity.WalkingTrack;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
 import com.petmily.backend.domain.walk.repository.WalkTrackRepository;
@@ -21,8 +25,10 @@ public class WalkNotificationService {
 
     private final GeminiMessageGenerator messageGenerator;
     private final KakaoMessageSender messageSender;
+    private final FcmService fcmService;
     private final WalkTrackRepository walkTrackRepository;
     private final WalkerRepository walkerRepository;
+    private final UserRepository userRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String LAST_NOTIFICATION_KEY = "walk:notification:last:";
@@ -109,9 +115,16 @@ public class WalkNotificationService {
     }
 
     /**
-     * 실제 메시지 발송 처리
+     * 실제 메시지 발송 처리 (FCM 푸시 알림 우선, 실패 시 카카오톡 메시지)
      */
     private boolean sendNotification(String ownerContact, String message) {
+        // FCM 푸시 알림 시도
+        boolean fcmSent = sendFcmNotification(ownerContact, message);
+        if (fcmSent) {
+            return true;
+        }
+
+        // FCM 실패 시 카카오톡 메시지 시도
         if (!messageSender.isMessageSendingAvailable()) {
             // 개발 환경에서는 로그로 출력
             messageSender.logMessageForDevelopment(ownerContact, message);
@@ -127,6 +140,75 @@ public class WalkNotificationService {
         // return messageSender.sendMessageToFriend(userAccessToken, message);
         
         return true;
+    }
+
+    /**
+     * FCM 푸시 알림 발송
+     */
+    private boolean sendFcmNotification(String ownerContact, String message) {
+        try {
+            // ownerContact는 사용자 ID 또는 이메일일 수 있음
+            // 여기서는 사용자 ID로 가정하고 User를 조회
+            User user = findUserByContact(ownerContact);
+            if (user == null || user.getFcmToken() == null || user.getFcmToken().isEmpty()) {
+                log.debug("FCM 토큰이 없어 푸시 알림을 발송할 수 없습니다 - Contact: {}", ownerContact);
+                return false;
+            }
+
+            // 메시지에서 제목과 본문 분리 (간단한 파싱)
+            String title = extractTitle(message);
+            String body = message.length() > 100 ? message.substring(0, 100) + "..." : message;
+
+            FcmSendDto fcmSendDto = FcmSendDto.builder()
+                    .token(user.getFcmToken())
+                    .title(title)
+                    .body(body)
+                    .build();
+
+            var result = fcmService.sendMessageTo(fcmSendDto);
+            if (result.isSuccess()) {
+                log.info("FCM 푸시 알림 발송 성공 - User: {}, Message: {}", ownerContact, message);
+                return true;
+            } else {
+                log.warn("FCM 푸시 알림 발송 실패 - User: {}, Error: {}", ownerContact, result.getErrorMessage());
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("FCM 푸시 알림 발송 중 오류 발생 - Contact: {}", ownerContact, e);
+            return false;
+        }
+    }
+
+    /**
+     * 연락처로 사용자 찾기 (이메일 또는 전화번호)
+     */
+    private User findUserByContact(String contact) {
+        // 이메일 형식인지 확인
+        if (contact.contains("@")) {
+            return userRepository.findByEmail(contact).orElse(null);
+        }
+        // 전화번호 형식인지 확인
+        if (contact.matches("\\d+")) {
+            return userRepository.findByPhone(contact).orElse(null);
+        }
+        // 사용자 ID로 시도
+        try {
+            Long userId = Long.parseLong(contact);
+            return userRepository.findById(userId).orElse(null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 메시지에서 제목 추출 (간단한 파싱)
+     */
+    private String extractTitle(String message) {
+        // 이모지나 특수 문자 앞의 텍스트를 제목으로 사용
+        if (message.length() > 30) {
+            return message.substring(0, 30) + "...";
+        }
+        return message;
     }
 
     /**
@@ -228,6 +310,9 @@ public class WalkNotificationService {
         }
     }
 
+    /**
+     * 예약의 주인 연락처 가져오기
+     */
     private String getOwnerContact(WalkBooking booking) {
         if (booking.getUser() != null) {
             if (booking.getUser().getPhone() != null && !booking.getUser().getPhone().trim().isEmpty()) {

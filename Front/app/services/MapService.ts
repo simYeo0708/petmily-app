@@ -158,7 +158,8 @@ class MapService {
     endLatitude: number,
     endLongitude: number,
     totalDistance: number,
-    durationSeconds: number
+    durationSeconds: number,
+    notes?: string
   ): Promise<WalkSessionResponse> {
     try {
       const token = await this.getAuthToken();
@@ -173,6 +174,7 @@ class MapService {
           endLongitude,
           totalDistance,
           durationSeconds,
+          notes: notes || null,
         }),
       });
 

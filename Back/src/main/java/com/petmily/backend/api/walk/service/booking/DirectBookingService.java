@@ -98,6 +98,30 @@ public class DirectBookingService {
         return WalkerBookingResponse.from(validation.booking);
     }
 
+    /**
+     * 사용자의 현재 진행 중인 산책 조회 (IN_PROGRESS 상태)
+     */
+    public WalkerBookingResponse getCurrentWalkingByUser(Long userId) {
+        User user = walkBookingService.findUserById(userId);
+        
+        // IN_PROGRESS 상태의 예약 조회
+        List<WalkBooking> inProgressBookings = walkBookingRepository.findByUserIdAndStatus(
+            user.getId(), 
+            WalkBooking.BookingStatus.IN_PROGRESS
+        );
+        
+        if (inProgressBookings.isEmpty()) {
+            return null;
+        }
+        
+        // 가장 최근 예약 반환
+        WalkBooking currentBooking = inProgressBookings.stream()
+            .max((b1, b2) -> b1.getDate().compareTo(b2.getDate()))
+            .orElse(null);
+        
+        return currentBooking != null ? WalkerBookingResponse.from(currentBooking) : null;
+    }
+
 
     @Transactional
     public WalkerBookingResponse updateBookingStatus(Long bookingId, WalkBooking.BookingStatus status, Long userId) {

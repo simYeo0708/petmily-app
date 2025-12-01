@@ -29,6 +29,15 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        String requestPath = request.getRequestURI();
+        String method = request.getMethod();
+        
+        // 워커 등록 API (POST /api/walkers 또는 POST /walkers)는 Rate Limit 제외
+        // context-path가 /api로 설정되어 있으므로 실제 경로는 /api/walkers
+        if ("POST".equals(method) && (requestPath.endsWith("/walkers") || requestPath.endsWith("/api/walkers"))) {
+            return true;
+        }
+        
         String clientId = getClientIdentifier(request);
         
         long currentTime = System.currentTimeMillis();
@@ -44,8 +53,15 @@ public class RateLimitInterceptor implements HandlerInterceptor {
         
         if (count.incrementAndGet() > maxRequestsPerMinute) {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.setContentType("application/json");
-            response.getWriter().write("{\"success\":false,\"message\":\"요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.\"}");
+            response.setContentType("application/json;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            
+            // UTF-8 바이트로 직접 작성하여 인코딩 문제 방지
+            String jsonResponse = "{\"success\":false,\"message\":\"요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.\"}";
+            byte[] jsonBytes = jsonResponse.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            response.setContentLength(jsonBytes.length);
+            response.getOutputStream().write(jsonBytes);
+            response.getOutputStream().flush();
             return false;
         }
         

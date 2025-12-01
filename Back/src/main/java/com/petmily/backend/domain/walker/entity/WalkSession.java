@@ -55,18 +55,22 @@ public class WalkSession extends BaseTimeEntity {
     @Column(name = "end_longitude", columnDefinition = "DECIMAL(10,7)")
     private Double endLongitude;
 
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes; // 워커가 입력한 산책 특이사항
+
     public enum WalkSessionStatus {
         IN_PROGRESS,  // 진행 중
         COMPLETED,    // 완료
         CANCELLED     // 취소
     }
 
-    public void complete(LocalDateTime endTime, Double endLatitude, Double endLongitude, Double totalDistance, Long durationSeconds) {
+    public void complete(LocalDateTime endTime, Double endLatitude, Double endLongitude, Double totalDistance, Long durationSeconds, String notes) {
         this.endTime = endTime;
         this.endLatitude = endLatitude;
         this.endLongitude = endLongitude;
         this.totalDistance = totalDistance;
         this.durationSeconds = durationSeconds;
+        this.notes = notes;
         this.status = WalkSessionStatus.COMPLETED;
     }
 

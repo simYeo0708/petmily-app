@@ -15,6 +15,8 @@ import com.petmily.backend.domain.walk.entity.BookingChangeRequest;
 import com.petmily.backend.domain.walk.repository.BookingChangeRequestRepository;
 import com.petmily.backend.api.chat.service.ChatMessageService;
 import com.petmily.backend.api.chat.service.ChatRoomService;
+import com.petmily.backend.api.fcm.dto.FcmSendDto;
+import com.petmily.backend.api.fcm.service.FcmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class WalkBookingService {
     private final BookingChangeRequestRepository bookingChangeRequestRepository;
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final FcmService fcmService;
 
     public User findUserById(Long userId){
         return userRepository.findById(userId)
@@ -68,6 +71,22 @@ public class WalkBookingService {
             );
 
             chatMessageService.createBookingSystemMessage(chatRoomResponse.getId(), booking);
+
+            // 예약 확정 FCM 푸시 알림 발송
+            try {
+                User user = findUserById(booking.getUserId());
+                if (user != null && user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                    FcmSendDto fcmDto = FcmSendDto.builder()
+                            .token(user.getFcmToken())
+                            .title("산책 예약이 확정되었습니다")
+                            .body(String.format("산책 예약이 확정되었습니다. 워커와 채팅을 시작할 수 있습니다."))
+                            .build();
+                    fcmService.sendMessageTo(fcmDto);
+                    log.info("예약 확정 FCM 푸시 알림 발송 완료 - Booking ID: {}", booking.getId());
+                }
+            } catch (Exception e) {
+                log.warn("예약 확정 FCM 푸시 알림 발송 실패 - Booking ID: {}", booking.getId(), e);
+            }
 
             log.info("예약 확정으로 인한 채팅방 생성 완료 - Booking ID: {}, Chat Room ID: {}",
                     booking.getId(), chatRoomResponse.getRoomId());

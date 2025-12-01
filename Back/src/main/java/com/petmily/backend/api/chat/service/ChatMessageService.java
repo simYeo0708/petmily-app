@@ -9,6 +9,8 @@ import com.petmily.backend.domain.chat.entity.ChatMessage;
 import com.petmily.backend.domain.chat.entity.ChatRoom;
 import com.petmily.backend.domain.chat.repository.ChatMessageRepository;
 import com.petmily.backend.domain.chat.repository.ChatRoomRepository;
+import com.petmily.backend.api.fcm.dto.FcmSendDto;
+import com.petmily.backend.api.fcm.service.FcmService;
 import com.petmily.backend.domain.user.entity.User;
 import com.petmily.backend.domain.user.repository.UserRepository;
 import com.petmily.backend.domain.walk.entity.WalkBooking;
@@ -31,6 +33,7 @@ public class ChatMessageService {
     private final ChatRoomRepository chatRoomRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final FcmService fcmService;
 
     private ChatRoom findChatRoomById(String roomId){
         return chatRoomRepository.findByRoomId(roomId)
@@ -82,6 +85,13 @@ public class ChatMessageService {
         // 발신자 정보 명시적으로 설정
         response.setSenderName(user.getName());
         response.setSenderUsername(user.getUsername());
+
+        // 새 채팅 메시지 FCM 푸시 알림 발송 (수신자에게만)
+        try {
+            sendChatMessageNotification(chatRoom, user, request.getContent());
+        } catch (Exception e) {
+            log.warn("채팅 메시지 FCM 푸시 알림 발송 실패 - Room ID: {}", roomId, e);
+        }
 
         return response;
     }
@@ -156,5 +166,40 @@ public class ChatMessageService {
         // 워커인지 확인 (walker 테이블에서 user_id로 조회)
         return chatRoom.getWalker() != null &&
                 chatRoom.getWalker().getUserId().equals(user.getId());
+    }
+
+    /**
+     * 채팅 메시지 FCM 푸시 알림 발송
+     */
+    private void sendChatMessageNotification(ChatRoom chatRoom, User sender, String messageContent) {
+        try {
+            // 수신자 결정 (발신자가 user면 walker에게, walker면 user에게)
+            User recipient = null;
+            if (chatRoom.getUserId().equals(sender.getId())) {
+                // 발신자가 user이면 walker에게 알림
+                if (chatRoom.getWalker() != null && chatRoom.getWalker().getUser() != null) {
+                    recipient = chatRoom.getWalker().getUser();
+                }
+            } else {
+                // 발신자가 walker이면 user에게 알림
+                recipient = chatRoom.getUser();
+            }
+
+            if (recipient != null && recipient.getFcmToken() != null && !recipient.getFcmToken().isEmpty()) {
+                String title = sender.getName() != null ? sender.getName() : sender.getUsername();
+                String body = messageContent.length() > 100 ? messageContent.substring(0, 100) + "..." : messageContent;
+
+                FcmSendDto fcmDto = FcmSendDto.builder()
+                        .token(recipient.getFcmToken())
+                        .title(title)
+                        .body(body)
+                        .build();
+
+                fcmService.sendMessageTo(fcmDto);
+                log.info("채팅 메시지 FCM 푸시 알림 발송 완료 - 수신자: {}", recipient.getUsername());
+            }
+        } catch (Exception e) {
+            log.error("채팅 메시지 FCM 푸시 알림 발송 중 오류 발생", e);
+        }
     }
 }

@@ -17,9 +17,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleCustomException(CustomException ex, WebRequest request) {
         log.error("Custom exception occurred: {}", ex.getMessage(), ex);
         
+        // INVALID_REQUEST의 경우 원본 메시지를 그대로 사용 (더 구체적인 에러 정보 제공)
+        String message = ex.getErrorCode() == com.petmily.backend.api.exception.ErrorCode.INVALID_REQUEST
+                ? ex.getMessage()
+                : getMobileOptimizedMessage(ex);
+        
         ApiResponse<Void> response = ApiResponse.<Void>builder()
                 .success(false)
-                .message(getMobileOptimizedMessage(ex))
+                .message(message)
                 .timestamp(System.currentTimeMillis())
                 .build();
                 

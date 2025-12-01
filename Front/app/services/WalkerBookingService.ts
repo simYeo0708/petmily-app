@@ -19,11 +19,18 @@ interface WalkingBookingResponse {
   id: number;
   petId: number;
   walkerId?: number;
+  userId?: number;
   date: string;
   duration: number;
   status: string;
   pickupAddress: string;
   notes?: string;
+  walkerName?: string;
+  walkerUsername?: string;
+  username?: string;
+  walkerLocation?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
 }
 
 const getAuthToken = async (): Promise<string> => {
@@ -166,6 +173,77 @@ const WalkerBookingService = {
       return data;
     } catch (error) {
       // 에러는 UI로만 처리 (콘솔 로그 없이)
+      return [];
+    }
+  },
+
+  async getCurrentWalking(): Promise<WalkingBookingResponse | null> {
+    try {
+      const token = await getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/walker-bookings/current`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 204) {
+        return null; // 현재 진행 중인 산책 없음
+      }
+
+      if (!response.ok) {
+        throw new Error(`현재 산책 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as WalkingBookingResponse;
+      return data;
+    } catch (error) {
+      return null;
+    }
+  },
+
+  async getOpenRequests(): Promise<WalkingBookingResponse[]> {
+    try {
+      const token = await getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/walker-bookings/open-requests`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`오픈 요청 목록 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as WalkingBookingResponse[];
+      return data;
+    } catch (error) {
+      return [];
+    }
+  },
+
+  async getCompletedWalks(): Promise<WalkingBookingResponse[]> {
+    try {
+      const token = await getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/walker-bookings/my-bookings`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`완료된 산책 목록 조회 실패: ${response.status}`);
+      }
+
+      const data = await response.json() as WalkingBookingResponse[];
+      // COMPLETED 상태인 예약만 필터링
+      return data.filter(booking => booking.status === 'COMPLETED');
+    } catch (error) {
       return [];
     }
   },

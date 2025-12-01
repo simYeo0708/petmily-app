@@ -25,6 +25,7 @@ import { useHelperStatus } from "../hooks/useHelperStatus";
 import { useGuide } from "../hooks/useGuide";
 import { useGuideContext } from "../contexts/GuideContext";
 import { usePet } from "../contexts/PetContext";
+import { useWalker } from "../contexts/WalkerContext";
 import { rf } from "../utils/responsive";
 import { RootStackParamList } from "../index";
 import {
@@ -193,6 +194,7 @@ const HomeScreen = () => {
   }, [showServiceGuide, showGuideOverlay, showStepModal, currentGuideStep, isFirstTime, hasPetInfo]);
 
   const { helperStatus, becomeHelper } = useHelperStatus();
+  const { isWalker } = useWalker(); // 전역 Context에서 워커 여부 가져오기
 
   // Refs for guide targets
   const petWalkerButtonRef = useRef<View | null>(null);
@@ -203,6 +205,59 @@ const HomeScreen = () => {
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [scrollY, setScrollY] = useState(0);
   const floatingButtonOpacity = useRef(new Animated.Value(1)).current;
+  
+  // 플로팅 메뉴 상태
+  const [isFloatingMenuExpanded, setIsFloatingMenuExpanded] = useState(false);
+  const floatingMenuAnimation = useRef(new Animated.Value(0)).current;
+  
+  // 현재 진행 중인 산책 정보
+  const [currentWalking, setCurrentWalking] = useState<any>(null);
+  
+  // 현재 산책 정보 로드
+  const loadCurrentWalking = useCallback(async () => {
+    try {
+      const { WalkerBookingService } = require('../services/WalkerBookingService');
+      const currentBooking = await WalkerBookingService.getCurrentWalking();
+      
+      if (currentBooking && currentBooking.status === 'IN_PROGRESS') {
+        const { getCurrentWalkingStartTime } = require('../utils/WalkingUtils');
+        const { startTime: savedStartTime, duration: savedDuration } = await getCurrentWalkingStartTime();
+        
+        const walkingData = {
+          ...currentBooking,
+          startTime: savedStartTime || currentBooking.startTime,
+          duration: savedDuration || currentBooking.duration,
+        };
+        setCurrentWalking(walkingData);
+      } else {
+        setCurrentWalking(null);
+      }
+    } catch (error) {
+      setCurrentWalking(null);
+    }
+  }, []);
+  
+  useEffect(() => {
+    loadCurrentWalking();
+  }, [loadCurrentWalking]);
+  
+  useFocusEffect(
+    useCallback(() => {
+      loadCurrentWalking();
+    }, [loadCurrentWalking])
+  );
+  
+  const toggleFloatingMenu = () => {
+    const toValue = isFloatingMenuExpanded ? 0 : 1;
+    setIsFloatingMenuExpanded(!isFloatingMenuExpanded);
+    
+    Animated.spring(floatingMenuAnimation, {
+      toValue,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 7,
+    }).start();
+  };
 
   const handleNavigateToHelper = () => {
     navigation.navigate("HelperDashboard");
@@ -606,101 +661,249 @@ const HomeScreen = () => {
         </View>
       </SafeAreaView>
       
-      {/* 가이드 시작 플로팅 버튼 */}
-      <Animated.View style={{ opacity: floatingButtonOpacity }}>
-        <TouchableOpacity
-          style={styles.guideButton}
-        onPress={() => {
-          console.log("[가이드] 가이드 시작 버튼 클릭");
-          console.log("[가이드] 현재 scrollY:", scrollY);
+      {/* 플로팅 메뉴 버튼들 */}
+      <View style={styles.floatingMenuContainer}>
+        <Animated.View style={{ opacity: floatingButtonOpacity }}>
+          {/* 펼쳐진 서브 버튼들 */}
+          {isFloatingMenuExpanded && (
+            <>
+              {/* 지도 보기 버튼 (모든 사용자에게 표시) */}
+              <Animated.View
+                style={[
+                  styles.floatingSubButton,
+                  {
+                    transform: [
+                      {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -70],
+                        }),
+                      },
+                      {
+                        scale: floatingMenuAnimation,
+                      },
+                    ],
+                    opacity: floatingMenuAnimation,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[styles.floatingSubButtonInner, { backgroundColor: '#4A90E2' }]}
+                  onPress={() => {
+                    navigation.navigate('WalkingMap');
+                    toggleFloatingMenu();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="map" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+              
+              {/* 가이드 시작 버튼 */}
+              <Animated.View
+                style={[
+                  styles.floatingSubButton,
+                  {
+                    transform: [
+                      {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -140],
+                        }),
+                      },
+                      {
+                        scale: floatingMenuAnimation,
+                      },
+                    ],
+                    opacity: floatingMenuAnimation,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[styles.floatingSubButtonInner, { backgroundColor: '#4A90E2' }]}
+                  onPress={() => {
+                    console.log("[가이드] 가이드 시작 버튼 클릭");
+                    console.log("[가이드] 현재 scrollY:", scrollY);
+                    
+                    const targetScrollY = 0;
+                    
+                    if (scrollViewRef.current) {
+                      const startY = scrollY;
+                      const diff = targetScrollY - startY;
+                      const duration = 300;
+                      const startTime = Date.now();
+                      
+                      const animateScroll = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        const easedProgress = 1 - Math.pow(1 - progress, 3);
+                        const currentY = startY + (diff * easedProgress);
+                        
+                        if (scrollViewRef.current) {
+                          scrollViewRef.current.scrollTo({
+                            x: 0,
+                            y: currentY,
+                            animated: false,
+                          });
+                        }
+                        
+                        if (progress < 1) {
+                          requestAnimationFrame(animateScroll);
+                        } else {
+                          if (scrollViewRef.current) {
+                            scrollViewRef.current.scrollTo({
+                              x: 0,
+                              y: targetScrollY,
+                              animated: false,
+                            });
+                          }
+                          forceStartGuide();
+                          setGuideActive(true);
+                          setGuideStep(0);
+                        }
+                      };
+                      
+                      requestAnimationFrame(animateScroll);
+                    } else {
+                      forceStartGuide();
+                      setGuideActive(true);
+                      setGuideStep(0);
+                    }
+                    toggleFloatingMenu();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="help-circle" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+              
+              {/* 헬퍼 대시보드 버튼 */}
+              <Animated.View
+                style={[
+                  styles.floatingSubButton,
+                  {
+                    transform: [
+                      {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -210],
+                        }),
+                      },
+                      {
+                        scale: floatingMenuAnimation,
+                      },
+                    ],
+                    opacity: floatingMenuAnimation,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[styles.floatingSubButtonInner, { backgroundColor: '#C59172' }]}
+                  onPress={() => {
+                    handleNavigateToHelper();
+                    toggleFloatingMenu();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="grid" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+              
+              {/* 워커용 지도 버튼 (워커만 보임) */}
+              {isWalker && (
+                <Animated.View
+                  style={[
+                    styles.floatingSubButton,
+                    {
+                      transform: [
+                        {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, -280],
+                        }),
+                        },
+                        {
+                          scale: floatingMenuAnimation,
+                        },
+                      ],
+                      opacity: floatingMenuAnimation,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[styles.floatingSubButtonInner, { backgroundColor: '#4A90E2' }]}
+                    onPress={() => {
+                      navigation.navigate('WalkerMap');
+                      toggleFloatingMenu();
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="map-outline" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
+              
+              {/* AI 고객지원 버튼 */}
+              <Animated.View
+                style={[
+                  styles.floatingSubButton,
+                  {
+                    transform: [
+                      {
+                        translateY: floatingMenuAnimation.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, isWalker ? -350 : -280],
+                        }),
+                      },
+                      {
+                        scale: floatingMenuAnimation,
+                      },
+                    ],
+                    opacity: floatingMenuAnimation,
+                  },
+                ]}
+              >
+                <TouchableOpacity
+                  style={[styles.floatingSubButtonInner, { backgroundColor: '#C59172' }]}
+                  onPress={() => {
+                    navigation.navigate('AIChat');
+                    toggleFloatingMenu();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
+            </>
+          )}
           
-          // 특정 박스 구간으로 스크롤 (예: 0 위치로 이동)
-          // TODO: 원하는 박스 구간의 Y 좌표로 변경 필요
-          const targetScrollY = 0;
-          
-          if (scrollViewRef.current) {
-            // Animated.timing을 사용하여 명시적으로 300ms duration 적용
-            // transition-all duration-300과 동일한 효과
-            const startY = scrollY;
-            const diff = targetScrollY - startY;
-            const duration = 300; // 300ms duration
-            const startTime = Date.now();
-            
-            // requestAnimationFrame을 사용하여 부드러운 스크롤 애니메이션 구현
-            const animateScroll = () => {
-              const elapsed = Date.now() - startTime;
-              const progress = Math.min(elapsed / duration, 1); // 0 ~ 1
-              
-              // Easing 함수 적용 (ease-out cubic)
-              const easedProgress = 1 - Math.pow(1 - progress, 3);
-              
-              const currentY = startY + (diff * easedProgress);
-              
-              if (scrollViewRef.current) {
-                scrollViewRef.current.scrollTo({
-                  x: 0,
-                  y: currentY,
-                  animated: false, // 즉시 이동 (애니메이션은 requestAnimationFrame으로 제어)
-                });
-              }
-              
-              if (progress < 1) {
-                // 아직 애니메이션 진행 중
-                requestAnimationFrame(animateScroll);
-              } else {
-                // 애니메이션 완료
-                // 최종 위치로 정확히 이동
-                if (scrollViewRef.current) {
-                  scrollViewRef.current.scrollTo({
-                    x: 0,
-                    y: targetScrollY,
-                    animated: false,
-                  });
-                }
-                
-                // 300ms 애니메이션 완료 후 가이드 시작
-                forceStartGuide();
-                setGuideActive(true);
-                setGuideStep(0);
-              }
-            };
-            
-            // 애니메이션 시작
-            requestAnimationFrame(animateScroll);
-          } else {
-            // scrollViewRef가 없을 경우 즉시 실행
-            forceStartGuide();
-            setGuideActive(true);
-            setGuideStep(0);
-          }
-        }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="help-circle" size={28} color="#fff" />
-        </TouchableOpacity>
-      </Animated.View>
-      
-      {/* 헬퍼 대시보드 플로팅 버튼 */}
-      <Animated.View style={{ opacity: floatingButtonOpacity }}>
-        <TouchableOpacity
-          style={styles.helperDashboardButton}
-        onPress={handleNavigateToHelper}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="grid" size={28} color="#fff" />
-        </TouchableOpacity>
-      </Animated.View>
-      
-      {/* AI 고객지원 플로팅 버튼 */}
-      <Animated.View style={{ opacity: floatingButtonOpacity }}>
-        <TouchableOpacity
-          style={styles.aiChatButton}
-        onPress={() => navigation.navigate('AIChat')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="chatbubble-ellipses" size={28} color="#fff" />
-        </TouchableOpacity>
-      </Animated.View>
+          {/* 메인 플로팅 버튼 */}
+          <TouchableOpacity
+            style={styles.floatingMainButton}
+            onPress={toggleFloatingMenu}
+            activeOpacity={0.8}
+          >
+            <Animated.View
+              style={{
+                transform: [
+                  {
+                    rotate: floatingMenuAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '45deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              <Ionicons 
+                name={isFloatingMenuExpanded ? "close" : "add"} 
+                size={28} 
+                color="#fff" 
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
       
       {/* 서비스 가이드 오버레이 및 하이라이트 */}
       {/* {showServiceGuide && (
@@ -822,10 +1025,14 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-  guideButton: {
+  floatingMenuContainer: {
     position: 'absolute',
     right: 20,
-    bottom: 230,
+    bottom: 90,
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  floatingMainButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -840,47 +1047,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
-    zIndex: 999,
   },
-  helperDashboardButton: {
+  floatingSubButton: {
     position: 'absolute',
-    right: 20,
-    bottom: 160,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#C59172',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    marginBottom: 10,
+  },
+  floatingSubButtonInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    zIndex: 999,
-  },
-  aiChatButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 90,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#C59172',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    zIndex: 999,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 
